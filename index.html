@@ -755,25 +755,21 @@ self.addEventListener('fetch', e => {
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
                     </svg>
                     <div class="maker-banner-text">
-                        <div class="maker-banner-title">🛒 Build Your Smart List</div>
+                        <div class="maker-banner-title">Build Your Smart List</div>
                         <div class="maker-banner-sub">Pick items → set quantity → export or save anytime</div>
                     </div>
                 </div>
 
                 <div class="card-header" style="margin-bottom:.75rem;">
-                    <!-- List Name Input -->
-                    <div class="input-group" style="flex:1; margin-right:1rem;">
-                        <label>List Name</label>
-                        <input type="text" id="list-name-input" placeholder="e.g. Parchun, Sabzi, Monthly..."
-                            style="font-weight:600; font-size:.95rem;"
-                            onkeypress="if(event.key==='Enter') event.target.blur()">
-                    </div>
-                    <label class="toggle-container" style="flex-shrink:0; margin-top:1.2rem;">
+                    <span></span>
+                    <label class="toggle-container">
                         <span class="toggle-label-text">Hide Rates (For Shop)</span>
                         <input type="checkbox" id="mode-toggle" onchange="toggleMode()" style="display:none;">
                         <div class="toggle-switch"></div>
                     </label>
                 </div>
+                <!-- Hidden list name input (used by save/PDF only) -->
+                <input type="hidden" id="list-name-input">
 
                 <!-- Add item form: item + qty on same row, Add button BELOW -->
                 <div class="no-print" style="margin-bottom:1.5rem;">
@@ -2013,16 +2009,24 @@ self.addEventListener('fetch', e => {
         arrow.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
     }
 
-    // Column name aliases
+    // Column name aliases — match by contains, not exact
     const COL = {
-        name: ['item','name','product','items','description','particulars','saman'],
-        qty:  ['qty','quantity','amount','kilo','wt','weight','maatra'],
-        unit: ['unit','uom','type','units','measure','prakar'],
-        rate: ['rate','price','cost','mrp','value','dam'],
+        name: ['item','name','product','items','description','particulars','saman','itemname','productname'],
+        qty:  ['qty','quantity','amount','wt','weight','maatra','matra','pieces','nos'],
+        unit: ['unit','uom','unittype','units','measure','prakar','unitofmeasure','unitofmeasurement','measuretype','type'],
+        rate: ['rate','price','cost','mrp','value','dam','unitprice','unitrate','unitcost'],
     };
 
     function matchCol(headers, aliases) {
-        return headers.findIndex(h => aliases.includes(h.toLowerCase().trim().replace(/[^a-z]/g,'')));
+        // First try exact match (after stripping spaces/special chars)
+        let idx = headers.findIndex(h => aliases.includes(h.toLowerCase().trim().replace(/[^a-z]/g,'')));
+        if (idx >= 0) return idx;
+        // Then try contains match (e.g. "unit type" contains "unit")
+        idx = headers.findIndex(h => {
+            const clean = h.toLowerCase().trim();
+            return aliases.some(a => clean.includes(a) || clean.replace(/\s+/g,'').includes(a));
+        });
+        return idx;
     }
 
     function handleExcelSelect(input) {
@@ -2078,11 +2082,25 @@ self.addEventListener('fetch', e => {
         const parsed = [];
         for (let i = dataStart; i < rows.length; i++) {
             const row  = rows[i];
-            const name = nameIdx >= 0 ? String(row[nameIdx] || '').trim() : '';
+            const name = nameIdx >= 0 ? String(row[nameIdx] ?? '').trim() : '';
             if (!name) continue;
-            const qty  = qtyIdx  >= 0 ? parseFloat(row[qtyIdx])  || 1   : 1;
-            const unit = unitIdx >= 0 ? String(row[unitIdx] || '').trim() || 'Piece' : 'Piece';
-            const rate = rateIdx >= 0 ? parseFloat(row[rateIdx]) || 0    : 0;
+
+            const qty  = qtyIdx  >= 0 ? (parseFloat(String(row[qtyIdx]  ?? '')) || 1) : 1;
+            const rate = rateIdx >= 0 ? (parseFloat(String(row[rateIdx] ?? '')) || 0) : 0;
+
+            // Unit: read raw value, preserve original casing, fallback to empty string (not 'Piece')
+            let unit = '';
+            if (unitIdx >= 0) {
+                unit = String(row[unitIdx] ?? '').trim();
+            }
+            // If unit cell is empty, try to extract from qty string (e.g. "5 kg" → "kg")
+            if (!unit && qtyIdx >= 0) {
+                const qtyRaw = String(row[qtyIdx] ?? '').trim();
+                const match  = qtyRaw.match(/[a-zA-Z]+/);
+                if (match) unit = match[0];
+            }
+            if (!unit) unit = '';   // leave blank — don't assume 'Piece'
+
             parsed.push({ name, qty, unit, rate });
         }
 
@@ -2097,9 +2115,9 @@ self.addEventListener('fetch', e => {
 
         body.innerHTML = parsed.map((row, i) => {
             const bg = i % 2 === 0 ? 'var(--solid)' : 'var(--bg)';
-            const unitBadge = row.unit !== 'Piece'
+            const unitBadge = row.unit
                 ? `<span style="background:#dcfce7; color:#166534; font-size:.7rem; font-weight:600; padding:.15rem .5rem; border-radius:10px;">${row.unit}</span>`
-                : `<span style="color:var(--muted); font-size:.75rem;">Piece</span>`;
+                : `<span style="color:var(--muted); font-size:.75rem;">—</span>`;
             return `<tr style="background:${bg};">
                 <td style="padding:.45rem .75rem; color:var(--muted); font-size:.78rem;">${i+1}</td>
                 <td style="padding:.45rem .75rem; font-weight:600; color:var(--text);">${row.name}</td>
@@ -2124,7 +2142,7 @@ self.addEventListener('fetch', e => {
             const cartItem = {
                 id:   tempId,
                 name: row.name,
-                unit: row.unit || 'Piece',
+                unit: row.unit || '',
                 rate: row.rate || 0,
                 qty:  row.qty  || 1,
             };
