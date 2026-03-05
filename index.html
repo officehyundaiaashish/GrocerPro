@@ -24,18 +24,17 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-
         body { background-color: var(--bg); color: var(--text-main); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
         /* Animations */
         @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-entry { animation: fadeSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-entry { animation: fadeSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
         /* Top Bar */
         .top-bar { background-color: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 1rem 1.5rem; z-index: 10; }
         .logo { font-size: 1.25rem; font-weight: 700; color: var(--accent); margin-right: auto; display: flex; align-items: center; gap: 0.5rem; }
         .desktop-nav { display: flex; gap: 0.5rem; }
-        .nav-btn { background: transparent; border: none; padding: 0.6rem 1rem; border-radius: 8px; color: var(--text-muted); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: var(--transition); }
+        .nav-btn { background: transparent; border: none; padding: 0.6rem 1rem; border-radius: 8px; color: var(--text-muted); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 0.5rem;}
         .nav-btn:hover { color: var(--text-main); background: #f8fafc; }
         .nav-btn.active { background-color: var(--accent-light); color: var(--accent-hover); }
 
@@ -44,26 +43,24 @@
         .view-section { display: none; max-width: 900px; margin: 0 auto; padding-bottom: 4rem; }
         .view-section.active { display: block; animation: fadeSlideUp 0.3s ease forwards; }
 
-        /* Cards */
+        /* Cards & Forms */
         .card { background: var(--surface); border-radius: var(--radius); padding: 1.5rem; border: 1px solid var(--border); box-shadow: var(--shadow); margin-bottom: 1.5rem; transition: var(--transition); }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
         h2 { font-size: 1.25rem; font-weight: 600; }
         h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; }
-
-        /* Forms & Inputs */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         .grid-3 { display: grid; grid-template-columns: 2fr 1fr auto; gap: 1rem; align-items: end; }
         @media (max-width: 600px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
         .input-group { display: flex; flex-direction: column; gap: 0.4rem; position: relative; }
         label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
         
-        input { padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; background: #f8fafc; outline: none; transition: var(--transition); width: 100%; }
-        input:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); transform: translateY(-1px); }
+        input, select { padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; background: #f8fafc; outline: none; transition: var(--transition); width: 100%; }
+        input:focus, select:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); transform: translateY(-1px); }
 
         /* Custom Animated Dropdown */
         .custom-select-wrapper { position: relative; user-select: none; width: 100%; }
         .custom-select { position: relative; display: flex; flex-direction: column; }
-        .custom-select__trigger { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; font-size: 0.95rem; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: var(--transition); }
+        .custom-select__trigger { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; font-size: 0.95rem; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: var(--transition); height: 45px;}
         .custom-select__trigger:hover { border-color: #cbd5e1; }
         .custom-select.open .custom-select__trigger { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
         .arrow { width: 10px; height: 10px; border-top: 2px solid var(--text-muted); border-right: 2px solid var(--text-muted); transform: rotate(135deg); transition: transform 0.3s; margin-bottom: 4px; }
@@ -72,17 +69,20 @@
         .custom-select.open .custom-options { opacity: 1; visibility: visible; pointer-events: all; transform: translateY(0); }
         .custom-option { position: relative; display: block; padding: 0.8rem 1rem; font-size: 0.95rem; color: var(--text-main); cursor: pointer; transition: background 0.2s; border-bottom: 1px solid #f1f5f9; }
         .custom-option:last-child { border-bottom: none; }
-        .custom-option:hover { background-color: var(--accent-light); color: var(--accent-hover); padding-left: 1.2rem; /* Nice hover slide effect */ }
+        .custom-option:hover { background-color: var(--accent-light); color: var(--accent-hover); padding-left: 1.2rem; }
         .custom-option.selected { background-color: var(--accent); color: #fff; }
 
-        /* Buttons with Push Effect */
-        button { padding: 0.75rem 1.5rem; background-color: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 500; cursor: pointer; transition: var(--transition); display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        /* Buttons */
+        button { padding: 0.75rem 1.5rem; background-color: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 500; cursor: pointer; transition: var(--transition); display: flex; align-items: center; justify-content: center; gap: 0.5rem; height: 45px;}
         button:hover { background-color: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(16,185,129,0.3); }
-        button:active { transform: translateY(1px) scale(0.96); box-shadow: none; } /* Push down effect */
+        button:active { transform: translateY(1px) scale(0.96); box-shadow: none; } 
         .btn-outline { background: transparent; color: var(--accent); border: 2px solid var(--accent); }
         .btn-outline:hover { background: var(--accent); color: #fff; }
+        .btn-danger { background: #fee2e2; color: var(--danger); border: none;}
+        .btn-danger:hover { background: #fca5a5; color: white; }
+        .btn-small { padding: 0.4rem 0.8rem; font-size: 0.85rem; height: auto; }
 
-        /* Beautiful iOS Style Toggle */
+        /* Toggle */
         .toggle-container { display: inline-flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 12px; transition: background 0.3s; }
         .toggle-container:hover { background: #f8fafc; }
         .toggle-label-text { font-size: 0.9rem; font-weight: 600; color: var(--text-main); user-select: none; }
@@ -97,18 +97,27 @@
         th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
         th { font-weight: 600; color: var(--text-muted); font-size: 0.85rem; background: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px; }
         td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+        .action-cell { display: flex; gap: 0.5rem; justify-content: center; align-items: center; }
         .total-row { display: flex; justify-content: space-between; align-items: center; font-size: 1.25rem; font-weight: 700; padding: 1.5rem; margin-top: 1rem; background: #fff; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
 
-        /* Mobile Bottom Nav */
+        /* File Upload */
+        .file-upload-wrapper { position: relative; width: 100%; }
+        .file-upload-input { position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .file-upload-label { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; border: 2px dashed var(--accent); border-radius: 8px; background: #f0fdf4; color: var(--accent-hover); transition: var(--transition); cursor: pointer; }
+        .file-upload-wrapper:hover .file-upload-label { background: #d1fae5; }
+        .file-name { margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted); }
+
+        /* Mobile Nav */
         .mobile-nav { display: none; }
         @media (max-width: 768px) {
             .desktop-nav { display: none; }
             .main-content { padding-bottom: 6rem; padding-inline: 1rem; }
             .mobile-nav { display: flex; position: fixed; bottom: 0; left: 0; width: 100%; background: var(--surface); border-top: 1px solid var(--border); justify-content: space-around; padding: 0.5rem 0; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
-            .mobile-nav .nav-btn { flex-direction: column; padding: 0.4rem; font-size: 0.75rem; gap: 0.2rem; width: 70px; background: transparent; }
-            .mobile-nav .nav-btn.active { color: var(--accent); background: transparent; }
+            .mobile-nav .nav-btn { flex-direction: column; padding: 0.4rem; font-size: 0.75rem; gap: 0.2rem; width: 70px; background: transparent; height: auto;}
+            .mobile-nav .nav-btn.active { color: var(--accent); background: transparent; box-shadow: none;}
             .mobile-nav .nav-btn svg { transition: var(--transition); }
             .mobile-nav .nav-btn.active svg { transform: translateY(-3px); stroke-width: 2.5; filter: drop-shadow(0 2px 4px rgba(16,185,129,0.3)); }
+            .table-responsive { border: none; }
         }
 
         /* Print Logic */
@@ -126,10 +135,13 @@
         <nav class="desktop-nav">
             <button class="nav-btn active" onclick="switchTab('maker', this)">List Maker</button>
             <button class="nav-btn" onclick="switchTab('inventory', this)">Inventory</button>
+            <button class="nav-btn" onclick="switchTab('history', this)">History</button>
+            <button class="nav-btn" onclick="switchTab('backup', this)">Data</button>
         </nav>
     </header>
 
     <main class="main-content">
+        
         <section id="maker-view" class="view-section active">
             <div class="card animate-entry">
                 <div class="card-header">
@@ -142,7 +154,6 @@
                 </div>
                 
                 <div class="grid-3 no-print" style="margin-bottom: 1.5rem;">
-                    
                     <div class="input-group">
                         <label>Select Item</label>
                         <div class="custom-select-wrapper">
@@ -182,7 +193,7 @@
                 </div>
 
                 <div class="grid-2 no-print" style="margin-top: 1.5rem;">
-                    <button class="btn-outline" onclick="cart.length = 0; renderCart();" style="border-color: var(--danger); color: var(--danger);">Clear List</button>
+                    <button class="btn-outline" onclick="saveCurrentList()">Save to History</button>
                     <button onclick="exportPDF()">
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                         Download PDF
@@ -193,8 +204,87 @@
 
         <section id="inventory-view" class="view-section">
             <div class="card animate-entry">
-                <h3>Your Inventory is Active</h3>
-                <p style="color: var(--text-muted)">All 11 items are securely loaded in the custom dropdown.</p>
+                <h3>Add New Item</h3>
+                <div class="grid-3">
+                    <div class="input-group">
+                        <label>Item Name</label>
+                        <input type="text" id="new-item-name" placeholder="e.g. Aashirvaad Atta" onkeypress="handleEnter(event, addNewItem)">
+                    </div>
+                    <div class="input-group">
+                        <label>Unit Type</label>
+                        <select id="new-item-unit">
+                            <option value="kg">Per kg</option>
+                            <option value="gram">Per 100g</option>
+                            <option value="Ltr">Per Litre</option>
+                            <option value="Piece">Per Piece</option>
+                            <option value="Packet">Per Packet</option>
+                            <option value="Ladi">Per Ladi (लड़ी)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Rate (₹)</label>
+                        <input type="number" id="new-item-rate" placeholder="e.g. 50" onkeypress="handleEnter(event, addNewItem)">
+                    </div>
+                </div>
+                <button onclick="addNewItem()" style="margin-top: 1rem; width: 100%;">Save Item to Inventory</button>
+            </div>
+
+            <div class="card animate-entry" style="animation-delay: 0.1s;">
+                <h3>Manage Current Inventory</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom:1rem;">Click 'Edit' to modify items directly.</p>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Unit</th>
+                                <th class="num">Rate (₹)</th>
+                                <th style="text-align: center;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="history-view" class="view-section">
+            <div class="card animate-entry">
+                <div class="card-header">
+                    <h2>Saved Quotations</h2>
+                </div>
+                <div id="history-container" style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+                    </div>
+            </div>
+        </section>
+
+        <section id="backup-view" class="view-section">
+            <div class="card animate-entry">
+                <h2>Data Management</h2>
+                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 2rem;">Secure your data (Settings, Inventory, Lists) in a JSON file.</p>
+                
+                <div class="grid-2">
+                    <div style="border: 1px solid var(--border); padding: 2rem; border-radius: 12px; text-align: center;">
+                        <svg style="margin: 0 auto 1rem; color: var(--accent);" width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        <h3 style="margin-bottom: 0.5rem;">Backup Data</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem;">Export everything to JSON.</p>
+                        <button onclick="downloadBackup()" style="width: 100%;">Download JSON</button>
+                    </div>
+
+                    <div style="border: 1px solid var(--border); padding: 2rem; border-radius: 12px; text-align: center;">
+                        <h3 style="margin-bottom: 0.5rem;">Restore Data</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">Upload a previously saved backup.</p>
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="restore-file" accept=".json" class="file-upload-input" onchange="handleFileSelect(this)">
+                            <div class="file-upload-label">
+                                <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                                <span style="margin-top: 0.5rem; font-weight: 500;">Click or Drag File</span>
+                            </div>
+                        </div>
+                        <div id="file-name-display" class="file-name">No file selected</div>
+                        <button class="btn-outline" onclick="restoreBackup()" style="width: 100%; margin-top: 1rem;">Restore Now</button>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
@@ -202,17 +292,25 @@
     <nav class="mobile-nav">
         <button class="nav-btn active" onclick="switchTab('maker', this)">
             <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-            List Maker
+            Maker
         </button>
         <button class="nav-btn" onclick="switchTab('inventory', this)">
             <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
             Inventory
         </button>
+        <button class="nav-btn" onclick="switchTab('history', this)">
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            History
+        </button>
+        <button class="nav-btn" onclick="switchTab('backup', this)">
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+            Data
+        </button>
     </nav>
 
     <script>
-        // Master Data
-        const inventory = [
+        // Data & State
+        const defaultInventory = [
             { id: 'i1', name: 'काले चने', unit: 'kg', rate: 90 },
             { id: 'i2', name: 'राजमा (लाल छोटा)', unit: 'kg', rate: 140 },
             { id: 'i3', name: 'छोले (Medium)', unit: 'kg', rate: 120 },
@@ -226,20 +324,42 @@
             { id: 'i11', name: 'तेल', unit: 'Piece', rate: 10 }
         ];
 
+        let appData = JSON.parse(localStorage.getItem('gp_appData')) || {
+            inventory: defaultInventory,
+            lists: [],
+            settings: { listOnlyMode: false }
+        };
+        
         let cart = [];
-        let isListOnlyMode = false;
+        let editingItemId = null; 
 
         function init() {
+            document.getElementById('mode-toggle').checked = appData.settings.listOnlyMode;
             renderCustomDropdown();
             renderCart();
+            renderInventoryTable();
+            renderHistory();
         }
 
-        // --- CUSTOM DROPDOWN LOGIC ---
+        function saveData() { localStorage.setItem('gp_appData', JSON.stringify(appData)); }
+        function handleEnter(e, callback) { if (e.key === 'Enter') { e.preventDefault(); callback(); } }
+
+        function switchTab(tabId, btnElement) {
+            document.querySelectorAll('.view-section').forEach(el => { el.classList.remove('active'); el.style.animation = 'none'; el.offsetHeight; el.style.animation = null; });
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`${tabId}-view`).classList.add('active');
+            
+            const tabIndex = Array.from(btnElement.parentElement.children).indexOf(btnElement);
+            document.querySelectorAll('.desktop-nav .nav-btn')[tabIndex]?.classList.add('active');
+            document.querySelectorAll('.mobile-nav .nav-btn')[tabIndex]?.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- List Maker (Custom Dropdown & Cart) ---
         function renderCustomDropdown() {
             const optionsContainer = document.getElementById('custom-options-list');
             optionsContainer.innerHTML = '';
-            
-            inventory.forEach(item => {
+            appData.inventory.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'custom-option';
                 div.innerHTML = `${item.name} <span style="color:#94a3b8; font-size:0.8em; float:right;">₹${item.rate}/${item.unit}</span>`;
@@ -247,12 +367,8 @@
                     document.getElementById('custom-select-text').innerText = item.name;
                     document.getElementById('item-select-value').value = item.id;
                     document.getElementById('myCustomSelect').classList.remove('open');
-                    
-                    // Remove selected class from all, add to clicked
                     document.querySelectorAll('.custom-option').forEach(el => el.classList.remove('selected'));
                     this.classList.add('selected');
-                    
-                    // Trigger unit update
                     document.getElementById('qty-label').innerText = `Qty (${item.unit})`;
                     document.getElementById('qty-input').focus();
                 };
@@ -260,37 +376,17 @@
             });
         }
 
-        // Toggle dropdown open/close
         document.querySelector('.custom-select__trigger').addEventListener('click', function() {
             document.getElementById('myCustomSelect').classList.toggle('open');
         });
-
-        // Close dropdown when clicking outside
         window.addEventListener('click', function(e) {
             const select = document.querySelector('.custom-select');
-            if (!select.contains(e.target)) {
-                select.classList.remove('open');
-            }
+            if (!select.contains(e.target)) select.classList.remove('open');
         });
 
-        // --- Core Functions ---
-        function handleEnter(e, callback) {
-            if (e.key === 'Enter') { e.preventDefault(); callback(); }
-        }
-
-        function switchTab(tabId, btnElement) {
-            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(`${tabId}-view`).classList.add('active');
-            
-            const tabIndex = Array.from(btnElement.parentElement.children).indexOf(btnElement);
-            document.querySelectorAll('.desktop-nav .nav-btn')[tabIndex]?.classList.add('active');
-            document.querySelectorAll('.mobile-nav .nav-btn')[tabIndex]?.classList.add('active');
-        }
-
         function toggleMode() {
-            isListOnlyMode = document.getElementById('mode-toggle').checked;
-            renderCart();
+            appData.settings.listOnlyMode = document.getElementById('mode-toggle').checked;
+            saveData(); renderCart();
         }
 
         function addToCart() {
@@ -298,29 +394,28 @@
             const qty = parseFloat(document.getElementById('qty-input').value);
             if (!id || isNaN(qty) || qty <= 0) return alert("Select an item and enter valid quantity!");
 
-            const item = inventory.find(i => i.id === id);
+            const item = appData.inventory.find(i => i.id === id);
             const existing = cart.find(c => c.id === item.id);
             if (existing) existing.qty += qty;
             else cart.push({ ...item, qty });
 
-            // Reset custom select
             document.getElementById('item-select-value').value = "";
             document.getElementById('custom-select-text').innerText = "Select an item...";
             document.querySelectorAll('.custom-option').forEach(el => el.classList.remove('selected'));
             document.getElementById('qty-input').value = "";
             document.getElementById('qty-label').innerText = 'Quantity';
-            
             renderCart();
         }
 
         function removeCartItem(idx) { cart.splice(idx, 1); renderCart(); }
 
         function renderCart() {
+            const isListOnly = appData.settings.listOnlyMode;
             const thead = document.querySelector('#cart-table thead');
             const tbody = document.getElementById('cart-body');
             const totalRow = document.getElementById('total-row-display');
             
-            if (isListOnlyMode) {
+            if (isListOnly) {
                 thead.innerHTML = `<tr><th>Item Description</th><th class="num">Qty</th><th>Rate (Fill Below)</th><th class="no-print" style="width:40px;"></th></tr>`;
                 totalRow.style.display = 'none';
             } else {
@@ -328,26 +423,22 @@
                 totalRow.style.display = 'flex';
             }
 
-            tbody.innerHTML = '';
-            let total = 0;
+            tbody.innerHTML = ''; let total = 0;
 
             if (cart.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="${isListOnlyMode ? 4 : 5}" style="text-align:center; color:#64748b; padding:3rem;">No items yet. Add something from above!</td></tr>`;
-                document.getElementById('grand-total').innerText = '0.00';
-                return;
+                tbody.innerHTML = `<tr><td colspan="${isListOnly ? 4 : 5}" style="text-align:center; color:#64748b; padding:3rem;">No items yet. Add something from above!</td></tr>`;
+                document.getElementById('grand-total').innerText = '0.00'; return;
             }
 
             cart.forEach((item, idx) => {
-                const amt = item.rate * item.qty;
-                total += amt;
-                
-                if (isListOnlyMode) {
+                const amt = item.rate * item.qty; total += amt;
+                if (isListOnly) {
                     tbody.innerHTML += `
                         <tr style="animation: fadeSlideUp 0.3s ease;">
                             <td style="font-weight: 500;">${item.name}</td>
                             <td class="num" style="font-weight: 600;">${item.qty} <span style="font-size:0.8em; color:var(--text-muted)">${item.unit}</span></td>
                             <td><div class="blank-write-space"></div></td>
-                            <td class="no-print" style="text-align:center;"><button style="background:transparent; color:var(--danger); padding:0.2rem;" onclick="removeCartItem(${idx})">✕</button></td>
+                            <td class="no-print" style="text-align:center;"><button class="btn-outline btn-small" style="border:none; color:var(--danger);" onclick="removeCartItem(${idx})">✕</button></td>
                         </tr>
                     `;
                 } else {
@@ -357,7 +448,7 @@
                             <td class="num" style="color:var(--text-muted)">₹${item.rate}</td>
                             <td class="num">${item.qty} <span style="font-size:0.8em; color:var(--text-muted)">${item.unit}</span></td>
                             <td class="num" style="font-weight: 600; color:var(--text-main);">₹${amt.toFixed(2)}</td>
-                            <td class="no-print" style="text-align:center;"><button style="background:transparent; color:var(--danger); padding:0.2rem;" onclick="removeCartItem(${idx})">✕</button></td>
+                            <td class="no-print" style="text-align:center;"><button class="btn-outline btn-small" style="border:none; color:var(--danger);" onclick="removeCartItem(${idx})">✕</button></td>
                         </tr>
                     `;
                 }
@@ -369,28 +460,173 @@
             if(cart.length === 0) return alert("List is empty!");
             const hideElems = document.querySelectorAll('.no-print');
             hideElems.forEach(el => el.style.display = 'none');
-            
             const writeSpaces = document.querySelectorAll('.blank-write-space');
-            if(isListOnlyMode) writeSpaces.forEach(el => el.style.display = 'block');
+            if(appData.settings.listOnlyMode) writeSpaces.forEach(el => el.style.display = 'block');
 
             const printArea = document.getElementById('print-area');
             const title = document.createElement('h2');
             title.id = 'temp-title';
-            title.innerText = isListOnlyMode ? 'Grocery List (Manual Entry)' : 'Quotation';
-            title.style.marginBottom = '20px';
-            title.style.color = '#0f172a';
+            title.innerText = appData.settings.listOnlyMode ? 'Grocery List (Manual Entry)' : 'Quotation';
+            title.style.marginBottom = '20px'; title.style.color = '#0f172a';
             printArea.prepend(title);
 
-            html2pdf().set({
-                margin: 0.5,
-                filename: 'Grocery_Doc.pdf',
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-            }).from(printArea).save().then(() => {
+            html2pdf().set({ margin: 0.5, filename: 'Grocery_Doc.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } }).from(printArea).save().then(() => {
                 hideElems.forEach(el => el.style.display = '');
                 writeSpaces.forEach(el => el.style.display = '');
                 document.getElementById('temp-title').remove();
             });
+        }
+
+        // --- Inventory Edit Logic ---
+        const unitOptions = ["kg", "gram", "Ltr", "Piece", "Packet", "Ladi"];
+
+        function addNewItem() {
+            const name = document.getElementById('new-item-name').value.trim();
+            const unit = document.getElementById('new-item-unit').value;
+            const rate = parseFloat(document.getElementById('new-item-rate').value);
+
+            if (!name || isNaN(rate) || rate < 0) return alert("Please fill all fields correctly!");
+            appData.inventory.push({ id: 'item_' + Date.now(), name, unit, rate });
+            saveData();
+            
+            document.getElementById('new-item-name').value = ''; document.getElementById('new-item-rate').value = '';
+            renderCustomDropdown(); renderInventoryTable();
+            document.getElementById('new-item-name').focus();
+        }
+
+        function renderInventoryTable() {
+            const tbody = document.getElementById('inventory-body');
+            tbody.innerHTML = '';
+            appData.inventory.forEach(item => {
+                if (editingItemId === item.id) {
+                    let selectHtml = `<select id="edit-unit-${item.id}" style="padding:0.4rem; font-size:0.9rem;">`;
+                    unitOptions.forEach(u => { selectHtml += `<option value="${u}" ${item.unit === u ? 'selected' : ''}>${u}</option>`; });
+                    selectHtml += `</select>`;
+                    tbody.innerHTML += `
+                        <tr style="background:#f0fdf4;">
+                            <td><input type="text" id="edit-name-${item.id}" value="${item.name}" style="padding:0.4rem; font-size:0.9rem;"></td>
+                            <td>${selectHtml}</td>
+                            <td class="num"><input type="number" id="edit-rate-${item.id}" value="${item.rate}" style="width:80px; padding:0.4rem; text-align:right;"></td>
+                            <td>
+                                <div class="action-cell">
+                                    <button class="btn-small" onclick="saveEditItem('${item.id}')">Save</button>
+                                    <button class="btn-outline btn-small" onclick="cancelEdit()">Cancel</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td style="font-weight: 500;">${item.name}</td>
+                            <td>${item.unit}</td>
+                            <td class="num">₹${item.rate}</td>
+                            <td>
+                                <div class="action-cell">
+                                    <button class="btn-outline btn-small" onclick="startEditItem('${item.id}')">Edit</button>
+                                    <button class="btn-danger btn-small" onclick="deleteItem('${item.id}')">Del</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+        }
+
+        function startEditItem(id) { editingItemId = id; renderInventoryTable(); }
+        function cancelEdit() { editingItemId = null; renderInventoryTable(); }
+
+        function saveEditItem(id) {
+            const newName = document.getElementById(`edit-name-${id}`).value.trim();
+            const newUnit = document.getElementById(`edit-unit-${id}`).value;
+            const newRate = parseFloat(document.getElementById(`edit-rate-${id}`).value);
+
+            if (!newName || isNaN(newRate) || newRate < 0) return alert("Invalid inputs!");
+
+            const item = appData.inventory.find(i => i.id === id);
+            item.name = newName; item.unit = newUnit; item.rate = newRate;
+            
+            editingItemId = null; saveData();
+            renderCustomDropdown(); renderInventoryTable();
+        }
+
+        function deleteItem(id) {
+            if(!confirm("Are you sure you want to delete this item?")) return;
+            appData.inventory = appData.inventory.filter(i => i.id !== id);
+            saveData(); renderCustomDropdown(); renderInventoryTable();
+        }
+
+        // --- History & Data Logic ---
+        function renderHistory() {
+            const container = document.getElementById('history-container');
+            container.innerHTML = '';
+            if (appData.lists.length === 0) {
+                container.innerHTML = `<p style="color:var(--text-muted); grid-column: 1/-1; text-align:center; padding: 2rem;">No saved lists yet.</p>`;
+                return;
+            }
+            appData.lists.slice().reverse().forEach(list => {
+                container.innerHTML += `
+                    <div class="card" style="margin-bottom:0; display:flex; flex-direction:column;">
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">${list.date}</div>
+                        <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.5rem;">${list.title}</div>
+                        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom: 1rem;">${list.items.length} Items | Total: <span style="color:var(--text-main); font-weight:600;">₹${list.total.toFixed(2)}</span></p>
+                        <div style="display: flex; gap: 0.5rem; margin-top: auto;">
+                            <button class="btn-outline" style="flex:1; padding:0.5rem;" onclick="loadList('${list.id}')">Load</button>
+                            <button class="btn-danger" style="padding:0.5rem;" onclick="deleteList('${list.id}')">Del</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function saveCurrentList() {
+            if (cart.length === 0) return alert("Cart is empty!");
+            const total = cart.reduce((sum, item) => sum + (item.rate * item.qty), 0);
+            appData.lists.push({ id: 'list_' + Date.now(), date: new Date().toLocaleString(), title: `List - ${new Date().toLocaleDateString()}`, items: [...cart], total: total });
+            saveData(); renderHistory(); alert("List Saved to History!");
+            cart = []; renderCart();
+        }
+
+        function loadList(id) {
+            const listObj = appData.lists.find(l => l.id === id);
+            cart = JSON.parse(JSON.stringify(listObj.items)); renderCart();
+            switchTab('maker', document.querySelector('.desktop-nav .nav-btn'));
+        }
+
+        function deleteList(id) {
+            if(!confirm("Delete this saved list?")) return;
+            appData.lists = appData.lists.filter(l => l.id !== id);
+            saveData(); renderHistory();
+        }
+
+        function downloadBackup() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `GroceryPro_Backup_${new Date().toLocaleDateString().replace(/\//g,'-')}.json`);
+            dlAnchorElem.click();
+        }
+
+        function handleFileSelect(input) {
+            const display = document.getElementById('file-name-display');
+            if (input.files && input.files[0]) { display.innerText = "Selected: " + input.files[0].name; display.style.color = "var(--accent)"; } 
+            else { display.innerText = "No file selected"; display.style.color = "var(--text-muted)"; }
+        }
+
+        function restoreBackup() {
+            const fileInput = document.getElementById('restore-file');
+            if (!fileInput.files.length) return alert("Please select a JSON backup file first.");
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed.inventory && parsed.lists && parsed.settings) {
+                        appData = parsed; saveData(); init(); alert("Data Restored Successfully!");
+                        fileInput.value = ""; document.getElementById('file-name-display').innerText = "No file selected";
+                    } else alert("Invalid backup file format.");
+                } catch (err) { alert("Error reading file."); }
+            };
+            reader.readAsText(fileInput.files[0]);
         }
 
         init();
