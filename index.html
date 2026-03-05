@@ -291,15 +291,14 @@ self.addEventListener('fetch', e => {
             display: flex; flex-direction: column;
             justify-content: center; align-items: center;
             z-index: 999999;
-            transition: opacity .4s ease-in-out, visibility .4s ease-in-out;
+            transition: opacity .5s ease-in-out, visibility .5s ease-in-out;
         }
         #splash-screen.hidden { opacity:0; visibility:hidden; }
         .splash-content {
-            display: flex; align-items: center; gap: 12px;
-            color: #fff; font-size: 2.5rem; font-weight: 700;
+            display: flex; align-items: center; justify-content: center; gap: 14px;
             animation: splashPulse 2.2s infinite alternate ease-in-out;
+            padding: 0 24px;
         }
-        .splash-content svg { width:50px; height:50px; stroke-width:2.5; }
 
         /* ── TOP BAR ────────────────────────────────────────────────── */
         .top-bar {
@@ -805,10 +804,10 @@ self.addEventListener('fetch', e => {
     <!-- ── SPLASH ──────────────────────────────────────────────────── -->
     <div id="splash-screen">
         <div class="splash-content">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="48" height="48" fill="none" stroke="#ffffff" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
                 <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
             </svg>
-            GroceryPro
+            <span style="color:#ffffff; font-size:2rem; font-weight:700; letter-spacing:-0.5px; white-space:nowrap; flex-shrink:0;">GroceryPro</span>
         </div>
     </div>
 
@@ -1365,20 +1364,13 @@ self.addEventListener('fetch', e => {
         checkFirstTime();
     }
 
-    // Splash — only show on first install, skip on repeat opens
+    // Splash — show every time, 1.8s visible then smooth fade
     window.addEventListener('load', () => {
-        const splash      = document.getElementById('splash-screen');
-        const isFirstOpen = !localStorage.getItem('gp_launched');
-        if (isFirstOpen) {
-            localStorage.setItem('gp_launched', '1');
-            setTimeout(() => {
-                splash.classList.add('hidden');
-                setTimeout(() => splash.remove(), 300);
-            }, 800);
-        } else {
-            // Skip splash instantly
-            splash.remove();
-        }
+        const splash = document.getElementById('splash-screen');
+        setTimeout(() => {
+            splash.classList.add('hidden');
+            setTimeout(() => splash.remove(), 500);
+        }, 1800);
     });
 
 
