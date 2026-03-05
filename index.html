@@ -16,7 +16,7 @@
             --solid-surface: #ffffff;
             --text-main: #0f172a;
             --text-muted: #64748b;
-            --border: #e2e8f0;
+            --border: #cbd5e1; /* Darkened border for visibility */
             --accent: #10b981; 
             --accent-hover: #059669;
             --accent-light: #d1fae5;
@@ -72,7 +72,6 @@
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         .grid-3 { display: grid; grid-template-columns: 2fr 1fr auto; gap: 1rem; align-items: end; }
         
-        /* Side by Side Buttons on Desktop */
         .grid-3-mobile { display: flex; gap: 1rem; flex-direction: row; } 
         .grid-3-mobile button { flex: 1; }
 
@@ -85,7 +84,7 @@
         .custom-select-wrapper { position: relative; user-select: none; width: 100%; }
         .custom-select { position: relative; display: flex; flex-direction: column; }
         .custom-select__trigger { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; font-size: 0.95rem; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: var(--transition); height: 45px;}
-        .custom-select__trigger:hover { border-color: #cbd5e1; }
+        .custom-select__trigger:hover { border-color: #94a3b8; }
         .custom-select.open .custom-select__trigger { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
         .arrow { width: 10px; height: 10px; border-top: 2px solid var(--text-muted); border-right: 2px solid var(--text-muted); transform: rotate(135deg); transition: transform 0.3s; margin-bottom: 4px; }
         .custom-select.open .arrow { transform: rotate(-45deg); margin-top: 4px; border-color: var(--accent); }
@@ -126,35 +125,66 @@
         input[type="checkbox"]:checked + .toggle-switch::after { transform: translateX(20px); }
 
         /* ---------------------------------------------------------------------------------
-           YAHAN HAI TERA TABLE KA JADOO (ORGANIZED BORDERS, SHADES & TEXT WRAP) 
+           [FIX 1 & 2 & 4]: STRICT ORGANIZED TABLES WITH FORCED WRAP 
         --------------------------------------------------------------------------------- */
-        .table-responsive { width: 100%; margin-top: 1rem; border-radius: 8px; overflow: hidden; background: #fff; border: 1px solid #cbd5e1; }
+        .table-responsive { width: 100%; margin-top: 1rem; border-radius: 8px; border: 1px solid var(--border); background: #fff; overflow-x: auto; /* Prevent push completely */ }
         table { width: 100%; border-collapse: collapse; background: #fff; table-layout: auto; }
         
-        /* Solid borders for all cells */
-        th, td { padding: 1rem 0.8rem; text-align: left; border: 1px solid #cbd5e1; vertical-align: middle; font-size: 0.95rem; }
-        th { font-weight: 600; color: var(--text-main); font-size: 0.8rem; background: #e2e8f0; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #94a3b8; }
+        /* Strict Borders */
+        th, td { border: 1px solid #cbd5e1; padding: 1rem 0.8rem; text-align: left; vertical-align: middle; font-size: 0.95rem; }
+        th { font-weight: 600; color: #0f172a; font-size: 0.85rem; background: #e2e8f0; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #94a3b8; }
         
-        /* Alternating Row Shades (Zebra Stripes) */
-        tbody tr:nth-child(even) { background-color: #f1f5f9; } 
-        tbody tr:nth-child(odd) { background-color: #ffffff; } 
+        /* Strict Zebra Stripes */
+        tbody tr:nth-child(even) td { background-color: #f1f5f9 !important; } 
+        tbody tr:nth-child(odd) td { background-color: #ffffff !important; } 
         
-        td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-        
-        /* Text Wrapping for First Column (Item Name) */
-        td:first-child, th:first-child { width: 100%; line-height: 1.4; white-space: normal; word-wrap: break-word; word-break: break-word; max-width: 200px;} 
+        /* FORCED WRAP: Prevents long names from pushing table out of bounds */
+        td:first-child, th:first-child { 
+            white-space: normal !important; 
+            word-wrap: break-word !important; 
+            overflow-wrap: anywhere !important; 
+            width: 45%; /* Limits width */
+            max-width: 250px;
+        } 
         
         .action-cell { display: flex; gap: 0.4rem; justify-content: flex-end; align-items: center; }
         .total-row { display: flex; justify-content: space-between; align-items: center; font-size: 1.15rem; font-weight: 700; padding: 1.2rem 1rem; margin-top: 1rem; background: #fff; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
 
         /* ---------------------------------------------------------------------------------
-           QUANTITY BUTTON CONTROLS (+/-) IN THE CART 
+           [FIX 3]: ANTI-SQUISH QUANTITY CONTROLS (+/-)
         --------------------------------------------------------------------------------- */
-        .qty-controls { display: inline-flex; align-items: center; gap: 0.4rem; background: #ffffff; padding: 3px 6px; border-radius: 8px; border: 1px solid #cbd5e1; }
-        .qty-btn { width: 28px; height: 28px; padding: 0; background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-        .qty-btn:hover { background: var(--accent-light); color: var(--accent-hover); border-color: var(--accent); }
+        .qty-controls { 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center;
+            gap: 0.4rem; 
+            background: #ffffff; 
+            padding: 4px; 
+            border-radius: 8px; 
+            border: 1px solid #94a3b8; 
+            flex-wrap: nowrap !important; /* Forces it to stay inline */
+            min-width: max-content !important; /* Protects from getting squished by phone */
+        }
+        .qty-btn { 
+            width: 32px; 
+            height: 32px; 
+            padding: 0; 
+            background: #e2e8f0; 
+            color: #0f172a; 
+            border: none; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 1.2rem; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            flex-shrink: 0 !important; /* Protects buttons from shrinking */
+        }
+        .qty-btn:hover { background: var(--accent); color: white; }
         .qty-btn:active { transform: scale(0.9); }
-        .qty-value { font-weight: 700; min-width: 2rem; text-align: center; color: var(--text-main); }
+        .qty-value { font-weight: 700; min-width: 2rem; text-align: center; color: var(--text-main); white-space: nowrap; }
 
         /* File Upload */
         .file-upload-wrapper { position: relative; width: 100%; }
@@ -173,11 +203,12 @@
             .grid-2 { grid-template-columns: 1fr; }
             .grid-3-mobile { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; }
             
-            /* Tight Mobile Table Layout for Wraps */
-            th, td { padding: 0.6rem 0.4rem; font-size: 0.85rem; }
-            td:first-child, th:first-child { max-width: 140px; } /* Ensures text wraps perfectly on small screens */
-            .qty-controls { gap: 0.2rem; padding: 2px 4px; }
-            .qty-btn { width: 22px; height: 22px; font-size: 1rem; border-radius: 4px; }
+            /* Tight Mobile Table Layout */
+            th, td { padding: 0.5rem 0.3rem; font-size: 0.85rem; }
+            td:first-child, th:first-child { width: auto; max-width: 130px; } /* Ensures wrap */
+            
+            .qty-controls { padding: 2px; gap: 0.2rem; }
+            .qty-btn { width: 26px; height: 26px; font-size: 1.1rem; }
             .qty-value { min-width: 1.5rem; font-size: 0.85rem; }
             
             .btn-small { padding: 0.3rem 0.5rem; font-size: 0.75rem; }
@@ -353,7 +384,7 @@
                             <tr>
                                 <th>Item</th>
                                 <th>Unit</th>
-                                <th class="num">Rate</th>
+                                <th>Rate</th>
                                 <th style="text-align: right;">Action</th>
                             </tr>
                         </thead>
@@ -423,7 +454,6 @@
     </nav>
 
     <script>
-        // --- SPLASH SCREEN LOGIC ---
         window.addEventListener('load', () => {
             setTimeout(() => {
                 const splash = document.getElementById('splash-screen');
@@ -432,7 +462,6 @@
             }, 1200); 
         });
 
-        // --- CUSTOM MODALS ---
         function showDialog(type, title, message) {
             return new Promise((resolve) => {
                 document.getElementById('dialog-title').innerHTML = title;
@@ -459,7 +488,6 @@
         window.customAlert = (msg) => showDialog('alert', '<svg width="22" height="22" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Notice', msg);
         window.customConfirm = (msg) => showDialog('confirm', '<svg width="22" height="22" fill="none" stroke="var(--danger)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg> Confirm Action', msg);
 
-        // --- Data & State ---
         const defaultInventory = [
             { id: 'i1', name: 'काले चने', unit: 'kg', rate: 90 },
             { id: 'i2', name: 'राजमा (लाल छोटा)', unit: 'kg', rate: 140 },
@@ -522,17 +550,11 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // --- UNIT MANAGER LOGIC ---
         function renderUnitManager() {
             const container = document.getElementById('unit-tags-container');
             container.innerHTML = '';
             appData.units.forEach(u => {
-                container.innerHTML += `
-                    <div class="unit-pill">
-                        ${u}
-                        <button onclick="deleteUnit('${u}')" title="Delete Unit">✕</button>
-                    </div>
-                `;
+                container.innerHTML += `<div class="unit-pill">${u}<button onclick="deleteUnit('${u}')" title="Delete Unit">✕</button></div>`;
             });
         }
 
@@ -546,38 +568,18 @@
             const input = document.getElementById('new-unit-input');
             const val = input.value.trim();
             if(!val) return;
-            
-            if(appData.units.map(u => u.toLowerCase()).includes(val.toLowerCase())) {
-                await customAlert("This unit already exists!");
-                return;
-            }
-
-            appData.units.push(val);
-            saveData();
-            input.value = '';
-            renderUnitManager();
-            renderUnitDropdowns();
-            renderInventoryTable();
+            if(appData.units.map(u => u.toLowerCase()).includes(val.toLowerCase())) { await customAlert("This unit already exists!"); return; }
+            appData.units.push(val); saveData(); input.value = ''; renderUnitManager(); renderUnitDropdowns(); renderInventoryTable();
         }
 
         async function deleteUnit(unitName) {
             const inUse = appData.inventory.some(i => i.unit === unitName);
-            if(inUse) {
-                await customAlert(`Cannot delete '${unitName}'. It is currently being used by items in your inventory. Change their units first.`);
-                return;
-            }
-            
+            if(inUse) { await customAlert(`Cannot delete '${unitName}'. It is currently being used by items in your inventory. Change their units first.`); return; }
             const confirmed = await customConfirm(`Are you sure you want to remove '${unitName}' from your available units?`);
             if(!confirmed) return;
-
-            appData.units = appData.units.filter(u => u !== unitName);
-            saveData();
-            renderUnitManager();
-            renderUnitDropdowns();
-            renderInventoryTable();
+            appData.units = appData.units.filter(u => u !== unitName); saveData(); renderUnitManager(); renderUnitDropdowns(); renderInventoryTable();
         }
 
-        // --- List Maker ---
         function renderCustomDropdown() {
             const optionsContainer = document.getElementById('custom-options-list');
             optionsContainer.innerHTML = '';
@@ -610,8 +612,7 @@
 
             const item = appData.inventory.find(i => i.id === id);
             const existing = cart.find(c => c.id === item.id);
-            if (existing) existing.qty += qty;
-            else cart.push({ ...item, qty });
+            if (existing) existing.qty += qty; else cart.push({ ...item, qty });
 
             document.getElementById('item-select-value').value = "";
             document.getElementById('custom-select-text').innerText = "Select an item...";
@@ -621,22 +622,16 @@
             renderCart();
         }
 
-        // YAHAN HAIN QTY (+ / -) CONTROLS KE LOGIC
         function updateQty(idx, change) {
             const newQty = cart[idx].qty + change;
-            if (newQty <= 0) {
-                removeCartItem(idx);
-            } else {
-                cart[idx].qty = Math.round(newQty * 100) / 100;
-                renderCart();
-            }
+            if (newQty <= 0) removeCartItem(idx); else { cart[idx].qty = Math.round(newQty * 100) / 100; renderCart(); }
         }
 
         function removeCartItem(idx) { cart.splice(idx, 1); renderCart(); }
 
         async function clearCart() {
             if(cart.length === 0) return;
-            const confirmed = await customConfirm("Are you sure you want to clear the entire list? This will remove all added items.");
+            const confirmed = await customConfirm("Are you sure you want to clear the entire list?");
             if(confirmed) { cart = []; renderCart(); }
         }
 
@@ -650,21 +645,19 @@
                 thead.innerHTML = `<tr><th>Item</th><th style="text-align:center;">Qty</th><th>Rate (Write)</th><th class="no-print" style="width:30px; text-align:center;">Del</th></tr>`;
                 totalRow.style.display = 'none';
             } else {
-                thead.innerHTML = `<tr><th>Item</th><th class="num">Rate</th><th style="text-align:center;">Qty</th><th class="num">Amount (₹)</th><th class="no-print" style="width:30px; text-align:center;">Del</th></tr>`;
+                thead.innerHTML = `<tr><th>Item</th><th>Rate</th><th style="text-align:center;">Qty</th><th>Amount(₹)</th><th class="no-print" style="width:30px; text-align:center;">Del</th></tr>`;
                 totalRow.style.display = 'flex';
             }
 
             tbody.innerHTML = ''; let total = 0;
-
             if (cart.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="${isListOnly ? 4 : 5}" style="text-align:center; color:#64748b; padding:3rem 1rem; font-size:0.9rem;">No items yet. Add something from above!</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="${isListOnly ? 4 : 5}" style="text-align:center; color:#64748b; padding:3rem 1rem;">No items yet. Add something from above!</td></tr>`;
                 document.getElementById('grand-total').innerText = '0.00'; return;
             }
 
             cart.forEach((item, idx) => {
                 const amt = item.rate * item.qty; total += amt;
                 
-                // + / - Buttons HTML
                 const qtyControls = `
                     <div class="qty-controls">
                         <button class="qty-btn no-print" onclick="updateQty(${idx}, -1)">-</button>
@@ -675,20 +668,20 @@
 
                 if (isListOnly) {
                     tbody.innerHTML += `
-                        <tr style="animation: fadeSlideUp 0.3s ease;">
+                        <tr>
                             <td style="font-weight: 500;">${item.name}</td>
-                            <td style="text-align:center;">${qtyControls}</td>
+                            <td style="text-align:center; padding: 0.5rem 0;">${qtyControls}</td>
                             <td><div class="blank-write-space" style="display:block;"></div></td>
                             <td class="no-print" style="text-align:center;"><button style="background:transparent; color:var(--danger); padding:0.2rem; margin:0 auto; display:block;" onclick="removeCartItem(${idx})">✕</button></td>
                         </tr>
                     `;
                 } else {
                     tbody.innerHTML += `
-                        <tr style="animation: fadeSlideUp 0.3s ease;">
+                        <tr>
                             <td style="font-weight: 500;">${item.name}</td>
-                            <td class="num" style="color:var(--text-muted)">₹${item.rate}</td>
-                            <td style="text-align:center;">${qtyControls}</td>
-                            <td class="num" style="font-weight: 600; color:var(--text-main);">₹${amt.toFixed(2)}</td>
+                            <td style="color:var(--text-muted)">₹${item.rate}</td>
+                            <td style="text-align:center; padding: 0.5rem 0;">${qtyControls}</td>
+                            <td style="font-weight: 600; color:var(--text-main);">₹${amt.toFixed(2)}</td>
                             <td class="no-print" style="text-align:center;"><button style="background:transparent; color:var(--danger); padding:0.2rem; margin:0 auto; display:block;" onclick="removeCartItem(${idx})">✕</button></td>
                         </tr>
                     `;
@@ -697,17 +690,20 @@
             document.getElementById('grand-total').innerText = total.toFixed(2);
         }
 
-        // --- PDF Generator ---
+        // --- PDF GENERATOR (FIXED PDF WIDTH CUT OFF) ---
         async function exportPDF() {
             if(cart.length === 0) { await customAlert("The list is currently empty. Please add items first."); return; }
             const isListOnly = appData.settings.listOnlyMode;
             
             const container = document.createElement('div');
+            // FIX: Set strict max-width to fit A4 paper without cutting right side
             container.style.padding = '30px'; 
             container.style.background = '#ffffff'; 
             container.style.color = '#0f172a'; 
             container.style.fontFamily = "'Inter', sans-serif"; 
-            container.style.width = '800px'; 
+            container.style.width = '720px'; 
+            container.style.maxWidth = '720px'; 
+            container.style.boxSizing = 'border-box';
             
             let html = `
                 <div style="border-bottom: 2px solid #10b981; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: flex-end;">
@@ -723,10 +719,10 @@
                 <table style="width:100%; border-collapse: collapse; margin-bottom: 25px;">
                     <thead>
                         <tr style="background:#f0fdf4; text-transform:uppercase; font-size:12px; color:#059669;">
-                            <th style="padding:14px; border:1px solid #e2e8f0; text-align:left;">Item Description</th>
-                            ${isListOnly ? '' : '<th style="padding:14px; border:1px solid #e2e8f0; text-align:right;">Rate</th>'}
-                            <th style="padding:14px; border:1px solid #e2e8f0; text-align:right;">Quantity</th>
-                            <th style="padding:14px; border:1px solid #e2e8f0; text-align:${isListOnly ? 'left' : 'right'};">${isListOnly ? 'Amount (Write)' : 'Total (₹)'}</th>
+                            <th style="padding:14px; border:1px solid #cbd5e1; text-align:left;">Item Description</th>
+                            ${isListOnly ? '' : '<th style="padding:14px; border:1px solid #cbd5e1; text-align:right;">Rate</th>'}
+                            <th style="padding:14px; border:1px solid #cbd5e1; text-align:right;">Quantity</th>
+                            <th style="padding:14px; border:1px solid #cbd5e1; text-align:${isListOnly ? 'left' : 'right'};">${isListOnly ? 'Amount (Write)' : 'Total (₹)'}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -736,13 +732,13 @@
             cart.forEach((item, index) => {
                 const amt = item.rate * item.qty; 
                 total += amt;
-                const bg = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+                const bg = index % 2 === 0 ? '#ffffff' : '#f1f5f9';
                 
                 html += `<tr style="background:${bg};">
-                    <td style="padding:12px 14px; border:1px solid #e2e8f0; font-weight:500; font-size: 14px; word-wrap:break-word; max-width:250px;">${item.name}</td>
-                    ${isListOnly ? '' : `<td style="padding:12px 14px; border:1px solid #e2e8f0; text-align:right; color:#64748b; font-size: 14px;">₹${item.rate}</td>`}
-                    <td style="padding:12px 14px; border:1px solid #e2e8f0; text-align:right; font-weight:600; font-size: 14px;">${item.qty} <span style="font-size:12px; color:#64748b;">${item.unit}</span></td>
-                    <td style="padding:12px 14px; border:1px solid #e2e8f0; text-align:${isListOnly ? 'left' : 'right'}; font-weight:600; font-size: 14px; color: #0f172a;">
+                    <td style="padding:12px 14px; border:1px solid #cbd5e1; font-weight:500; font-size: 14px; white-space: normal; word-wrap: break-word; overflow-wrap: anywhere; max-width: 250px;">${item.name}</td>
+                    ${isListOnly ? '' : `<td style="padding:12px 14px; border:1px solid #cbd5e1; text-align:right; color:#64748b; font-size: 14px;">₹${item.rate}</td>`}
+                    <td style="padding:12px 14px; border:1px solid #cbd5e1; text-align:right; font-weight:600; font-size: 14px;">${item.qty} <span style="font-size:12px; color:#64748b;">${item.unit}</span></td>
+                    <td style="padding:12px 14px; border:1px solid #cbd5e1; text-align:${isListOnly ? 'left' : 'right'}; font-weight:600; font-size: 14px; color: #0f172a;">
                         ${isListOnly ? '<div style="border-bottom:1px dotted #94a3b8; height:18px; width:80px;"></div>' : `₹${amt.toFixed(2)}`}
                     </td>
                 </tr>`;
@@ -759,12 +755,11 @@
                 margin: 0.5, 
                 filename: `GroceryPro_${new Date().toLocaleDateString().replace(/\//g,'-')}.pdf`, 
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, letterRendering: true }, 
+                html2canvas: { scale: 2, letterRendering: true, windowWidth: 720 }, // windowWidth force fit
                 jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } 
             }).from(container).save();
         }
 
-        // --- Inventory Edit Logic ---
         async function addNewItem() {
             const name = document.getElementById('new-item-name').value.trim();
             const unit = document.getElementById('new-item-unit').value;
@@ -785,10 +780,10 @@
                     appData.units.forEach(u => { selectHtml += `<option value="${u}" ${item.unit === u ? 'selected' : ''}>${u}</option>`; });
                     selectHtml += `</select>`;
                     tbody.innerHTML += `
-                        <tr style="background:#e0f2fe;">
+                        <tr style="background:#e0f2fe !important;">
                             <td><input type="text" id="edit-name-${item.id}" value="${item.name}" style="padding:0.4rem; font-size:0.85rem; height:35px; width:100%;"></td>
                             <td>${selectHtml}</td>
-                            <td class="num"><input type="number" id="edit-rate-${item.id}" value="${item.rate}" style="width:65px; padding:0.4rem; text-align:right; height:35px;"></td>
+                            <td><input type="number" id="edit-rate-${item.id}" value="${item.rate}" style="width:65px; padding:0.4rem; height:35px;"></td>
                             <td>
                                 <div class="action-cell">
                                     <button class="btn-small" onclick="saveEditItem('${item.id}')" style="height:30px;">Save</button>
@@ -802,7 +797,7 @@
                         <tr>
                             <td style="font-weight: 500;">${item.name}</td>
                             <td>${item.unit}</td>
-                            <td class="num">₹${item.rate}</td>
+                            <td>₹${item.rate}</td>
                             <td>
                                 <div class="action-cell">
                                     <button class="btn-outline btn-small" onclick="startEditItem('${item.id}')">Edit</button>
@@ -843,7 +838,6 @@
             saveData(); renderCustomDropdown(); renderInventoryTable();
         }
 
-        // --- History & Data Logic ---
         function renderHistory() {
             const container = document.getElementById('history-container'); container.innerHTML = '';
             if (appData.lists.length === 0) { container.innerHTML = `<p style="color:var(--text-muted); grid-column: 1/-1; text-align:center; padding: 2rem;">No saved lists yet.</p>`; return; }
@@ -872,7 +866,9 @@
             container.style.background = '#ffffff'; 
             container.style.color = '#0f172a'; 
             container.style.fontFamily = "'Inter', sans-serif"; 
-            container.style.width = '800px'; 
+            container.style.width = '720px'; 
+            container.style.maxWidth = '720px'; 
+            container.style.boxSizing = 'border-box';
             
             let html = `
                 <div style="border-bottom: 2px solid #10b981; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: flex-end;">
@@ -887,10 +883,10 @@
                 <table style="width:100%; border-collapse: collapse; margin-bottom: 25px;">
                     <thead>
                         <tr style="background:#f0fdf4; text-transform:uppercase; font-size:12px; color:#059669;">
-                            <th style="padding:14px; border:1px solid #e2e8f0; text-align:left;">Item Description</th>
-                            ${isListOnly ? '' : '<th style="padding:14px; border:1px solid #e2e8f0; text-align:right;">Rate</th>'}
-                            <th style="padding:14px; border:1px solid #e2e8f0; text-align:right;">Quantity</th>
-                            <th style="padding:14px; border:1px solid #e2e8f0; text-align:${isListOnly ? 'left' : 'right'};">${isListOnly ? 'Amount (Write)' : 'Total (₹)'}</th>
+                            <th style="padding:14px; border:1px solid #cbd5e1; text-align:left;">Item Description</th>
+                            ${isListOnly ? '' : '<th style="padding:14px; border:1px solid #cbd5e1; text-align:right;">Rate</th>'}
+                            <th style="padding:14px; border:1px solid #cbd5e1; text-align:right;">Quantity</th>
+                            <th style="padding:14px; border:1px solid #cbd5e1; text-align:${isListOnly ? 'left' : 'right'};">${isListOnly ? 'Amount (Write)' : 'Total (₹)'}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -898,13 +894,13 @@
             
             list.items.forEach((item, index) => {
                 const amt = item.rate * item.qty; 
-                const bg = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+                const bg = index % 2 === 0 ? '#ffffff' : '#f1f5f9';
                 
                 html += `<tr style="background:${bg};">
-                    <td style="padding:12px 14px; border:1px solid #e2e8f0; font-weight:500; font-size: 14px; word-wrap:break-word; max-width:250px;">${item.name}</td>
-                    ${isListOnly ? '' : `<td style="padding:12px 14px; border:1px solid #e2e8f0; text-align:right; color:#64748b; font-size: 14px;">₹${item.rate}</td>`}
-                    <td style="padding:12px 14px; border:1px solid #e2e8f0; text-align:right; font-weight:600; font-size: 14px;">${item.qty} <span style="font-size:12px; color:#64748b;">${item.unit}</span></td>
-                    <td style="padding:12px 14px; border:1px solid #e2e8f0; text-align:${isListOnly ? 'left' : 'right'}; font-weight:600; font-size: 14px; color: #0f172a;">
+                    <td style="padding:12px 14px; border:1px solid #cbd5e1; font-weight:500; font-size: 14px; white-space: normal; word-wrap: break-word; overflow-wrap: anywhere; max-width: 250px;">${item.name}</td>
+                    ${isListOnly ? '' : `<td style="padding:12px 14px; border:1px solid #cbd5e1; text-align:right; color:#64748b; font-size: 14px;">₹${item.rate}</td>`}
+                    <td style="padding:12px 14px; border:1px solid #cbd5e1; text-align:right; font-weight:600; font-size: 14px;">${item.qty} <span style="font-size:12px; color:#64748b;">${item.unit}</span></td>
+                    <td style="padding:12px 14px; border:1px solid #cbd5e1; text-align:${isListOnly ? 'left' : 'right'}; font-weight:600; font-size: 14px; color: #0f172a;">
                         ${isListOnly ? '<div style="border-bottom:1px dotted #94a3b8; height:18px; width:80px;"></div>' : `₹${amt.toFixed(2)}`}
                     </td>
                 </tr>`;
@@ -921,7 +917,7 @@
                 margin: 0.5, 
                 filename: `${list.title.replace(/\s+/g, '_')}.pdf`, 
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, letterRendering: true }, 
+                html2canvas: { scale: 2, letterRendering: true, windowWidth: 720 },
                 jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } 
             }).from(container).save();
         }
@@ -946,7 +942,6 @@
             appData.lists = appData.lists.filter(l => l.id !== id); saveData(); renderHistory();
         }
 
-        // --- BLOB BASED BACKUP ---
         function downloadBackup() {
             const jsonStr = JSON.stringify(appData);
             const blob = new Blob([jsonStr], { type: "application/json" });
