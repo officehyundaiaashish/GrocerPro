@@ -79,6 +79,7 @@ self.addEventListener('fetch', e => {
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
         onerror="window._pdfLibMissing=true"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         /* ── DESIGN TOKENS ─────────────────────────────────────────── */
         :root {
@@ -782,6 +783,80 @@ self.addEventListener('fetch', e => {
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
                         Add Item to List
                     </button>
+
+                    <!-- Excel Import Toggle -->
+                    <div style="margin-top:.75rem;">
+                        <button class="btn-outline" onclick="toggleExcelPanel()" id="excel-toggle-btn"
+                            style="width:100%; border-style:dashed; color:var(--accent); border-color:var(--accent); display:flex; align-items:center; justify-content:center; gap:.5rem; font-size:.88rem;">
+                            <svg width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            Import from Excel / CSV
+                            <svg id="excel-toggle-arrow" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" style="transition:transform .3s;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+
+                        <!-- Collapsible Excel Panel -->
+                        <div id="excel-panel" style="display:none; margin-top:.75rem; border:1.5px solid var(--accent); border-radius:10px; overflow:hidden;">
+
+                            <!-- Column guide pills -->
+                            <div style="padding:.75rem 1rem; background:var(--accent-light); border-bottom:1px solid var(--border-light);">
+                                <div style="font-size:.72rem; font-weight:700; color:var(--accent-hover); text-transform:uppercase; letter-spacing:.5px; margin-bottom:.45rem;">Supported Column Names</div>
+                                <div style="display:flex; flex-wrap:wrap; gap:.35rem;">
+                                    <span style="background:var(--solid); color:var(--accent-hover); font-size:.72rem; font-weight:600; padding:.2rem .55rem; border-radius:20px; border:1px solid var(--border);">Item / Name / Product</span>
+                                    <span style="background:var(--solid); color:var(--accent-hover); font-size:.72rem; font-weight:600; padding:.2rem .55rem; border-radius:20px; border:1px solid var(--border);">Qty / Quantity</span>
+                                    <span style="background:var(--solid); color:var(--accent-hover); font-size:.72rem; font-weight:600; padding:.2rem .55rem; border-radius:20px; border:1px solid var(--border);">Unit / UOM</span>
+                                    <span style="background:#fef9c3; color:#92400e; font-size:.72rem; font-weight:600; padding:.2rem .55rem; border-radius:20px; border:1px solid #fde68a;">Rate / Price (optional)</span>
+                                </div>
+                            </div>
+
+                            <div style="padding:.85rem 1rem;">
+                                <!-- File picker -->
+                                <div class="file-upload-wrapper" style="margin-bottom:.5rem;">
+                                    <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" class="file-upload-input" onchange="handleExcelSelect(this)">
+                                    <div class="file-upload-label" style="padding:1rem; flex-direction:row; gap:.75rem; justify-content:flex-start;">
+                                        <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8" style="flex-shrink:0; color:var(--accent);"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                                        <div>
+                                            <div style="font-weight:600; font-size:.88rem; color:var(--accent);">Tap to choose file</div>
+                                            <div style="font-size:.72rem; color:var(--muted);">.xlsx · .xls · .csv</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="excel-file-name" style="font-size:.75rem; color:var(--muted); margin-bottom:.6rem;">No file selected</div>
+
+                                <!-- Preview table -->
+                                <div id="excel-preview-wrap" style="display:none; margin-bottom:.75rem;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.3rem; margin-bottom:.5rem;">
+                                        <div style="font-size:.8rem; font-weight:700; color:var(--text);">Preview — <span id="excel-preview-count" style="color:var(--accent);"></span></div>
+                                        <div id="excel-warn" style="font-size:.72rem; color:#d97706; font-weight:600;"></div>
+                                    </div>
+                                    <div style="overflow-x:auto; border-radius:8px; border:1px solid var(--border-light);">
+                                        <table style="width:100%; border-collapse:collapse; font-size:.8rem; min-width:340px;">
+                                            <thead>
+                                                <tr style="background:var(--accent); color:#fff;">
+                                                    <th style="padding:.45rem .65rem; text-align:left;">#</th>
+                                                    <th style="padding:.45rem .65rem; text-align:left;">Item</th>
+                                                    <th style="padding:.45rem .65rem; text-align:center;">Qty</th>
+                                                    <th style="padding:.45rem .65rem; text-align:center;">Unit</th>
+                                                    <th style="padding:.45rem .65rem; text-align:right;">Rate</th>
+                                                    <th style="padding:.45rem .65rem; text-align:center;">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="excel-preview-body"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Action buttons -->
+                                <div id="excel-action-btns" style="display:none; gap:.5rem; flex-direction:column;">
+                                    <button onclick="importExcelData()" style="width:100%; font-size:.9rem;">
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" style="vertical-align:middle; margin-right:.3rem;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                                        Load into Cart
+                                    </button>
+                                    <button class="btn-outline" onclick="resetExcelImport()" style="width:100%; font-size:.85rem;">Clear</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="print-area">
@@ -1596,14 +1671,14 @@ self.addEventListener('fetch', e => {
                 ${isListOnly ? '' : `<td style="padding:9px 12px; border:1px solid #a7f3d0; font-size:12.5px; text-align:right; color:#059669; font-weight:600;">&#8377;${item.rate} / ${item.unit}</td>`}
                 <td style="padding:9px 12px; border:1px solid #a7f3d0; font-size:12.5px; text-align:center; font-weight:700; color:#0f172a;">${item.qty} ${item.unit}</td>
                 <td style="padding:9px 12px; border:1px solid #a7f3d0; font-size:12.5px; text-align:right; font-weight:700; color:#059669;">
-                    ${isListOnly ? '___________' : `&#8377;${amt}`}
+                    ${(item.rate > 0) ? `&#8377;${amt}` : '<span style="color:#94a3b8; font-size:11px;">—</span>'}
                 </td>
             </tr>`;
         }).join('');
 
-        const itemColW  = isListOnly ? '55%' : '40%';
+        const itemColW  = isListOnly ? '45%' : '40%';
         const rateColW  = '22%';
-        const qtyColW   = '18%';
+        const qtyColW   = '20%';
         const totalColW = '20%';
 
         const summaryRow = !isListOnly ? `
@@ -1637,7 +1712,7 @@ self.addEventListener('fetch', e => {
         </table>` : `
         <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;">
           <tr>
-            <td width="50%" style="padding-right:6px;">
+            <td width="33%" style="padding-right:6px;">
               <table width="100%" cellpadding="12" style="background:#f0fdf4; border:1.5px solid #a7f3d0; border-radius:8px; text-align:center;">
                 <tr><td>
                   <div style="font-size:10px; color:#059669; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Total Items</div>
@@ -1645,7 +1720,15 @@ self.addEventListener('fetch', e => {
                 </td></tr>
               </table>
             </td>
-            <td width="50%" style="padding-left:6px;">
+            <td width="33%" style="padding:0 3px;">
+              <table width="100%" cellpadding="12" style="background:#f0fdf4; border:1.5px solid #a7f3d0; border-radius:8px; text-align:center;">
+                <tr><td>
+                  <div style="font-size:10px; color:#059669; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Est. Total</div>
+                  <div style="font-size:20px; font-weight:800; color:#059669; margin-top:3px;">&#8377;${total.toFixed(2)}</div>
+                </td></tr>
+              </table>
+            </td>
+            <td width="33%" style="padding-left:6px;">
               <table width="100%" cellpadding="12" style="background:#f0fdf4; border:1.5px solid #a7f3d0; border-radius:8px; text-align:center;">
                 <tr><td>
                   <div style="font-size:10px; color:#059669; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Type</div>
@@ -1696,13 +1779,12 @@ self.addEventListener('fetch', e => {
       </tr>
     </thead>
     <tbody>${tableRows}</tbody>
-    ${!isListOnly ? `
     <tfoot>
       <tr style="background:#059669;">
         <td colspan="${isListOnly ? 2 : 3}" style="padding:13px 12px; font-size:13px; font-weight:700; color:#fff; text-align:right;">Grand Total</td>
         <td style="padding:13px 12px; font-size:15px; font-weight:800; color:#fff; text-align:right;">&#8377;${total.toFixed(2)}</td>
       </tr>
-    </tfoot>` : ''}
+    </tfoot>
   </table>
 
   <!-- FOOTER -->
@@ -1859,6 +1941,195 @@ self.addEventListener('fetch', e => {
         };
         reader.readAsText(fileInput.files[0]);
     }
+
+    // ── SECTION 11: EXCEL / CSV IMPORT ───────────────────────────────
+
+    let _excelParsed = [];   // holds parsed rows before import
+
+    function toggleExcelPanel() {
+        const panel = document.getElementById('excel-panel');
+        const arrow = document.getElementById('excel-toggle-arrow');
+        const open  = panel.style.display === 'none';
+        panel.style.display = open ? 'block' : 'none';
+        arrow.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+
+    // Column name aliases
+    const COL = {
+        name: ['item','name','product','items','description','particulars','saman'],
+        qty:  ['qty','quantity','amount','kilo','wt','weight','maatra'],
+        unit: ['unit','uom','type','units','measure','prakar'],
+        rate: ['rate','price','cost','mrp','value','dam'],
+    };
+
+    function matchCol(headers, aliases) {
+        return headers.findIndex(h => aliases.includes(h.toLowerCase().trim().replace(/[^a-z]/g,'')));
+    }
+
+    function handleExcelSelect(input) {
+        const file = input.files?.[0];
+        const nameEl = document.getElementById('excel-file-name');
+        if (!file) { nameEl.textContent = 'No file selected'; return; }
+        nameEl.textContent = '📄 ' + file.name;
+        nameEl.style.color = 'var(--accent)';
+
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                let rows = [];
+                if (file.name.endsWith('.csv')) {
+                    // parse CSV manually
+                    const lines = e.target.result.split(/\r?\n/).filter(l => l.trim());
+                    rows = lines.map(l => l.split(',').map(c => c.trim().replace(/^"|"$/g,'')));
+                } else {
+                    const wb = XLSX.read(e.target.result, {type:'array'});
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+                }
+                parseExcelRows(rows);
+            } catch(err) {
+                customAlert('Could not read file. Make sure it is a valid Excel or CSV file.');
+                resetExcelImport();
+            }
+        };
+        if (file.name.endsWith('.csv')) reader.readAsText(file);
+        else reader.readAsArrayBuffer(file);
+    }
+
+    function parseExcelRows(rows) {
+        // Find header row (first row with recognizable column)
+        let headerIdx = -1, headers = [];
+        for (let i = 0; i < Math.min(5, rows.length); i++) {
+            const row = rows[i].map(c => String(c).toLowerCase().trim().replace(/[^a-z]/g,''));
+            if (COL.name.some(a => row.includes(a))) { headerIdx = i; headers = row; break; }
+        }
+
+        // If no header found, try to auto-detect: first column = name, second = qty, third = unit/rate
+        let nameIdx, qtyIdx, unitIdx, rateIdx, dataStart;
+        if (headerIdx === -1) {
+            nameIdx = 0; qtyIdx = 1; unitIdx = 2; rateIdx = 3; dataStart = 0;
+        } else {
+            nameIdx  = matchCol(headers, COL.name);
+            qtyIdx   = matchCol(headers, COL.qty);
+            unitIdx  = matchCol(headers, COL.unit);
+            rateIdx  = matchCol(headers, COL.rate);
+            dataStart = headerIdx + 1;
+        }
+
+        const parsed = [];
+        for (let i = dataStart; i < rows.length; i++) {
+            const row  = rows[i];
+            const name = nameIdx >= 0 ? String(row[nameIdx] || '').trim() : '';
+            if (!name) continue;
+            const qty  = qtyIdx  >= 0 ? parseFloat(row[qtyIdx])  || 1   : 1;
+            const unit = unitIdx >= 0 ? String(row[unitIdx] || '').trim() || 'Piece' : 'Piece';
+            const rate = rateIdx >= 0 ? parseFloat(row[rateIdx]) || 0    : 0;
+            parsed.push({ name, qty, unit, rate });
+        }
+
+        _excelParsed = parsed;
+        renderExcelPreview(parsed);
+    }
+
+    function renderExcelPreview(parsed) {
+        if (!parsed.length) { customAlert('No valid rows found in the file.'); return; }
+
+        const body = document.getElementById('excel-preview-body');
+        let newCount = 0, existCount = 0;
+
+        body.innerHTML = parsed.map((row, i) => {
+            const exists = appData.inventory.some(inv =>
+                inv.name.toLowerCase().trim() === row.name.toLowerCase().trim());
+            if (exists) existCount++; else newCount++;
+            const bg = i % 2 === 0 ? 'var(--solid)' : 'var(--bg)';
+            const badge = exists
+                ? `<span style="background:#dbeafe; color:#1d4ed8; font-size:.7rem; font-weight:700; padding:.15rem .5rem; border-radius:10px;">Exists</span>`
+                : `<span style="background:#dcfce7; color:#166534; font-size:.7rem; font-weight:700; padding:.15rem .5rem; border-radius:10px;">New ✦</span>`;
+            return `<tr style="background:${bg};">
+                <td style="padding:.45rem .75rem; color:var(--muted); font-size:.78rem;">${i+1}</td>
+                <td style="padding:.45rem .75rem; font-weight:600; color:var(--text);">${row.name}</td>
+                <td style="padding:.45rem .75rem; text-align:center; color:var(--text);">${row.qty}</td>
+                <td style="padding:.45rem .75rem; text-align:center; color:var(--muted);">${row.unit}</td>
+                <td style="padding:.45rem .75rem; text-align:right; color:var(--accent-hover);">${row.rate > 0 ? '₹' + row.rate : '—'}</td>
+                <td style="padding:.45rem .75rem; text-align:center;">${badge}</td>
+            </tr>`;
+        }).join('');
+
+        document.getElementById('excel-preview-count').textContent =
+            `${parsed.length} rows  •  ${newCount} new  •  ${existCount} existing`;
+        document.getElementById('excel-warn').textContent =
+            newCount > 0 ? `${newCount} new item(s) will be added to Inventory` : '';
+        document.getElementById('excel-preview-wrap').style.display = 'block';
+        document.getElementById('excel-action-btns').style.display  = 'flex';
+    }
+
+    async function importExcelData() {
+        if (!_excelParsed.length) return;
+
+        let addedToInv = 0, updatedUnit = 0;
+        const newCartItems = [];
+
+        for (const row of _excelParsed) {
+            // Ensure unit exists
+            const unitLower = row.unit.toLowerCase();
+            if (!appData.units.map(u => u.toLowerCase()).includes(unitLower)) {
+                appData.units.push(row.unit);
+            }
+
+            // Check if item exists in inventory (case-insensitive)
+            let inv = appData.inventory.find(i =>
+                i.name.toLowerCase().trim() === row.name.toLowerCase().trim());
+
+            if (!inv) {
+                // Create new inventory item
+                inv = { id: 'item_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+                        name: row.name, unit: row.unit, rate: row.rate || 0 };
+                appData.inventory.push(inv);
+                addedToInv++;
+            } else {
+                // Update rate if provided and currently 0
+                if (row.rate > 0 && inv.rate === 0) { inv.rate = row.rate; }
+            }
+
+            // Add to cart
+            const existing = newCartItems.find(c => c.id === inv.id);
+            if (existing) existing.qty += row.qty;
+            else newCartItems.push({ ...inv, qty: row.qty });
+        }
+
+        // Merge with existing cart
+        for (const ni of newCartItems) {
+            const inCart = cart.find(c => c.id === ni.id);
+            if (inCart) inCart.qty += ni.qty;
+            else cart.push(ni);
+        }
+
+        saveData();
+        renderUnitManager(); renderUnitDropdowns();
+        renderCustomDropdown(); renderInventoryTable();
+        renderCart();
+
+        await customAlert(
+            `✅ Import Complete!\n\n• ${_excelParsed.length} items loaded into Cart\n• ${addedToInv} new item(s) added to Inventory\n\nSwitch to List tab to see your cart.`
+        );
+
+        resetExcelImport();
+        switchTab('maker', document.querySelector('.desktop-nav .nav-btn'));
+    }
+
+    function resetExcelImport() {
+        _excelParsed = [];
+        document.getElementById('excel-file-input').value        = '';
+        document.getElementById('excel-file-name').textContent   = 'No file selected';
+        document.getElementById('excel-file-name').style.color   = 'var(--muted)';
+        document.getElementById('excel-preview-wrap').style.display = 'none';
+        document.getElementById('excel-action-btns').style.display  = 'none';
+        document.getElementById('excel-preview-body').innerHTML  = '';
+        // Close panel
+        document.getElementById('excel-panel').style.display         = 'none';
+        document.getElementById('excel-toggle-arrow').style.transform = 'rotate(0deg)';
+    }
+
 
     // ── BOOT ─────────────────────────────────────────────────────────
     init();
