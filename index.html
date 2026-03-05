@@ -10,7 +10,7 @@
 
         :root {
             --bg: #f0fdf4; 
-            --surface: rgba(255, 255, 255, 0.85); /* Slightly transparent for blur */
+            --surface: rgba(255, 255, 255, 0.85); 
             --solid-surface: #ffffff;
             --text-main: #0f172a;
             --text-muted: #64748b;
@@ -40,6 +40,15 @@
         /* Animations */
         @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         .animate-entry { animation: fadeSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        /* Cart Logo Animation */
+        @keyframes driveCart {
+            0%, 100% { transform: translateX(0) translateY(0) rotate(0deg); }
+            25% { transform: translateX(3px) translateY(-1px) rotate(3deg); }
+            50% { transform: translateX(5px) translateY(0) rotate(0deg); }
+            75% { transform: translateX(3px) translateY(-1px) rotate(-3deg); }
+        }
+        .animated-cart { animation: driveCart 2.5s infinite ease-in-out; display: inline-block; }
 
         /* Top Bar (Glassmorphism) */
         .top-bar { 
@@ -177,7 +186,7 @@
 
     <header class="top-bar">
         <div class="logo">
-            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            <svg class="animated-cart" width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
             GroceryPro
         </div>
         <nav class="desktop-nav">
@@ -279,7 +288,7 @@
 
             <div class="card animate-entry" style="animation-delay: 0.1s;">
                 <h3>Manage Current Inventory</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom:1rem;">Click 'Edit' to modify items directly.</p>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom:1rem;">Changes here will Auto-Update in your Cart and Saved History!</p>
                 <div class="table-responsive">
                     <table>
                         <thead>
@@ -309,7 +318,7 @@
         <section id="backup-view" class="view-section">
             <div class="card animate-entry">
                 <h2>Data Management</h2>
-                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 2rem;">Secure your data (Settings, Inventory, Lists) in a JSON file.</p>
+                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 2rem;">Secure your data (Settings, New Inventory Items, Lists) in a JSON file.</p>
                 
                 <div class="grid-2">
                     <div style="border: 1px solid var(--border); padding: 2rem; border-radius: 12px; text-align: center;">
@@ -559,7 +568,7 @@
             });
         }
 
-        // --- Inventory Edit Logic ---
+        // --- Inventory Edit Logic & GLOBAL AUTO UPDATE ---
         const unitOptions = ["kg", "gram", "Ltr", "Piece", "Packet", "Ladi"];
 
         async function addNewItem() {
@@ -631,11 +640,37 @@
                 return;
             }
 
+            // 1. Update in Master Inventory
             const item = appData.inventory.find(i => i.id === id);
             item.name = newName; item.unit = newUnit; item.rate = newRate;
             
+            // 2. AUTO-UPDATE IN CURRENT CART
+            const cartItem = cart.find(c => c.id === id);
+            if(cartItem) {
+                cartItem.name = newName; cartItem.unit = newUnit; cartItem.rate = newRate;
+            }
+
+            // 3. AUTO-UPDATE IN ALL SAVED HISTORY LISTS
+            appData.lists.forEach(list => {
+                let listChanged = false;
+                list.items.forEach(li => {
+                    if(li.id === id) {
+                        li.name = newName; li.unit = newUnit; li.rate = newRate;
+                        listChanged = true;
+                    }
+                });
+                if(listChanged) {
+                    list.total = list.items.reduce((sum, i) => sum + (i.rate * i.qty), 0);
+                }
+            });
+
             editingItemId = null; saveData();
+            
+            // Re-render everything globally
             renderCustomDropdown(); renderInventoryTable();
+            renderCart(); renderHistory();
+            
+            await customAlert("Item Updated Successfully! Changes have been auto-synced to your current Cart and all History Lists.");
         }
 
         async function deleteItem(id) {
@@ -645,7 +680,7 @@
             saveData(); renderCustomDropdown(); renderInventoryTable();
         }
 
-        // --- History & Data Logic ---
+        // --- History, Data Logic & HISTORY PDF GENERATOR ---
         function renderHistory() {
             const container = document.getElementById('history-container');
             container.innerHTML = '';
@@ -659,13 +694,71 @@
                         <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">${list.date}</div>
                         <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.5rem;">${list.title}</div>
                         <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom: 1rem;">${list.items.length} Items | Total: <span style="color:var(--text-main); font-weight:600;">₹${list.total.toFixed(2)}</span></p>
-                        <div style="display: flex; gap: 0.5rem; margin-top: auto;">
-                            <button class="btn-outline" style="flex:1; padding:0.5rem;" onclick="loadList('${list.id}')">Load</button>
-                            <button class="btn-danger" style="padding:0.5rem;" onclick="deleteList('${list.id}')">Del</button>
+                        <div style="display: flex; gap: 0.4rem; margin-top: auto;">
+                            <button class="btn-outline" style="flex:1; padding:0.4rem; font-size:0.85rem;" onclick="loadList('${list.id}')">Load</button>
+                            <button class="btn-outline" style="flex:1; padding:0.4rem; font-size:0.85rem; color:var(--text-main); border-color:var(--text-muted);" onclick="downloadHistoryPDF('${list.id}')">PDF</button>
+                            <button class="btn-danger" style="padding:0.4rem; font-size:0.85rem;" onclick="deleteList('${list.id}')">Del</button>
                         </div>
                     </div>
                 `;
             });
+        }
+
+        // Generates PDF directly from a history list without loading it to cart
+        function downloadHistoryPDF(id) {
+            const list = appData.lists.find(l => l.id === id);
+            if(!list) return;
+
+            const isListOnly = appData.settings.listOnlyMode;
+            const container = document.createElement('div');
+            container.style.padding = '20px';
+            container.style.background = '#fff';
+            container.style.color = '#0f172a';
+            container.style.fontFamily = "'Inter', sans-serif";
+            container.style.width = '800px'; 
+
+            let html = `
+                <h2 style="text-align:center; margin-bottom:20px; color:#0f172a;">${isListOnly ? 'Grocery List (Manual Entry)' : 'Quotation'}</h2>
+                <div style="margin-bottom: 20px; color: #64748b; font-size: 0.9rem;">
+                    <strong>Date:</strong> ${list.date}<br>
+                    <strong>Title:</strong> ${list.title}
+                </div>
+                <table style="width:100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="background:#f8fafc; text-transform:uppercase; font-size:0.85rem; color:#64748b;">
+                            <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:left;">Item Description</th>
+                            ${isListOnly ? '' : '<th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:right;">Rate</th>'}
+                            <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:right;">Qty</th>
+                            <th style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:${isListOnly ? 'left' : 'right'};">${isListOnly ? 'Rate (Fill Below)' : 'Amount (₹)'}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            list.items.forEach(item => {
+                const amt = item.rate * item.qty;
+                html += `<tr>
+                    <td style="padding:10px; border-bottom:1px solid #e2e8f0; font-weight:500;">${item.name}</td>
+                    ${isListOnly ? '' : `<td style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:right; color:#64748b;">₹${item.rate}</td>`}
+                    <td style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:right; font-weight:600;">${item.qty} <span style="font-size:0.8em; color:#64748b;">${item.unit}</span></td>
+                    <td style="padding:10px; border-bottom:1px solid #e2e8f0; text-align:${isListOnly ? 'left' : 'right'}; font-weight:600;">
+                        ${isListOnly ? '<div style="border-bottom:1px dotted #000; height:1.5rem; width:100px;"></div>' : `₹${amt.toFixed(2)}`}
+                    </td>
+                </tr>`;
+            });
+
+            html += `</tbody></table>`;
+            if (!isListOnly) {
+                html += `<div style="text-align:right; font-size:1.25rem; font-weight:700; margin-top:20px; padding-top:20px; border-top:2px solid #e2e8f0;">Grand Total: ₹${list.total.toFixed(2)}</div>`;
+            }
+            container.innerHTML = html;
+
+            html2pdf().set({
+                margin: 0.5,
+                filename: `${list.title.replace(/\s+/g, '_')}.pdf`,
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            }).from(container).save();
         }
 
         async function saveCurrentList() {
