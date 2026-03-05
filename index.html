@@ -8,12 +8,107 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="GroceryPro">
+    <link rel="apple-touch-icon" id="apple-touch-icon">
+    <!-- Instantly apply saved theme before render to prevent flash & fix status bar -->
+    <script>
+    (function(){
+        const dark = localStorage.getItem('gp_theme') === 'dark';
+        if (dark) {
+            document.documentElement.classList.add('dark-html');
+            document.querySelector('meta[name="theme-color"]').content = '#0d1f1a';
+            document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').content = 'black';
+        }
+    })();
+    </script>
     <title>GroceryPro - Minimalist Planner</title>
     <link rel="manifest" id="pwa-manifest-link">
     <script>
     // ── PWA: Inline Manifest Generator ───────────────────────────────
     // Generates manifest dynamically so it works from any file:// or http:// path
     (function() {
+
+        // Generate PNG icon using Canvas — green background, white cart
+        function makeIconPNG(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const r   = size * 0.18;   // corner radius
+
+            // Green rounded background
+            ctx.beginPath();
+            ctx.moveTo(r, 0);
+            ctx.lineTo(size - r, 0);
+            ctx.quadraticCurveTo(size, 0, size, r);
+            ctx.lineTo(size, size - r);
+            ctx.quadraticCurveTo(size, size, size - r, size);
+            ctx.lineTo(r, size);
+            ctx.quadraticCurveTo(0, size, 0, size - r);
+            ctx.lineTo(0, r);
+            ctx.quadraticCurveTo(0, 0, r, 0);
+            ctx.closePath();
+            ctx.fillStyle = '#10b981';
+            ctx.fill();
+
+            // White cart icon — scaled to fit nicely
+            const pad  = size * 0.18;
+            const w    = size - pad * 2;
+            const h    = w;
+            const ox   = pad;
+            const oy   = pad;
+            const sw   = size * 0.055;   // stroke width
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth   = sw;
+            ctx.lineCap     = 'round';
+            ctx.lineJoin    = 'round';
+
+            // Cart path scaled to viewBox 0 0 24 24
+            const s = w / 24;
+            ctx.save();
+            ctx.translate(ox, oy);
+            ctx.scale(s, s);
+            ctx.lineWidth = sw / s;
+
+            ctx.beginPath();
+            // Handle + pole: M3 3h2l.4 2
+            ctx.moveTo(3, 3); ctx.lineTo(5, 3); ctx.lineTo(5.4, 5);
+            ctx.stroke();
+
+            ctx.beginPath();
+            // Body: M7 13h10l4-8H5.4
+            ctx.moveTo(7, 13); ctx.lineTo(17, 13); ctx.lineTo(21, 5); ctx.lineTo(5.4, 5);
+            ctx.stroke();
+
+            ctx.beginPath();
+            // Pole down: M7 13L5.4 5
+            ctx.moveTo(7, 13); ctx.lineTo(5.4, 5);
+            ctx.stroke();
+
+            ctx.beginPath();
+            // Lower body: M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17
+            ctx.moveTo(7, 13);
+            ctx.lineTo(4.707, 15.293);
+            ctx.bezierCurveTo(4.077, 15.923, 4.523, 17, 5.414, 17);
+            ctx.lineTo(17, 17);
+            ctx.stroke();
+
+            // Right wheel
+            ctx.beginPath();
+            ctx.arc(17, 19.5, 1.5, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Left wheel
+            ctx.beginPath();
+            ctx.arc(9, 19.5, 1.5, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.restore();
+            return canvas.toDataURL('image/png');
+        }
+
+        const icon192 = makeIconPNG(192);
+        const icon512 = makeIconPNG(512);
+
         const manifest = {
             name: "GroceryPro - Smart Planner",
             short_name: "GroceryPro",
@@ -24,25 +119,17 @@
             background_color: "#10b981",
             theme_color: "#10b981",
             icons: [
-                {
-                    src: "data:image/svg+xml," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='38' fill='%2310b981'/><path d='M38 38h24l5 20M67 130h100l40-80H54M67 130L54 50M67 130l-23 23c-6 6-2 17 7 17h170m0 0a20 20 0 100 40 20 20 0 000-40zm-80 20a20 20 0 11-40 0 20 20 0 0140 0z' fill='none' stroke='%23fff' stroke-width='14' stroke-linecap='round' stroke-linejoin='round'/></svg>`),
-                    sizes: "192x192",
-                    type: "image/svg+xml",
-                    purpose: "any maskable"
-                },
-                {
-                    src: "data:image/svg+xml," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='96' fill='%2310b981'/><path d='M96 96h60l14 56M180 346h268l107-213H144M180 346L144 134M180 346l-62 62c-17 17-5 46 19 46h454m0 0a54 54 0 100 108 54 54 0 000-108zm-214 54a54 54 0 11-108 0 54 54 0 01108 0z' fill='none' stroke='%23fff' stroke-width='36' stroke-linecap='round' stroke-linejoin='round'/></svg>`),
-                    sizes: "512x512",
-                    type: "image/svg+xml",
-                    purpose: "any maskable"
-                }
+                { src: icon192, sizes: "192x192", type: "image/png", purpose: "any maskable" },
+                { src: icon512, sizes: "512x512", type: "image/png", purpose: "any maskable" },
             ],
             categories: ["productivity", "utilities"],
-            screenshots: [],
             prefer_related_applications: false
         };
         const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
         document.getElementById('pwa-manifest-link').href = URL.createObjectURL(blob);
+        // Also set apple touch icon
+        const appleIcon = document.getElementById('apple-touch-icon');
+        if (appleIcon) appleIcon.href = icon192;
     })();
 
     // ── PWA: Service Worker Registration ─────────────────────────────
@@ -172,16 +259,30 @@ self.addEventListener('fetch', e => {
         h3 { font-size: 1.1rem;  font-weight: 600; margin-bottom: 1rem; }
 
         /* ── ANIMATIONS ─────────────────────────────────────────────── */
-        @keyframes fadeSlideUp  { from { opacity:0; transform:translateY(15px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes splashPulse  { 0%   { transform:scale(.95); opacity:.8; }    100% { transform:scale(1.05); opacity:1; } }
-        @keyframes driveCart    {
+        @keyframes fadeSlideUp   { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes fadeSlideDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes fadeIn        { from { opacity:0; } to { opacity:1; } }
+        @keyframes splashIn      { 0% { opacity:0; transform:scale(.7); } 60% { transform:scale(1.08); } 100% { opacity:1; transform:scale(1); } }
+        @keyframes splashPulse   { 0% { transform:scale(1); } 50% { transform:scale(1.04); } 100% { transform:scale(1); } }
+        @keyframes driveCart     {
             0%,100% { transform:translateX(0)   translateY(0)  rotate(0deg);  }
             25%     { transform:translateX(3px)  translateY(-1px) rotate(3deg);  }
             50%     { transform:translateX(5px)  translateY(0)  rotate(0deg);  }
             75%     { transform:translateX(3px)  translateY(-1px) rotate(-3deg); }
         }
-        .animate-entry  { animation: fadeSlideUp 0.4s var(--ease-spring) forwards; }
-        .animated-cart  { animation: driveCart   2.5s infinite ease-in-out; display:inline-block; }
+        @keyframes ripple {
+            to { transform: scale(4); opacity: 0; }
+        }
+
+        .animate-entry  {
+            animation: fadeSlideUp 0.45s var(--ease-spring) both;
+            will-change: transform, opacity;
+        }
+        .animate-entry:nth-child(1) { animation-delay: 0s; }
+        .animate-entry:nth-child(2) { animation-delay: .06s; }
+        .animate-entry:nth-child(3) { animation-delay: .12s; }
+        .animate-entry:nth-child(4) { animation-delay: .18s; }
+        .animated-cart  { animation: driveCart 2.5s infinite ease-in-out; display:inline-block; }
 
         /* ── SPLASH SCREEN ──────────────────────────────────────────── */
         #splash-screen {
@@ -190,15 +291,16 @@ self.addEventListener('fetch', e => {
             display: flex; flex-direction: column;
             justify-content: center; align-items: center;
             z-index: 999999;
-            transition: opacity .3s ease-in-out, visibility .3s ease-in-out;
+            transition: opacity .4s cubic-bezier(0.4,0,0.2,1), visibility .4s cubic-bezier(0.4,0,0.2,1);
         }
         #splash-screen.hidden { opacity:0; visibility:hidden; }
         .splash-content {
-            display: flex; align-items: center; gap: 12px;
+            display: flex; align-items: center; gap: 14px;
             color: #fff; font-size: 2.5rem; font-weight: 700;
-            animation: splashPulse 1.5s infinite alternate ease-in-out;
+            animation: splashIn .55s cubic-bezier(0.16,1,0.3,1) both, splashPulse 2s 0.6s ease-in-out infinite;
+            will-change: transform, opacity;
         }
-        .splash-content svg { width:50px; height:50px; stroke-width:2.5; }
+        .splash-content svg { width:52px; height:52px; stroke-width:2.5; filter: drop-shadow(0 4px 12px rgba(0,0,0,.2)); }
 
         /* ── TOP BAR ────────────────────────────────────────────────── */
         .top-bar {
@@ -235,7 +337,11 @@ self.addEventListener('fetch', e => {
             background: var(--bg);
         }
         .view-section { display:none; max-width:900px; margin:0 auto; padding-bottom:4rem; }
-        .view-section.active { display:block; animation:fadeSlideUp .3s ease forwards; }
+        .view-section.active {
+            display:block;
+            animation: fadeSlideUp .32s cubic-bezier(0.16,1,0.3,1) both;
+            will-change: transform, opacity;
+        }
 
         /* ── CARDS ──────────────────────────────────────────────────── */
         .card {
@@ -381,18 +487,36 @@ self.addEventListener('fetch', e => {
             border:none; border-radius:8px;
             font-weight:500; cursor:pointer;
             display:flex; align-items:center; justify-content:center; gap:.5rem;
-            transition:var(--transition);
-            touch-action: manipulation;   /* prevents double-tap zoom on buttons */
+            transition: background .2s var(--ease), transform .15s var(--ease), box-shadow .2s var(--ease);
+            touch-action: manipulation;
             -webkit-user-select: none; user-select: none;
+            position: relative; overflow: hidden;
+            will-change: transform;
         }
-        button:hover   { background:var(--accent-hover); transform:translateY(-2px); box-shadow:0 4px 10px rgba(16,185,129,.3); }
-        button:active  { transform:translateY(1px) scale(.96); box-shadow:none; }
+        button::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.35);
+            width: 10px; height: 10px;
+            left: var(--rx, 50%); top: var(--ry, 50%);
+            transform: translate(-50%, -50%) scale(0);
+            pointer-events: none;
+            opacity: 1;
+        }
+        button.rippling::after {
+            animation: ripple .5s cubic-bezier(0.4,0,0.2,1) forwards;
+        }
+        button:hover   { background:var(--accent-hover); transform:translateY(-1px); box-shadow:0 6px 16px rgba(16,185,129,.25); }
+        button:active  { transform:translateY(1px) scale(.97); box-shadow:none; transition-duration:.08s; }
 
         .btn-outline { background:transparent; color:var(--accent); border:1.5px solid var(--accent); }
         .btn-outline:hover { background:var(--accent); color:#fff; }
+        .btn-outline::after { background: rgba(16,185,129,0.2); }
 
         .btn-danger { background:#fee2e2; color:var(--danger); border:none; }
         .btn-danger:hover { background:#fca5a5; color:#fff; }
+        .btn-danger::after { background: rgba(239,68,68,0.2); }
 
         .btn-small { padding:.4rem .6rem; font-size:.8rem; height:auto; }
 
@@ -646,8 +770,8 @@ self.addEventListener('fetch', e => {
             }
             .mobile-nav .nav-btn { flex-direction:column; padding:.4rem; font-size:.75rem; gap:.2rem; width:70px; background:transparent; height:auto; }
             .mobile-nav .nav-btn.active { color:var(--accent); background:transparent; box-shadow:none; }
-            .mobile-nav .nav-btn svg { transition:var(--transition); }
-            .mobile-nav .nav-btn.active svg { transform:translateY(-3px); stroke-width:2.5; filter:drop-shadow(0 2px 4px rgba(16,185,129,.3)); }
+            .mobile-nav .nav-btn svg { transition: transform .3s cubic-bezier(0.16,1,0.3,1), filter .3s ease; }
+            .mobile-nav .nav-btn.active svg { transform:translateY(-4px) scale(1.15); stroke-width:2.5; filter:drop-shadow(0 3px 6px rgba(16,185,129,.4)); }
         }
 
         /* ── PRINT ──────────────────────────────────────────────────── */
@@ -1243,13 +1367,20 @@ self.addEventListener('fetch', e => {
         checkFirstTime();
     }
 
-    // Splash fade-out — fast (500ms visible, 300ms fade)
+    // Splash — only show on first install, skip on repeat opens
     window.addEventListener('load', () => {
-        setTimeout(() => {
-            const splash = document.getElementById('splash-screen');
-            splash.classList.add('hidden');
-            setTimeout(() => splash.remove(), 300);
-        }, 500);
+        const splash      = document.getElementById('splash-screen');
+        const isFirstOpen = !localStorage.getItem('gp_launched');
+        if (isFirstOpen) {
+            localStorage.setItem('gp_launched', '1');
+            setTimeout(() => {
+                splash.classList.add('hidden');
+                setTimeout(() => splash.remove(), 300);
+            }, 800);
+        } else {
+            // Skip splash instantly
+            splash.remove();
+        }
     });
 
 
@@ -1290,13 +1421,9 @@ self.addEventListener('fetch', e => {
     // ── SECTION 3: NAVIGATION ────────────────────────────────────────
 
     function switchTab(tabId, btnElement) {
-        document.querySelectorAll('.view-section').forEach(el => {
-            el.classList.remove('active');
-            el.style.animation = 'none'; el.offsetHeight; el.style.animation = null; // reflow trick
-        });
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
         document.getElementById(`${tabId}-view`).classList.add('active');
-
         const tabIndex = Array.from(btnElement.parentElement.children).indexOf(btnElement);
         document.querySelectorAll('.desktop-nav .nav-btn')[tabIndex]?.classList.add('active');
         document.querySelectorAll('.mobile-nav  .nav-btn')[tabIndex]?.classList.add('active');
@@ -2231,6 +2358,20 @@ self.addEventListener('fetch', e => {
 
 
     // ── BOOT ─────────────────────────────────────────────────────────
+
+    // Ripple effect on all buttons
+    document.addEventListener('pointerdown', e => {
+        const btn = e.target.closest('button');
+        if (!btn || btn.disabled) return;
+        const rect = btn.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        btn.style.setProperty('--rx', x + 'px');
+        btn.style.setProperty('--ry', y + 'px');
+        btn.classList.remove('rippling');
+        void btn.offsetWidth; // reflow
+        btn.classList.add('rippling');
+    });
     init();
     </script>
 </body>
