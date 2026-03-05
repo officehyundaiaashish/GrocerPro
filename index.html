@@ -873,6 +873,14 @@ self.addEventListener('fetch', e => {
 
                                 <!-- Action buttons -->
                                 <div id="excel-action-btns" style="display:none; gap:.5rem; flex-direction:column;">
+                                    <!-- Optional: save to inventory toggle -->
+                                    <label style="display:flex; align-items:center; gap:.6rem; padding:.6rem .75rem; background:var(--bg); border:1px solid var(--border-light); border-radius:8px; cursor:pointer; user-select:none;">
+                                        <input type="checkbox" id="excel-save-inventory" style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer; display:inline;">
+                                        <div>
+                                            <div style="font-size:.83rem; font-weight:600; color:var(--text);">Also save to Inventory</div>
+                                            <div style="font-size:.72rem; color:var(--muted);">New items will be added to master inventory</div>
+                                        </div>
+                                    </label>
                                     <button onclick="importExcelData()" style="width:100%; font-size:.9rem;">
                                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" style="vertical-align:middle; margin-right:.3rem;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                                         Load into Cart
@@ -1729,6 +1737,15 @@ self.addEventListener('fetch', e => {
             </tr>`;
         }).join('');
 
+        const emptyRows = isListOnly ? Array.from({length: 5}, (_, i) => {
+            const bg = (items.length + i) % 2 === 0 ? '#ffffff' : '#f0fdf4';
+            return `<tr style="background:${bg};">
+                <td style="padding:9px 12px; border:1px solid #a7f3d0; height:32px;"></td>
+                <td style="padding:9px 12px; border:1px solid #a7f3d0;"></td>
+                <td style="padding:9px 12px; border:1px solid #a7f3d0;"></td>
+            </tr>`;
+        }).join('') : '';
+
         const itemColW  = isListOnly ? '45%' : '40%';
         const rateColW  = '22%';
         const qtyColW   = '20%';
@@ -1832,7 +1849,7 @@ self.addEventListener('fetch', e => {
         <th style="padding:11px 12px; font-size:10.5px; font-weight:700; color:#fff; text-align:right; text-transform:uppercase; letter-spacing:0.5px; width:${totalColW};">${isListOnly ? 'Amount' : 'Total'}</th>
       </tr>
     </thead>
-    <tbody>${tableRows}</tbody>
+    <tbody>${tableRows}${emptyRows}</tbody>
     <tfoot>
       <tr style="background:#059669;">
         <td colspan="${isListOnly ? 2 : 3}" style="padding:13px 12px; font-size:13px; font-weight:700; color:#fff; text-align:right;">Grand Total</td>
@@ -2136,23 +2153,57 @@ self.addEventListener('fetch', e => {
     async function importExcelData() {
         if (!_excelParsed.length) return;
 
+        const saveToInv = document.getElementById('excel-save-inventory').checked;
+        let addedToInv  = 0;
+
         for (const row of _excelParsed) {
-            // Build a temporary cart item — no inventory touch at all
-            const tempId = 'tmp_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
-            const cartItem = {
+            // Build temp cart item
+            const tempId  = 'tmp_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+            let cartItem  = {
                 id:   tempId,
                 name: row.name,
                 unit: row.unit || '',
                 rate: row.rate || 0,
                 qty:  row.qty  || 1,
             };
+
+            if (saveToInv) {
+                // Ensure unit exists in unit list
+                if (row.unit) {
+                    const unitExists = appData.units.some(u => u.toLowerCase() === row.unit.toLowerCase());
+                    if (!unitExists) appData.units.push(row.unit);
+                }
+                // Check if already in inventory
+                let inv = appData.inventory.find(i =>
+                    i.name.toLowerCase().trim() === row.name.toLowerCase().trim());
+                if (!inv) {
+                    inv = { id: 'item_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+                            name: row.name, unit: row.unit || '', rate: row.rate || 0 };
+                    appData.inventory.push(inv);
+                    addedToInv++;
+                } else if (row.rate > 0 && inv.rate === 0) {
+                    inv.rate = row.rate;
+                }
+                // Use inventory id for cart item so qty controls work
+                cartItem.id = inv.id;
+            }
+
             // Merge if same name already in cart
             const existing = cart.find(c => c.name.toLowerCase().trim() === row.name.toLowerCase().trim());
             if (existing) existing.qty += row.qty;
             else cart.push(cartItem);
         }
 
+        if (saveToInv) {
+            saveData();
+            renderUnitManager(); renderUnitDropdowns();
+            renderCustomDropdown(); renderInventoryTable();
+        }
+
         renderCart();
+        if (saveToInv && addedToInv > 0) {
+            await customAlert(`✅ Done!\n\n${_excelParsed.length} items loaded into Cart\n${addedToInv} new item(s) added to Inventory`);
+        }
         resetExcelImport();
     }
 
@@ -2164,6 +2215,7 @@ self.addEventListener('fetch', e => {
         document.getElementById('excel-preview-wrap').style.display = 'none';
         document.getElementById('excel-action-btns').style.display  = 'none';
         document.getElementById('excel-preview-body').innerHTML  = '';
+        document.getElementById('excel-save-inventory').checked  = false;
         // Close panel
         document.getElementById('excel-panel').style.display         = 'none';
         document.getElementById('excel-toggle-arrow').style.transform = 'rotate(0deg)';
