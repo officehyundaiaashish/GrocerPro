@@ -40,17 +40,17 @@
 
         /* FIRST TIME HINT (Tooltip Box) */
         .hint-box {
-            display: none; position: relative; background: var(--accent); color: white;
-            padding: 1rem; border-radius: 8px; font-size: 0.85rem; margin-top: 0.5rem;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); animation: fadeSlideUp 0.5s ease;
-            line-height: 1.4;
+            display: none; position: absolute; top: 100%; left: 0; z-index: 999;
+            background: var(--accent); color: white; padding: 1rem; border-radius: 8px; 
+            font-size: 0.85rem; margin-top: 0.8rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); 
+            animation: fadeSlideUp 0.5s ease; line-height: 1.4; width: max-content; max-width: 250px;
         }
         .hint-box::before {
             content: ''; position: absolute; top: -6px; left: 20px;
             border-width: 0 8px 8px 8px; border-style: solid;
             border-color: transparent transparent var(--accent) transparent;
         }
-        .hint-box button { background: rgba(0,0,0,0.2); height: 30px; padding: 0 1rem; font-size: 0.8rem; margin-top: 0.5rem; border-radius: 6px; box-shadow: none; width: auto;}
+        .hint-box button { background: rgba(0,0,0,0.2); height: 30px; padding: 0 1rem; font-size: 0.8rem; margin-top: 0.8rem; border-radius: 6px; box-shadow: none; width: auto;}
         .hint-box button:hover { background: rgba(0,0,0,0.3); transform: none;}
 
         /* Top Bar */
@@ -66,19 +66,21 @@
         .view-section { display: none; max-width: 900px; margin: 0 auto; padding-bottom: 4rem; }
         .view-section.active { display: block; animation: fadeSlideUp 0.3s ease forwards; }
 
-        /* Cards & Forms */
-        .card { background: var(--solid-surface); border-radius: var(--radius); padding: 1.5rem; border: 1px solid var(--border); box-shadow: var(--shadow); margin-bottom: 1.5rem; transition: var(--transition); }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem; }
-        h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.2rem;}
-        h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.2rem; }
-        .sub-text { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.4; }
+        /* Cards & Spacing Fixes (Chipak hata di) */
+        .card { background: var(--solid-surface); border-radius: var(--radius); padding: 1.5rem; border: 1px solid var(--border); box-shadow: var(--shadow); margin-bottom: 2rem; transition: var(--transition); }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+        h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.4rem;}
+        h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.4rem; }
+        .sub-text { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; }
         
-        /* Grid Layouts (Responsive) */
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        .grid-3 { display: grid; grid-template-columns: 2fr 1fr auto; gap: 1rem; align-items: end; }
-        .action-bar { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem; align-items: center;}
+        /* Grid Layouts (Proper gaps) */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .grid-3 { display: grid; grid-template-columns: 2fr 1fr auto; gap: 1rem; align-items: end; margin-bottom: 2rem; }
         
-        .input-group { display: flex; flex-direction: column; gap: 0.4rem; position: relative; }
+        /* Actions Bar spacing restored */
+        .action-bar { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem; align-items: center;}
+        
+        .input-group { display: flex; flex-direction: column; gap: 0.5rem; position: relative; }
         label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
         input, select { padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; background: #f8fafc; outline: none; transition: var(--transition); width: 100%; }
         input:focus, select:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); transform: translateY(-1px); }
@@ -110,13 +112,33 @@
         .btn-danger:hover { background: #fca5a5; color: white; }
         .btn-small { padding: 0.4rem 0.6rem; font-size: 0.8rem; height: auto; width: auto;}
 
+        /* Inline +/- Qty Adjuster */
+        .qty-control { 
+            display: inline-flex; align-items: center; border: 1px solid var(--border); 
+            border-radius: 6px; background: #fff; height: 32px; 
+        }
+        .qty-btn { 
+            background: #f8fafc; color: var(--text-main); border: none; padding: 0 0.6rem; 
+            cursor: pointer; font-weight: bold; height: 100%; border-radius: 0; box-shadow: none; 
+        }
+        .qty-btn:first-child { border-right: 1px solid var(--border); border-top-left-radius: 5px; border-bottom-left-radius: 5px;}
+        .qty-btn:last-child { border-left: 1px solid var(--border); border-top-right-radius: 5px; border-bottom-right-radius: 5px;}
+        .qty-btn:hover { background: #e2e8f0; transform: none; box-shadow: none;}
+        .qty-btn:active { transform: scale(0.95); }
+        .qty-inline-input { 
+            width: 45px; text-align: center; border: none; background: transparent; 
+            font-weight: 600; font-size: 0.9rem; padding: 0; height: 100%; -moz-appearance: textfield;
+        }
+        .qty-inline-input::-webkit-outer-spin-button, .qty-inline-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .qty-inline-input:focus { box-shadow: none; background: #f0fdf4; transform: none;}
+
         /* Unit Tags in Inventory */
         .unit-pill { display: inline-flex; align-items: center; background: #f1f5f9; color: var(--text-main); font-size: 0.85rem; padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid var(--border); }
         .unit-pill button { background: transparent; border: none; padding: 0 0 0 0.5rem; color: var(--text-muted); height: auto; display: flex; align-items: center; margin: 0; box-shadow: none; }
         .unit-pill button:hover { color: var(--danger); transform: none; background: transparent; }
 
         /* Toggle */
-        .toggle-container { display: inline-flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.5rem; border-radius: 12px; transition: background 0.3s; margin-left: auto;}
+        .toggle-container { display: inline-flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.5rem; border-radius: 12px; transition: background 0.3s;}
         .toggle-container:hover { background: #f8fafc; }
         .toggle-label-text { font-size: 0.9rem; font-weight: 600; color: var(--text-main); user-select: none; }
         .toggle-switch { position: relative; width: 44px; height: 24px; background: #cbd5e1; border-radius: 12px; transition: 0.4s cubic-bezier(0.4, 0.0, 0.2, 1); box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
@@ -125,14 +147,18 @@
         input[type="checkbox"]:checked + .toggle-switch::after { transform: translateX(20px); }
 
         /* COMPACT TABLES FOR MOBILE */
-        .table-responsive { width: 100%; margin-top: 1rem; border-radius: 12px; border: 1px solid var(--border); overflow: hidden; background: #fff;}
+        .table-responsive { width: 100%; border-radius: 12px; border: 1px solid var(--border); overflow: hidden; background: #fff;}
         table { width: 100%; border-collapse: collapse; background: #fff; table-layout: auto; }
-        th, td { padding: 1rem 0.8rem; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; font-size: 0.95rem;}
+        th, td { padding: 1.2rem 1rem; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; font-size: 0.95rem;}
         th { font-weight: 600; color: var(--text-muted); font-size: 0.8rem; background: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px; }
         td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
         td:first-child, th:first-child { width: 100%; line-height: 1.3; } 
-        .action-cell { display: flex; gap: 0.4rem; justify-content: flex-end; align-items: center; }
+        .action-cell { display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center; }
         .total-row { display: flex; justify-content: space-between; align-items: center; font-size: 1.15rem; font-weight: 700; padding: 1.2rem 1rem; margin-top: 1rem; background: #fff; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+
+        /* History Action Buttons Flex Grid */
+        .history-actions { display: flex; gap: 0.5rem; margin-top: 1.5rem; }
+        .history-actions button { flex: 1; padding: 0.5rem; font-size: 0.9rem; }
 
         /* File Upload */
         .file-upload-wrapper { position: relative; width: 100%; }
@@ -146,25 +172,20 @@
         @media (max-width: 768px) {
             .desktop-nav { display: none; }
             .main-content { padding: 1rem; padding-bottom: 6rem; }
-            .card { padding: 1rem; }
             
-            /* Stack Backup/Restore & Form Grids vertically */
-            .grid-2 { grid-template-columns: 1fr; gap: 1rem; }
-            .grid-3 { grid-template-columns: 1fr; gap: 0.75rem;}
+            /* Restore spacing for mobile */
+            .grid-2 { grid-template-columns: 1fr; gap: 1.5rem; }
+            .grid-3 { grid-template-columns: 1fr; gap: 1rem;}
             
-            /* Action Bar (Save/PDF) spreads evenly on mobile */
-            .action-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; justify-content: stretch; }
+            /* Action Bar (Save/PDF) spreads evenly */
+            .action-bar { display: flex; flex-direction: column; gap: 0.75rem; align-items: stretch; margin-top: 1.5rem;}
             .action-bar button { width: 100%; justify-content: center;}
-            .btn-clear-mobile { grid-column: span 2; } /* Clear button takes full width on top */
-
-            /* History Buttons Stack Fix */
-            .history-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; }
             
             /* Compact table cells for portrait */
-            th, td { padding: 0.6rem 0.4rem; font-size: 0.85rem; }
-            .btn-small { padding: 0.3rem 0.5rem; font-size: 0.75rem; }
-            input, select, .custom-select__trigger { padding: 0.6rem; font-size: 0.9rem; height: 42px;}
-            button { height: 42px; font-size: 0.9rem; }
+            th, td { padding: 0.8rem 0.5rem; font-size: 0.85rem; }
+            .btn-small { padding: 0.4rem 0.6rem; font-size: 0.8rem; }
+            input, select, .custom-select__trigger { padding: 0.7rem; font-size: 0.9rem; height: 45px;}
+            button { height: 45px; font-size: 0.9rem; }
             
             .mobile-nav { 
                 display: flex; position: fixed; bottom: 0; left: 0; width: 100%; 
@@ -175,12 +196,6 @@
             .mobile-nav .nav-btn.active { color: var(--accent); background: transparent; box-shadow: none;}
             .mobile-nav .nav-btn svg { transition: var(--transition); }
             .mobile-nav .nav-btn.active svg { transform: translateY(-3px); stroke-width: 2.5; filter: drop-shadow(0 2px 4px rgba(16,185,129,0.3)); }
-        }
-
-        /* Desktop specific flex for Action Bar */
-        @media (min-width: 769px) {
-            .history-actions { display: flex; gap: 0.5rem; }
-            .history-actions button { flex: 1; }
         }
 
         /* CUSTOM DIALOG BOXES CSS */
@@ -194,7 +209,13 @@
         .dialog-actions button { height: 40px; padding: 0.5rem 1rem; font-size: 0.85rem; width: auto; }
         
         .no-print { display: block; }
-        @media print { .no-print { display: none !important; } }
+        .print-only { display: none; }
+        @media print { 
+            .no-print { display: none !important; } 
+            .print-only { display: inline !important; }
+            .blank-write-space { display: block !important; border-bottom: 1px dotted #000; height: 1.2rem; width: 60px; } 
+        }
+        .blank-write-space { display: none; }
     </style>
 </head>
 <body>
@@ -228,7 +249,7 @@
         <section id="maker-view" class="view-section active">
             <div class="card animate-entry">
                 <div class="card-header">
-                    <div>
+                    <div style="flex:1;">
                         <h2>🛒 Build Your Grocery List</h2>
                         <p class="sub-text">Add items from your inventory to generate a quotation or a manual fill-up bill.</p>
                     </div>
@@ -239,7 +260,7 @@
                     </label>
                 </div>
                 
-                <div class="grid-3 no-print" style="margin-bottom: 0.5rem; position: relative;">
+                <div class="grid-3 no-print">
                     <div class="input-group">
                         <label>Select Item</label>
                         <div class="custom-select-wrapper">
@@ -271,7 +292,7 @@
                     </button>
                 </div>
 
-                <div id="print-area">
+                <div id="print-area" style="margin-top: 1rem;">
                     <div class="table-responsive">
                         <table id="cart-table">
                             <thead></thead>
@@ -285,7 +306,7 @@
                 </div>
 
                 <div class="action-bar no-print">
-                    <button class="btn-danger-outline btn-clear-mobile" onclick="clearCart()">Clear List</button>
+                    <button class="btn-danger-outline" onclick="clearCart()" style="margin-right: auto;">Clear List</button>
                     <button class="btn-outline" onclick="saveCurrentList()">Save List</button>
                     <button onclick="exportPDF()">
                         <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
@@ -300,10 +321,9 @@
             <div class="card animate-entry">
                 <h2>📏 Manage Unit Types</h2>
                 <p class="sub-text">Add custom measuring units like 'Box', 'Katta', 'Dozen' to use them globally across your inventory.</p>
-                
-                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                    <input type="text" id="new-unit-input" placeholder="e.g. Box" onkeypress="handleEnter(event, addNewUnit)" style="height: 42px;">
-                    <button onclick="addNewUnit()" style="width: auto; height: 42px; padding: 0 1rem;">Add Unit</button>
+                <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                    <input type="text" id="new-unit-input" placeholder="e.g. Box" onkeypress="handleEnter(event, addNewUnit)">
+                    <button onclick="addNewUnit()" style="width: auto; padding: 0 1.5rem;">Add Unit</button>
                 </div>
                 <div id="unit-tags-container" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
             </div>
@@ -369,13 +389,13 @@
                     <div style="border: 1px solid var(--border); padding: 1.5rem; border-radius: 12px; text-align: center;">
                         <svg style="margin: 0 auto 0.5rem; color: var(--accent);" width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                         <h3 style="margin-bottom: 0.5rem; font-size: 1.1rem;">Backup Data</h3>
-                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.4;">Download your entire database to a secure file. Keep it safe!</p>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.4;">Download your entire database to a secure file. Keep it safe!</p>
                         <button onclick="downloadBackup()" style="width: 100%;">Download JSON</button>
                     </div>
 
                     <div style="border: 1px solid var(--border); padding: 1.5rem; border-radius: 12px; text-align: center;">
                         <h3 style="margin-bottom: 0.5rem; font-size: 1.1rem;">Restore Data</h3>
-                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; line-height: 1.4;">Upload a previously saved backup file to restore everything.</p>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.4;">Upload a previously saved backup file to restore everything.</p>
                         <div class="file-upload-wrapper" style="margin-bottom: 0.5rem;">
                             <input type="file" id="restore-file" accept=".json" class="file-upload-input" onchange="handleFileSelect(this)">
                             <div class="file-upload-label" style="padding: 1.5rem 1rem;">
@@ -383,7 +403,7 @@
                                 <span style="margin-top: 0.5rem; font-weight: 500; font-size: 0.85rem;">Select JSON File</span>
                             </div>
                         </div>
-                        <div id="file-name-display" class="file-name" style="font-size: 0.75rem;">No file selected</div>
+                        <div id="file-name-display" class="file-name" style="font-size: 0.8rem;">No file selected</div>
                         <button class="btn-outline" onclick="restoreBackup()" style="width: 100%; margin-top: 1rem;">Restore Now</button>
                     </div>
                 </div>
@@ -410,8 +430,7 @@
         </button>
     </nav>
 
-    <div id="pdf-export-container" style="display:none; padding: 40px; background: white; width: 800px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #0f172a;">
-        </div>
+    <div id="pdf-export-container" style="display:none; padding: 40px; background: white; width: 800px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #0f172a;"></div>
 
     <script>
         // --- CUSTOM IN-APP MODAL LOGIC ---
@@ -443,16 +462,11 @@
 
         // --- Data & State ---
         const defaultInventory = [
-            { id: 'i1', name: 'काले चने', unit: 'kg', rate: 90 },
-            { id: 'i2', name: 'राजमा (लाल छोटा)', unit: 'kg', rate: 140 },
-            { id: 'i3', name: 'छोले (Medium)', unit: 'kg', rate: 120 },
-            { id: 'i4', name: 'चावल (पोना)', unit: 'kg', rate: 50 },
-            { id: 'i5', name: 'चिन्नी', unit: 'kg', rate: 44 },
-            { id: 'i6', name: 'क्लिनिक प्लस शैम्पू', unit: 'Ladi', rate: 14 },
-            { id: 'i7', name: 'उड़द दाल (धुली)', unit: 'kg', rate: 140 },
-            { id: 'i8', name: 'बेसन', unit: 'kg', rate: 120 },
-            { id: 'i9', name: 'मैगी (10 वाली)', unit: 'Packet', rate: 9 },
-            { id: 'i10', name: 'मैगी मसाला', unit: 'Packet', rate: 5 },
+            { id: 'i1', name: 'काले चने', unit: 'kg', rate: 90 }, { id: 'i2', name: 'राजमा (लाल छोटा)', unit: 'kg', rate: 140 },
+            { id: 'i3', name: 'छोले (Medium)', unit: 'kg', rate: 120 }, { id: 'i4', name: 'चावल (पोना)', unit: 'kg', rate: 50 },
+            { id: 'i5', name: 'चिन्नी', unit: 'kg', rate: 44 }, { id: 'i6', name: 'क्लिनिक प्लस शैम्पू', unit: 'Ladi', rate: 14 },
+            { id: 'i7', name: 'उड़द दाल (धुली)', unit: 'kg', rate: 140 }, { id: 'i8', name: 'बेसन', unit: 'kg', rate: 120 },
+            { id: 'i9', name: 'मैगी (10 वाली)', unit: 'Packet', rate: 9 }, { id: 'i10', name: 'मैगी मसाला', unit: 'Packet', rate: 5 },
             { id: 'i11', name: 'तेल', unit: 'Piece', rate: 10 }
         ];
 
@@ -473,13 +487,10 @@
 
         // Onboarding Hint Logic
         function checkFirstTimeHint() {
-            if(!localStorage.getItem('gp_hasSeenHint')) {
-                document.getElementById('first-time-hint').style.display = 'block';
-            }
+            if(!localStorage.getItem('gp_hasSeenHint')) { document.getElementById('first-time-hint').style.display = 'block'; }
         }
         function dismissHint() {
-            document.getElementById('first-time-hint').style.display = 'none';
-            localStorage.setItem('gp_hasSeenHint', 'true');
+            document.getElementById('first-time-hint').style.display = 'none'; localStorage.setItem('gp_hasSeenHint', 'true');
         }
 
         function saveData() { localStorage.setItem('gp_appData', JSON.stringify(appData)); }
@@ -489,7 +500,6 @@
             document.querySelectorAll('.view-section').forEach(el => { el.classList.remove('active'); el.style.animation = 'none'; el.offsetHeight; el.style.animation = null; });
             document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(`${tabId}-view`).classList.add('active');
-            
             const tabIndex = Array.from(btnElement.parentElement.children).indexOf(btnElement);
             document.querySelectorAll('.desktop-nav .nav-btn')[tabIndex]?.classList.add('active');
             document.querySelectorAll('.mobile-nav .nav-btn')[tabIndex]?.classList.add('active');
@@ -561,10 +571,30 @@
         }
 
         function removeCartItem(idx) { cart.splice(idx, 1); renderCart(); }
+        
         async function clearCart() {
             if(cart.length === 0) return;
             const confirmed = await customConfirm("Are you sure you want to completely clear your current list?");
             if(confirmed) { cart = []; renderCart(); }
+        }
+
+        // NEW: Inline Qty +/- Update Logic
+        function updateCartQty(idx, dir) {
+            let item = cart[idx];
+            let step = (['kg', 'gram', 'Ltr'].includes(item.unit)) ? 0.5 : 1;
+            let newQty = item.qty + (dir * step);
+            if(newQty > 0) {
+                cart[idx].qty = parseFloat(newQty.toFixed(2));
+                renderCart();
+            }
+        }
+
+        function setCartQty(idx, val) {
+            let newQty = parseFloat(val);
+            if(newQty > 0) {
+                cart[idx].qty = parseFloat(newQty.toFixed(2));
+            }
+            renderCart();
         }
 
         function renderCart() {
@@ -573,7 +603,7 @@
             const totalRow = document.getElementById('total-row-display');
             
             if (isListOnly) {
-                thead.innerHTML = `<tr><th>Item</th><th class="num">Qty</th><th>Rate (Fill Below)</th><th class="no-print" style="width:30px;"></th></tr>`;
+                thead.innerHTML = `<tr><th>Item</th><th class="num">Qty</th><th>Rate (Write)</th><th class="no-print" style="width:30px;"></th></tr>`;
                 totalRow.style.display = 'none';
             } else {
                 thead.innerHTML = `<tr><th>Item</th><th class="num">Rate</th><th class="num">Qty</th><th class="num">Amount (₹)</th><th class="no-print" style="width:30px;"></th></tr>`;
@@ -587,13 +617,27 @@
 
             cart.forEach((item, idx) => {
                 const amt = item.rate * item.qty; total += amt;
+                
+                // Qty Control HTML
+                const qtyControlHtml = `
+                    <div style="display:flex; justify-content:flex-end; align-items:center; gap:0.5rem;">
+                        <div class="qty-control no-print">
+                            <button class="qty-btn" onclick="updateCartQty(${idx}, -1)">−</button>
+                            <input type="number" class="qty-inline-input" value="${item.qty}" onchange="setCartQty(${idx}, this.value)" step="any">
+                            <button class="qty-btn" onclick="updateCartQty(${idx}, 1)">+</button>
+                        </div>
+                        <span class="print-only" style="font-weight:600;">${item.qty}</span>
+                        <span style="font-size:0.75em; color:var(--text-muted)">${item.unit}</span>
+                    </div>
+                `;
+
                 if (isListOnly) {
                     tbody.innerHTML += `
                         <tr style="animation: fadeSlideUp 0.3s ease;">
                             <td style="font-weight: 500;">${item.name}</td>
-                            <td class="num" style="font-weight: 600;">${item.qty} <span style="font-size:0.75em; color:var(--text-muted)">${item.unit}</span></td>
-                            <td><div style="border-bottom: 1px dotted #cbd5e1; height: 1.5rem; width: 80px;"></div></td>
-                            <td class="no-print action-cell"><button style="background:transparent; color:var(--danger); padding:0.2rem;" onclick="removeCartItem(${idx})">✕</button></td>
+                            <td class="num">${qtyControlHtml}</td>
+                            <td><div class="blank-write-space" style="display:block;"></div></td>
+                            <td class="no-print action-cell"><button class="btn-outline btn-small" style="border:none; color:var(--danger);" onclick="removeCartItem(${idx})">✕</button></td>
                         </tr>
                     `;
                 } else {
@@ -601,9 +645,9 @@
                         <tr style="animation: fadeSlideUp 0.3s ease;">
                             <td style="font-weight: 500;">${item.name}</td>
                             <td class="num" style="color:var(--text-muted)">₹${item.rate}</td>
-                            <td class="num">${item.qty} <span style="font-size:0.75em; color:var(--text-muted)">${item.unit}</span></td>
+                            <td class="num">${qtyControlHtml}</td>
                             <td class="num" style="font-weight: 600; color:var(--text-main);">₹${amt.toFixed(2)}</td>
-                            <td class="no-print action-cell"><button style="background:transparent; color:var(--danger); padding:0.2rem;" onclick="removeCartItem(${idx})">✕</button></td>
+                            <td class="no-print action-cell"><button class="btn-outline btn-small" style="border:none; color:var(--danger);" onclick="removeCartItem(${idx})">✕</button></td>
                         </tr>
                     `;
                 }
@@ -667,7 +711,7 @@
             };
 
             html2pdf().set(opt).from(container).save().then(() => {
-                container.style.display = 'none'; // Hide it back after export
+                container.style.display = 'none';
             });
         }
 
@@ -747,7 +791,7 @@
             const item = appData.inventory.find(i => i.id === id);
             item.name = newName; item.unit = newUnit; item.rate = newRate;
             
-            // AUTO-SYNC TO CART AND HISTORY
+            // AUTO-SYNC
             const cartItem = cart.find(c => c.id === id); if(cartItem) { cartItem.name = newName; cartItem.unit = newUnit; cartItem.rate = newRate; }
             appData.lists.forEach(list => { let listChanged = false; list.items.forEach(li => { if(li.id === id) { li.name = newName; li.unit = newUnit; li.rate = newRate; listChanged = true; } }); if(listChanged) list.total = list.items.reduce((sum, i) => sum + (i.rate * i.qty), 0); });
 
@@ -763,7 +807,7 @@
             saveData(); renderCustomDropdown(); renderInventoryTable();
         }
 
-        // --- History & Data Logic ---
+        // --- History Logic ---
         function renderHistory() {
             const container = document.getElementById('history-container'); container.innerHTML = '';
             if (appData.lists.length === 0) { container.innerHTML = `<p style="color:var(--text-muted); grid-column: 1/-1; text-align:center; padding: 2rem;">No saved lists yet.</p>`; return; }
@@ -773,10 +817,10 @@
                         <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">${list.date}</div>
                         <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.5rem;">${list.title}</div>
                         <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom: 1rem;">${list.items.length} Items | Total: <span style="color:var(--text-main); font-weight:600;">₹${list.total.toFixed(2)}</span></p>
-                        <div class="history-actions" style="margin-top: auto;">
-                            <button class="btn-outline" style="padding:0.4rem; font-size:0.85rem;" onclick="loadList('${list.id}')">Load</button>
-                            <button class="btn-outline" style="padding:0.4rem; font-size:0.85rem; color:var(--text-main); border-color:var(--text-muted);" onclick="downloadHistoryPDF('${list.id}')">PDF</button>
-                            <button class="btn-danger" style="padding:0.4rem; font-size:0.85rem;" onclick="deleteList('${list.id}')">Del</button>
+                        <div class="history-actions">
+                            <button class="btn-outline" onclick="loadList('${list.id}')">Load</button>
+                            <button class="btn-outline" style="color:var(--text-main); border-color:var(--text-muted);" onclick="downloadHistoryPDF('${list.id}')">PDF</button>
+                            <button class="btn-danger" onclick="deleteList('${list.id}')">Del</button>
                         </div>
                     </div>
                 `;
@@ -803,12 +847,10 @@
             appData.lists = appData.lists.filter(l => l.id !== id); saveData(); renderHistory();
         }
 
-        // --- BLOB BASED BACKUP (App/Web Safe) ---
+        // --- BLOB BACKUP ---
         function downloadBackup() {
-            const jsonStr = JSON.stringify(appData);
-            const blob = new Blob([jsonStr], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = `GroceryPro_Backup_${new Date().toLocaleDateString().replace(/\//g,'-')}.json`;
+            const jsonStr = JSON.stringify(appData); const blob = new Blob([jsonStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `GroceryPro_Backup_${new Date().toLocaleDateString().replace(/\//g,'-')}.json`;
             document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
         }
 
