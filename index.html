@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#ffffff" id="theme-color-meta">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" id="apple-status-bar-meta">
+    <meta name="theme-color" content="#10b981" id="theme-color-meta">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="apple-status-bar-meta">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="GroceryPro">
@@ -16,9 +16,9 @@
         if (dark) {
             document.documentElement.classList.add('dark-html');
             document.querySelector('meta[name="theme-color"]').content = '#0d1f1a';
-            document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').content = 'black';
+            document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').content = 'black-translucent';
         }
-        // Light mode keeps default white (#ffffff) — already set in meta tag
+        // Light mode: keep green (#10b981) during splash — will update to white after splash hides
     })();
     </script>
     <title>GroceryPro - Minimalist Planner</title>
@@ -240,10 +240,12 @@ self.addEventListener('fetch', e => {
 
         /* html must also carry the bg — browser uses html for overscroll flash color */
         html {
-            background: #f0fdf4;
+            background: #10b981; /* Match splash accent — eliminates thin line between browser bar and splash */
             overscroll-behavior: none;
         }
         html.dark-html { background: #0d1f1a; }
+        html.app-ready { background: #f0fdf4; }
+        html.app-ready.dark-html { background: #0d1f1a; }
 
         body {
             background: var(--bg);
@@ -292,6 +294,9 @@ self.addEventListener('fetch', e => {
             justify-content: center; align-items: center;
             z-index: 999999;
             transition: opacity .5s ease-in-out, visibility .5s ease-in-out;
+            /* Extend behind status bar to eliminate any gap/line */
+            padding-top: env(safe-area-inset-top);
+            margin-top: calc(-1 * env(safe-area-inset-top));
         }
         #splash-screen.hidden { opacity:0; visibility:hidden; }
         .splash-content {
@@ -1369,6 +1374,13 @@ self.addEventListener('fetch', e => {
         const splash = document.getElementById('splash-screen');
         setTimeout(() => {
             splash.classList.add('hidden');
+            // Restore theme-color to match app after splash fades
+            const isDark = document.body.classList.contains('dark');
+            const themeMeta = document.querySelector('meta[name="theme-color"]');
+            const appleBarMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+            if (themeMeta) themeMeta.content = isDark ? '#0d1f1a' : '#ffffff';
+            if (appleBarMeta) appleBarMeta.content = isDark ? 'black-translucent' : 'default';
+            document.documentElement.classList.add('app-ready'); // restore html bg
             setTimeout(() => splash.remove(), 500);
         }, 1800);
     });
