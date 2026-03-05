@@ -3,250 +3,615 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#10b981">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#10b981" id="theme-color-meta">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="GroceryPro">
     <title>GroceryPro - Minimalist Planner</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+        onerror="window._pdfLibMissing=true"></script>
     <style>
+        /* ── DESIGN TOKENS ─────────────────────────────────────────── */
+        :root {
+            --bg:             #f0fdf4;
+            --surface:        rgba(255,255,255,0.85);
+            --solid:          #ffffff;
+            --text:           #0f172a;
+            --muted:          #64748b;
+            --border:         #cbd5e1;
+            --border-light:   #e2e8f0;
+            --accent:         #10b981;
+            --accent-hover:   #059669;
+            --accent-light:   #d1fae5;
+            --danger:         #ef4444;
+            --radius:         12px;
+            --shadow:         0 10px 15px -3px rgba(0,0,0,.05), 0 4px 6px -2px rgba(0,0,0,.025);
+            --ease:           cubic-bezier(0.4,0,0.2,1);
+            --ease-spring:    cubic-bezier(0.16,1,0.3,1);
+            --transition:     all 0.3s var(--ease);
+        }
+
+        /* ── DARK MODE TOKENS ───────────────────────────────────────── */
+        body.dark {
+            --bg:           #0d1f1a;
+            --surface:      rgba(17,34,28,0.95);
+            --solid:        #132920;
+            --text:         #e2fdf4;
+            --muted:        #6aac92;
+            --border:       #1e4a38;
+            --border-light: #1a3d2e;
+            --accent-light: #0d3326;
+            --shadow:       0 10px 15px -3px rgba(0,0,0,.3), 0 4px 6px -2px rgba(0,0,0,.2);
+        }
+        body.dark input,
+        body.dark select                { background:var(--bg); color:var(--text); border-color:var(--border); }
+        body.dark input:focus,
+        body.dark select:focus          { background:var(--solid); }
+        body.dark .custom-select__trigger       { background:var(--bg); color:var(--text); }
+        body.dark .custom-select__trigger:hover { background:var(--accent-light); }
+        body.dark .custom-options       { background:var(--solid); border-color:var(--accent); }
+        body.dark .custom-option        { color:var(--text); border-bottom-color:var(--border); }
+        body.dark .custom-option:hover,
+        body.dark .custom-option.selected       { background:var(--accent); color:#fff; }
+        body.dark .nav-btn:hover        { background:#1a3d2e; }
+        body.dark #cart-table th,
+        body.dark #inventory-table th   { background:#0d2b1f; }
+        body.dark #cart-table      tbody tr:nth-child(even),
+        body.dark #inventory-table tbody tr:nth-child(even) { background:#0f2d20; }
+        body.dark .custom-options  { background:#132920; }
+        body.dark #cart-table tbody tr:hover,
+        body.dark #inventory-table tbody tr:hover { background:#1a3d2e; }
+        body.dark .total-row            { background:#132920; }
+        body.dark .dialog-box           { background:#132920; }
+        body.dark .unit-pill            { background:#0d2b1f; border-color:#1e4a38; }
+        body.dark .scroll-hint          { background:#0d2b1f; border-color:#1e4a38; }
+        body.dark .qty-value            { background:var(--accent-light); color:#10b981; }
+        body.dark .btn-danger           { background:#2d1515; color:#f87171; }
+        body.dark .btn-danger:hover     { background:#5c2020; color:#fff; }
+        body.dark .file-upload-label    { background:#0d2b1f; }
+        body.dark .onboarding-hint      { box-shadow:0 10px 25px rgba(0,0,0,.5); }
+        body.dark .info-box             { border-color:var(--border); }
+
+        /* ── RESET & BASE ───────────────────────────────────────────── */
+        *, *::before, *::after {
+            box-sizing: border-box; margin: 0; padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;  /* removes grey flash on Android tap */
+        }
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-        :root {
-            --bg: #f0fdf4; 
-            --surface: rgba(255, 255, 255, 0.85); 
-            --solid-surface: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border: #cbd5e1; 
-            --accent: #10b981; 
-            --accent-hover: #059669;
-            --accent-light: #d1fae5;
-            --danger: #ef4444;
-            --radius: 12px;
-            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        /* html must also carry the bg — browser uses html for overscroll flash color */
+        html {
+            background: #f0fdf4;
+            overscroll-behavior: none;
         }
+        html.dark-html { background: #0d1f1a; }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-        body { background-color: var(--bg); color: var(--text-main); display: flex; flex-direction: column; height: 100dvh; overscroll-behavior-y: contain; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            height: 100dvh;
+            overscroll-behavior: none;
+            -webkit-overflow-scrolling: touch;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+        h2 { font-size: 1.25rem; font-weight: 600; }
+        h3 { font-size: 1.1rem;  font-weight: 600; margin-bottom: 1rem; }
 
-        /* LAUNCH/SPLASH SCREEN CSS */
+        /* ── ANIMATIONS ─────────────────────────────────────────────── */
+        @keyframes fadeSlideUp  { from { opacity:0; transform:translateY(15px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes splashPulse  { 0%   { transform:scale(.95); opacity:.8; }    100% { transform:scale(1.05); opacity:1; } }
+        @keyframes driveCart    {
+            0%,100% { transform:translateX(0)   translateY(0)  rotate(0deg);  }
+            25%     { transform:translateX(3px)  translateY(-1px) rotate(3deg);  }
+            50%     { transform:translateX(5px)  translateY(0)  rotate(0deg);  }
+            75%     { transform:translateX(3px)  translateY(-1px) rotate(-3deg); }
+        }
+        .animate-entry  { animation: fadeSlideUp 0.4s var(--ease-spring) forwards; }
+        .animated-cart  { animation: driveCart   2.5s infinite ease-in-out; display:inline-block; }
+
+        /* ── SPLASH SCREEN ──────────────────────────────────────────── */
         #splash-screen {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
-            background-color: var(--accent); display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 999999;
-            transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+            position: fixed; inset: 0;
+            background: var(--accent);
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 999999;
+            transition: opacity .5s ease-in-out, visibility .5s ease-in-out;
         }
-        #splash-screen.hidden { opacity: 0; visibility: hidden; }
+        #splash-screen.hidden { opacity:0; visibility:hidden; }
         .splash-content {
-            display: flex; align-items: center; gap: 12px; color: #ffffff;
-            font-size: 2.5rem; font-weight: 700;
+            display: flex; align-items: center; gap: 12px;
+            color: #fff; font-size: 2.5rem; font-weight: 700;
             animation: splashPulse 1.5s infinite alternate ease-in-out;
         }
-        .splash-content svg { width: 50px; height: 50px; stroke-width: 2.5; }
-        @keyframes splashPulse { 0% { transform: scale(0.95); opacity: 0.8; } 100% { transform: scale(1.05); opacity: 1; } }
+        .splash-content svg { width:50px; height:50px; stroke-width:2.5; }
 
-        /* Animations */
-        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-entry { animation: fadeSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes driveCart { 0%, 100% { transform: translateX(0) translateY(0) rotate(0deg); } 25% { transform: translateX(3px) translateY(-1px) rotate(3deg); } 50% { transform: translateX(5px) translateY(0) rotate(0deg); } 75% { transform: translateX(3px) translateY(-1px) rotate(-3deg); } }
-        .animated-cart { animation: driveCart 2.5s infinite ease-in-out; display: inline-block; }
+        /* ── TOP BAR ────────────────────────────────────────────────── */
+        .top-bar {
+            background: var(--surface);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center;
+            padding: 1rem 1.5rem;
+            /* Safe area for notch / Dynamic Island */
+            padding-top: max(1rem, env(safe-area-inset-top));
+            padding-left:  max(1.5rem, env(safe-area-inset-left));
+            padding-right: max(1.5rem, env(safe-area-inset-right));
+            position: sticky; top: 0; z-index: 10;
+        }
+        .logo { font-size:1.25rem; font-weight:700; color:var(--accent); margin-right:auto; display:flex; align-items:center; gap:.5rem; }
+        .desktop-nav { display:flex; gap:.5rem; }
+        .nav-btn {
+            background: transparent; border: none;
+            padding: .6rem 1rem; border-radius: 8px;
+            color: var(--muted); font-size:.95rem; font-weight:500;
+            cursor: pointer; transition: var(--transition);
+            display: flex; align-items:center; gap:.5rem;
+        }
+        .nav-btn:hover  { color:var(--text); background:var(--accent-light); }
+        .nav-btn.active { background:var(--accent-light); color:var(--accent-hover); }
 
-        /* Top Bar */
-        .top-bar { background-color: var(--surface); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 1rem 1.5rem; z-index: 10; position: sticky; top: 0; }
-        .logo { font-size: 1.25rem; font-weight: 700; color: var(--accent); margin-right: auto; display: flex; align-items: center; gap: 0.5rem; }
-        .desktop-nav { display: flex; gap: 0.5rem; }
-        .nav-btn { background: transparent; border: none; padding: 0.6rem 1rem; border-radius: 8px; color: var(--text-muted); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 0.5rem;}
-        .nav-btn:hover { color: var(--text-main); background: #f8fafc; }
-        .nav-btn.active { background-color: var(--accent-light); color: var(--accent-hover); }
+        /* ── LAYOUT ─────────────────────────────────────────────────── */
+        .main-content {
+            flex: 1; padding: 1.5rem;
+            padding-left:  max(1.5rem, env(safe-area-inset-left));
+            padding-right: max(1.5rem, env(safe-area-inset-right));
+            overflow-y: auto; scroll-behavior: smooth;
+            overscroll-behavior-y: auto;
+            background: var(--bg);
+        }
+        .view-section { display:none; max-width:900px; margin:0 auto; padding-bottom:4rem; }
+        .view-section.active { display:block; animation:fadeSlideUp .3s ease forwards; }
 
-        /* Main Workspace */
-        .main-content { flex: 1; padding: 1.5rem; overflow-y: auto; scroll-behavior: smooth; overscroll-behavior-y: auto; }
-        .view-section { display: none; max-width: 900px; margin: 0 auto; padding-bottom: 4rem; }
-        .view-section.active { display: block; animation: fadeSlideUp 0.3s ease forwards; }
+        /* ── CARDS ──────────────────────────────────────────────────── */
+        .card {
+            background: var(--solid);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+            transition: var(--transition);
+        }
+        .card-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
 
-        /* Cards & Forms */
-        .card { background: var(--solid-surface); border-radius: var(--radius); padding: 1.5rem; border: 1px solid var(--border); box-shadow: var(--shadow); margin-bottom: 1.5rem; transition: var(--transition); }
-        .card-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
-        h2 { font-size: 1.25rem; font-weight: 600; }
-        h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        .grid-3 { display: grid; grid-template-columns: 2fr 1fr auto; gap: 1rem; align-items: end; }
-        
-        .grid-3-mobile { display: flex; gap: 1rem; flex-direction: row; } 
-        .grid-3-mobile button { flex: 1; }
+        /* ── GRID HELPERS ───────────────────────────────────────────── */
+        .grid-2        { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+        .grid-3        { display:grid; grid-template-columns:2fr 1fr auto; gap:1rem; align-items:end; }
+        .grid-3-mobile { display:flex; gap:1rem; flex-direction:row; }
+        .grid-3-mobile button { flex:1; }
 
-        .input-group { display: flex; flex-direction: column; gap: 0.4rem; position: relative; }
-        label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        input, select { padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; background: #f8fafc; outline: none; transition: var(--transition); width: 100%; }
-        input:focus, select:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); transform: translateY(-1px); }
+        /* ── FORM ELEMENTS ──────────────────────────────────────────── */
+        .input-group { display:flex; flex-direction:column; gap:.4rem; position:relative; }
+        label { font-size:.8rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
 
-        /* Custom Dropdown */
-        .custom-select-wrapper { position: relative; user-select: none; width: 100%; }
-        .custom-select { position: relative; display: flex; flex-direction: column; }
-        .custom-select__trigger { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; font-size: 0.95rem; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: var(--transition); height: 45px;}
-        .custom-select__trigger:hover { border-color: #94a3b8; }
-        .custom-select.open .custom-select__trigger { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-        .arrow { width: 10px; height: 10px; border-top: 2px solid var(--text-muted); border-right: 2px solid var(--text-muted); transform: rotate(135deg); transition: transform 0.3s; margin-bottom: 4px; }
-        .custom-select.open .arrow { transform: rotate(-45deg); margin-top: 4px; border-color: var(--accent); }
-        .custom-options { position: absolute; display: block; top: 100%; left: 0; right: 0; border: 1px solid var(--border); border-top: none; background: #fff; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-10px); border-radius: 0 0 8px 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 99; max-height: 220px; overflow-y: auto; }
-        .custom-select.open .custom-options { opacity: 1; visibility: visible; pointer-events: all; transform: translateY(0); }
-        .custom-option { position: relative; display: block; padding: 0.8rem 1rem; font-size: 0.95rem; color: var(--text-main); cursor: pointer; transition: background 0.2s; border-bottom: 1px solid #f1f5f9; }
-        .custom-option:last-child { border-bottom: none; }
-        .custom-option:hover { background-color: var(--accent-light); color: var(--accent-hover); padding-left: 1.2rem; }
-        .custom-option.selected { background-color: var(--accent); color: #fff; }
+        input {
+            padding: .75rem 1rem;
+            border: 1.5px solid var(--border); border-radius:10px;
+            font-size: .95rem; background:var(--bg);
+            outline: none; width:100%;
+            transition: var(--transition);
+            color: var(--text);
+        }
+        input:focus {
+            border-color: var(--accent); background:var(--solid);
+            box-shadow: 0 0 0 3px rgba(16,185,129,.15);
+            transform: translateY(-1px);
+        }
 
-        /* ONBOARDING HINT BOX */
-        .onboarding-hint { position: absolute; top: calc(100% + 12px); left: 0; background: var(--accent); color: white; padding: 1.2rem; border-radius: 12px; width: 260px; z-index: 1000; box-shadow: 0 10px 25px rgba(16,185,129,0.4); display: none; animation: fadeSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; border: 2px solid #059669; }
-        .onboarding-hint .hint-arrow { position: absolute; top: -10px; left: 20px; width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 10px solid var(--accent); filter: drop-shadow(0 -2px 1px rgba(5,150,105,0.5)); }
-        .onboarding-hint p { font-size: 0.85rem; line-height: 1.5; margin-bottom: 1rem; }
-        .onboarding-hint button { background: white; color: var(--accent); border: none; padding: 0.4rem 1rem; font-size: 0.85rem; font-weight: 600; border-radius: 8px; cursor: pointer; width: 100%; height: auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .onboarding-hint button:hover { background: #f8fafc; }
+        /* Native <select> – custom arrow, theme ring */
+        select {
+            padding: .75rem 1rem; padding-right:2.2rem;
+            border: 1.5px solid var(--border); border-radius:10px;
+            font-size: .95rem; background:var(--bg);
+            color: var(--text);
+            outline: none; width:100%; cursor:pointer;
+            appearance:none; -webkit-appearance:none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right .85rem center;
+            transition: var(--transition);
+        }
+        select:focus { border-color:var(--accent); background-color:var(--solid); box-shadow:0 0 0 3px rgba(16,185,129,.15); }
+        select option { background:var(--solid); color:var(--text); }
 
-        /* Buttons */
-        button { padding: 0.75rem 1.5rem; background-color: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 500; cursor: pointer; transition: var(--transition); display: flex; align-items: center; justify-content: center; gap: 0.5rem; height: 45px;}
-        button:hover { background-color: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(16,185,129,0.3); }
-        button:active { transform: translateY(1px) scale(0.96); box-shadow: none; } 
-        .btn-outline { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
-        .btn-outline:hover { background: var(--accent); color: #fff; }
-        .btn-danger { background: #fee2e2; color: var(--danger); border: none;}
-        .btn-danger:hover { background: #fca5a5; color: white; }
-        .btn-small { padding: 0.4rem 0.6rem; font-size: 0.8rem; height: auto; }
+        /* ── CUSTOM ITEM DROPDOWN ───────────────────────────────────── */
+        .custom-select-wrapper { position:relative; user-select:none; width:100%; }
+        .custom-select         { position:relative; display:flex; flex-direction:column; }
 
-        .unit-pill { display: inline-flex; align-items: center; background: #f1f5f9; color: var(--text-main); font-size: 0.85rem; padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid var(--border); }
-        .unit-pill button { background: transparent; border: none; padding: 0 0 0 0.5rem; color: var(--text-muted); height: auto; display: flex; align-items: center; margin: 0; box-shadow: none; }
-        .unit-pill button:hover { color: var(--danger); transform: none; background: transparent; }
+        .custom-select__trigger {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:.75rem 1rem; height:45px;
+            font-size:.95rem; font-weight:500; color:var(--text);
+            background:var(--bg); border:1.5px solid var(--border); border-radius:10px;
+            cursor:pointer; transition:var(--transition);
+        }
+        .custom-select__trigger:hover { border-color:var(--accent); background:var(--accent-light); }
+        .custom-select.open .custom-select__trigger {
+            background:var(--accent); color:#fff;
+            border-color:var(--accent); border-radius:10px 10px 0 0;
+            box-shadow:0 0 0 3px rgba(16,185,129,.2);
+        }
+        .custom-select.open .custom-select__trigger span { color:#fff; }
 
-        .toggle-container { display: inline-flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.5rem; border-radius: 12px; transition: background 0.3s; }
-        .toggle-container:hover { background: #f8fafc; }
-        .toggle-label-text { font-size: 0.9rem; font-weight: 600; color: var(--text-main); user-select: none; }
-        .toggle-switch { position: relative; width: 44px; height: 24px; background: #cbd5e1; border-radius: 12px; transition: 0.4s cubic-bezier(0.4, 0.0, 0.2, 1); box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
-        .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: 0.4s cubic-bezier(0.4, 0.0, 0.2, 1); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        input[type="checkbox"]:checked + .toggle-switch { background: var(--accent); }
-        input[type="checkbox"]:checked + .toggle-switch::after { transform: translateX(20px); }
+        .arrow {
+            width:8px; height:8px; flex-shrink:0;
+            border-top:2px solid var(--muted); border-right:2px solid var(--muted);
+            transform:rotate(135deg); transition:transform .3s;
+        }
+        .custom-select.open .arrow { transform:rotate(-45deg); border-color:#fff; }
 
-        /* ====================================================================
-           1. EXACT MAKER TABLE CSS (CART-TABLE) FOR WRAP, BORDER, SHADES 
-           ==================================================================== */
-        .table-responsive { width: 100%; margin-top: 1rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; overflow: hidden; }
-        
+        .custom-options {
+            position:absolute; top:100%; left:0; right:0; z-index:99;
+            background:var(--solid);
+            border:1.5px solid var(--accent); border-top:none;
+            border-radius:0 0 10px 10px;
+            box-shadow:0 12px 20px -4px rgba(16,185,129,.15);
+            max-height:240px; overflow-y:auto;
+            opacity:0; visibility:hidden; pointer-events:none;
+            transform:translateY(-6px);
+            transition:all .25s var(--ease-spring);
+        }
+        .custom-select.open .custom-options { opacity:1; visibility:visible; pointer-events:all; transform:translateY(0); }
+
+        .custom-option {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:.75rem 1rem; font-size:.92rem; color:var(--text);
+            cursor:pointer; border-bottom:1px solid #f1f5f9;
+            transition:all .15s ease;
+        }
+        .custom-option:last-child { border-bottom:none; }
+        .custom-option:hover          { background:var(--accent); color:#fff; padding-left:1.2rem; }
+        .custom-option:hover span     { color:rgba(255,255,255,.75) !important; }
+        .custom-option.selected       { background:var(--accent); color:#fff; font-weight:600; }
+        .custom-option.selected span  { color:rgba(255,255,255,.75) !important; }
+
+        /* ── ONBOARDING HINT ────────────────────────────────────────── */
+        .onboarding-hint {
+            position:absolute; top:calc(100% + 12px); left:0;
+            background:var(--accent); color:#fff;
+            padding:1.2rem; border-radius:12px; width:260px;
+            z-index:1000; display:none; border:2px solid var(--accent-hover);
+            box-shadow:0 10px 25px rgba(16,185,129,.4);
+            animation:fadeSlideUp .5s var(--ease-spring) forwards;
+        }
+        .onboarding-hint .hint-arrow {
+            position:absolute; top:-9px; left:22px;
+            width:0; height:0;
+            border-left:9px solid transparent;
+            border-right:9px solid transparent;
+            border-bottom:9px solid var(--accent-hover);
+        }
+        /* Inner arrow layered on top for clean triangle (no glow) */
+        .onboarding-hint .hint-arrow::after {
+            content:'';
+            position:absolute; top:2px; left:-8px;
+            width:0; height:0;
+            border-left:8px solid transparent;
+            border-right:8px solid transparent;
+            border-bottom:8px solid var(--accent);
+        }
+        .onboarding-hint p      { font-size:.85rem; line-height:1.5; margin-bottom:1rem; }
+        .onboarding-hint button {
+            background:#fff; color:var(--accent); border:none;
+            padding:.4rem 1rem; font-size:.85rem; font-weight:600;
+            border-radius:8px; cursor:pointer; width:100%; height:auto;
+            box-shadow:0 2px 4px rgba(0,0,0,.1);
+        }
+        .onboarding-hint button:hover { background:#f8fafc; transform:none; }
+
+        /* ── BUTTONS ────────────────────────────────────────────────── */
+        button {
+            padding:.75rem 1.5rem; height:45px;
+            background:var(--accent); color:#fff;
+            border:none; border-radius:8px;
+            font-weight:500; cursor:pointer;
+            display:flex; align-items:center; justify-content:center; gap:.5rem;
+            transition:var(--transition);
+            touch-action: manipulation;   /* prevents double-tap zoom on buttons */
+            -webkit-user-select: none; user-select: none;
+        }
+        button:hover   { background:var(--accent-hover); transform:translateY(-2px); box-shadow:0 4px 10px rgba(16,185,129,.3); }
+        button:active  { transform:translateY(1px) scale(.96); box-shadow:none; }
+
+        .btn-outline { background:transparent; color:var(--accent); border:1.5px solid var(--accent); }
+        .btn-outline:hover { background:var(--accent); color:#fff; }
+
+        .btn-danger { background:#fee2e2; color:var(--danger); border:none; }
+        .btn-danger:hover { background:#fca5a5; color:#fff; }
+
+        .btn-small { padding:.4rem .6rem; font-size:.8rem; height:auto; }
+
+        /* Delete button inside table – reusable class */
+        .btn-del-row {
+            background:#fee2e2; color:var(--danger); border:none; border-radius:8px;
+            width:28px; height:28px; padding:0; cursor:pointer; flex-shrink:0;
+            display:flex; align-items:center; justify-content:center; font-size:1rem;
+        }
+        .btn-del-row:hover { background:#fca5a5; color:#fff; transform:none; box-shadow:none; }
+
+        /* ── TOGGLE SWITCH ──────────────────────────────────────────── */
+        .toggle-container { display:inline-flex; align-items:center; gap:.75rem; cursor:pointer; padding:.5rem; border-radius:12px; transition:background .3s; }
+        .toggle-container:hover { background:var(--accent-light); }
+        .toggle-label-text { font-size:.9rem; font-weight:600; color:var(--text); user-select:none; }
+        .toggle-switch {
+            position:relative; width:44px; height:24px;
+            background:var(--border); border-radius:12px;
+            transition:.4s var(--ease); box-shadow:inset 0 2px 4px rgba(0,0,0,.1);
+        }
+        .toggle-switch::after {
+            content:''; position:absolute; top:2px; left:2px;
+            width:20px; height:20px; background:#fff; border-radius:50%;
+            transition:.4s var(--ease); box-shadow:0 2px 5px rgba(0,0,0,.2);
+        }
+        input[type="checkbox"]:checked + .toggle-switch            { background:var(--accent); }
+        input[type="checkbox"]:checked + .toggle-switch::after     { transform:translateX(20px); }
+
+        /* ── UNIT PILL TAGS ─────────────────────────────────────────── */
+        .unit-pill { display:inline-flex; align-items:center; background:#f1f5f9; color:var(--text); font-size:.85rem; padding:.3rem .8rem; border-radius:20px; border:1px solid var(--border); }
+        .unit-pill button { background:transparent; border:none; padding:0 0 0 .5rem; color:var(--muted); height:auto; display:flex; align-items:center; margin:0; box-shadow:none; }
+        .unit-pill button:hover { color:var(--danger); transform:none; background:transparent; }
+
+        /* ── DATA TABLE (CART & INVENTORY) ─────────────────────────── */
+        .table-responsive {
+            width:100%; margin-top:1rem;
+            border-radius:10px; border:1px solid var(--border-light);
+            background:var(--solid); overflow-x:auto;
+            -webkit-overflow-scrolling:touch;
+        }
         #cart-table, #inventory-table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed; /* STRICT LAYOUT: FORCES WRAP, STOPS HORIZONTAL PUSH */
-            background: #fff;
+            width:100%; min-width:420px;
+            border-collapse:collapse; table-layout:auto;
+            background:var(--solid);
         }
+        /* Item name column wraps naturally */
+        #cart-table td:nth-child(2), #cart-table th:nth-child(2) { min-width:100px; word-break:break-word; white-space:normal; line-height:1.5; }
+        /* Qty pill column never crushes */
+        #cart-table td:nth-child(4), #cart-table th:nth-child(4) { min-width:110px; white-space:nowrap; }
+        /* Total column */
+        #cart-table td:nth-child(5), #cart-table th:nth-child(5) { white-space:nowrap; text-align:right; }
+        /* Delete column – first, fixed narrow */
+        #cart-table td:nth-child(1), #cart-table th:nth-child(1) { width:36px; min-width:36px; text-align:center; }
 
-        /* Column widths to prevent overflow */
-        #cart-table th:nth-child(1), #cart-table td:nth-child(1) { width: 38%; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; }
-        #cart-table th:nth-child(2), #cart-table td:nth-child(2) { width: 15%; text-align: center; }
-        #cart-table th:nth-child(3), #cart-table td:nth-child(3) { width: 27%; text-align: center; }
-        #cart-table th:nth-child(4), #cart-table td:nth-child(4) { width: 12%; text-align: center; }
-        
-        /* Borders & Padding for all cells */
-        #cart-table th, #cart-table td, #inventory-table th, #inventory-table td {
-            border: 1px solid #cbd5e1;
-            padding: 0.8rem 0.5rem;
-            font-size: 0.9rem;
-            vertical-align: middle;
+        #cart-table th, #cart-table td,
+        #inventory-table th, #inventory-table td {
+            border:1px solid var(--border-light);
+            padding:.75rem .6rem;
+            font-size:.9rem; vertical-align:middle;
         }
-
         #cart-table th, #inventory-table th {
-            font-weight: 600; color: #0f172a; background: #e2e8f0; text-transform: uppercase; font-size: 0.8rem; border-bottom: 2px solid #94a3b8;
+            font-weight:600; color:var(--accent-hover);
+            background:#f0fdf4; text-transform:uppercase;
+            font-size:.75rem; letter-spacing:.4px;
+            border-bottom:2px solid #86efac; white-space:nowrap;
+        }
+        #cart-table      tbody tr:nth-child(even),
+        #inventory-table tbody tr:nth-child(even) { background:var(--bg); }
+        #cart-table      tbody tr:nth-child(odd),
+        #inventory-table tbody tr:nth-child(odd)  { background:var(--solid); }
+        #cart-table      tbody tr:hover,
+        #inventory-table tbody tr:hover           { background:#f0fdf4; transition:background .15s; }
+
+        .total-row {
+            display:flex; justify-content:space-between; align-items:center;
+            font-size:1.15rem; font-weight:700;
+            padding:1.2rem 1rem; margin-top:1rem;
+            background:var(--solid); border-radius:12px;
+            border:1px solid var(--border); box-shadow:0 2px 4px rgba(0,0,0,.02);
         }
 
-        /* Zebra Striping (Alternating Shades) */
-        #cart-table tbody tr:nth-child(even), #inventory-table tbody tr:nth-child(even) { background-color: #f1f5f9; }
-        #cart-table tbody tr:nth-child(odd), #inventory-table tbody tr:nth-child(odd) { background-color: #ffffff; }
-
-        .total-row { display: flex; justify-content: space-between; align-items: center; font-size: 1.15rem; font-weight: 700; padding: 1.2rem 1rem; margin-top: 1rem; background: #fff; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-
-        /* ====================================================================
-           2. ANTI-SQUISH QUANTITY CONTROLS (+/-) FOR MAKER TABLE
-           ==================================================================== */
-        .qty-controls { 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            gap: 6px; 
-            background: #ffffff; 
-            padding: 4px; 
-            border-radius: 8px; 
-            border: 1px solid #94a3b8; 
-            width: max-content; /* Prevents squishing */
-            margin: 0 auto;
+        /* ── QTY PILL CONTROLS (+/−) ────────────────────────────────── */
+        .qty-controls {
+            display:inline-flex; align-items:center; justify-content:center;
+            background:var(--accent-light); border:1.5px solid var(--accent);
+            border-radius:30px; overflow:hidden; white-space:nowrap;
         }
-        .qty-btn { 
-            width: 28px; 
-            height: 28px; 
-            padding: 0; 
-            background: #e2e8f0; 
-            color: #0f172a; 
-            border: none; 
-            border-radius: 6px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 1.2rem; 
-            font-weight: bold; 
-            cursor: pointer; 
-            flex-shrink: 0; /* Protects buttons from shrinking */
+        .qty-btn {
+            width:28px; height:28px; padding:0; flex-shrink:0;
+            background:var(--accent); color:#fff; border:none; border-radius:0;
+            display:flex; align-items:center; justify-content:center;
+            font-size:1.1rem; font-weight:bold; cursor:pointer;
+            transition:background .2s; box-shadow:none;
         }
-        .qty-btn:active { transform: scale(0.9); }
-        .qty-value { font-weight: 700; min-width: 24px; text-align: center; color: var(--text-main); font-size: 0.9rem;}
+        .qty-btn:hover  { background:var(--accent-hover); transform:none; box-shadow:none; }
+        .qty-btn:active { transform:scale(.9); }
+        .qty-value {
+            font-weight:700; min-width:36px; text-align:center;
+            color:var(--accent-hover); font-size:.85rem;
+            padding:0 4px; background:var(--accent-light); line-height:28px;
+        }
 
-        /* File Upload */
-        .file-upload-wrapper { position: relative; width: 100%; }
-        .file-upload-input { position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-        .file-upload-label { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; border: 2px dashed var(--accent); border-radius: 8px; background: #f0fdf4; color: var(--accent-hover); transition: var(--transition); cursor: pointer; }
-        .file-upload-wrapper:hover .file-upload-label { background: #d1fae5; }
-        .file-name { margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted); }
+        /* ── ACTION CELL (EDIT / DEL) ───────────────────────────────── */
+        .action-cell { display:flex; flex-direction:row; gap:.4rem; align-items:center; flex-wrap:nowrap; }
+        .action-cell button { white-space:nowrap; flex-shrink:0; min-width:38px; }
 
-        /* Mobile Adjustments */
-        .mobile-nav { display: none; }
-        @media (max-width: 768px) {
-            .desktop-nav { display: none; }
-            .main-content { padding: 1rem; padding-bottom: 6rem; }
-            .card { padding: 1rem; }
-            .grid-3 { grid-template-columns: 1fr; gap: 0.75rem;}
-            .grid-2 { grid-template-columns: 1fr; }
-            .grid-3-mobile { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; }
-            
-            #cart-table th, #cart-table td { padding: 0.5rem 0.2rem; font-size: 0.8rem; }
-            .qty-controls { gap: 4px; padding: 2px; }
-            .qty-btn { width: 24px; height: 24px; font-size: 1.1rem; }
-            .qty-value { min-width: 16px; font-size: 0.8rem; }
-            
-            .btn-small { padding: 0.3rem 0.5rem; font-size: 0.75rem; }
-            input, select, .custom-select__trigger { padding: 0.6rem; font-size: 0.9rem; height: 42px;}
-            button { height: 42px; font-size: 0.9rem; }
-            
-            .mobile-nav { 
-                display: flex; position: fixed; bottom: 0; left: 0; width: 100%; 
-                background: var(--surface); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-                border-top: 1px solid var(--border); justify-content: space-around; padding: 0.5rem 0; z-index: 100; padding-bottom: env(safe-area-inset-bottom); 
+        /* ── SCROLL HINT (mobile only) ──────────────────────────────── */
+        .scroll-hint {
+            display:none; align-items:center; justify-content:center; gap:.4rem;
+            font-size:.78rem; color:var(--muted);
+            padding:.4rem .6rem; background:var(--bg);
+            border-top:1px solid var(--border-light);
+            border-radius:0 0 10px 10px;
+        }
+        @media (max-width:600px) { .scroll-hint { display:flex; } }
+
+        /* ── DARK MODE TOGGLE BUTTON ────────────────────────────────── */
+        .theme-btn {
+            background:transparent; border:1.5px solid var(--border);
+            border-radius:20px; height:34px; padding:0 .75rem;
+            color:var(--muted); font-size:.8rem; font-weight:600;
+            cursor:pointer; display:flex; align-items:center; gap:.4rem;
+            transition:var(--transition); flex-shrink:0;
+        }
+        .theme-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-light); transform:none; box-shadow:none; }
+        .theme-btn svg   { width:16px; height:16px; transition:var(--transition); }
+
+        /* ── MAKER HEADER BANNER ────────────────────────────────────── */
+        .maker-banner {
+            display:flex; align-items:center; gap:.75rem;
+            background:linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+            /* Pull out to card edges, sit flush at top */
+            margin: -1.5rem -1.5rem 1.25rem -1.5rem;
+            border-radius: var(--radius) var(--radius) 0 0;
+            padding: 1rem 1.5rem;
+            color:#fff;
+        }
+        @media (max-width:768px) {
+            .maker-banner { margin: -1rem -1rem 1rem -1rem; padding: .85rem 1rem; }
+        }
+        .maker-banner svg   { flex-shrink:0; opacity:.9; }
+        .maker-banner-text  { flex:1; min-width:0; }
+        .maker-banner-title { font-size:1rem; font-weight:700; line-height:1.2; }
+        .maker-banner-sub   { font-size:.78rem; opacity:.85; margin-top:2px; white-space:normal; }
+        .file-upload-wrapper { position:relative; width:100%; }
+        .file-upload-input   { position:absolute; inset:0; opacity:0; cursor:pointer; }
+        .file-upload-label   {
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            padding:2rem; border:2px dashed var(--accent); border-radius:8px;
+            background:#f0fdf4; color:var(--accent-hover);
+            transition:var(--transition); cursor:pointer;
+        }
+        .file-upload-wrapper:hover .file-upload-label { background:#d1fae5; }
+        .file-name { margin-top:.5rem; font-size:.85rem; color:var(--muted); }
+
+        /* ── INVENTORY SEARCH BAR ───────────────────────────────────── */
+        .search-wrap { position:relative; margin-bottom:1rem; }
+        .search-wrap svg { position:absolute; left:.75rem; top:50%; transform:translateY(-50%); pointer-events:none; color:var(--muted); }
+        .search-input { padding:.6rem .75rem .6rem 2.2rem !important; font-size:.88rem !important; }
+        .search-clear {
+            position:absolute; right:.5rem; top:50%; transform:translateY(-50%);
+            background:var(--border); border:none; border-radius:50%;
+            width:20px; height:20px; padding:0; cursor:pointer;
+            display:none; align-items:center; justify-content:center;
+            color:var(--muted); font-size:.75rem; transition:var(--transition);
+        }
+        .search-clear.visible { display:flex; }
+        .search-clear:hover { background:var(--danger); color:#fff; transform:translateY(-50%) scale(1.1); box-shadow:none; }
+        .inv-count { font-size:.78rem; color:var(--muted); margin-bottom:.5rem; }
+
+        /* ── PDF EXPORT LOADING OVERLAY ─────────────────────────────── */
+        #pdf-overlay {
+            position:fixed; inset:0; z-index:99999;
+            background:rgba(0,0,0,.55); backdrop-filter:blur(3px);
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            gap:1rem; opacity:0; visibility:hidden;
+            transition:opacity .25s ease, visibility .25s ease;
+        }
+        #pdf-overlay.active { opacity:1; visibility:visible; }
+        .pdf-spinner {
+            width:48px; height:48px;
+            border:4px solid rgba(255,255,255,.2);
+            border-top-color:#fff;
+            border-radius:50%;
+            animation:spin .8s linear infinite;
+        }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .pdf-overlay-text { color:#fff; font-size:.95rem; font-weight:600; letter-spacing:.3px; }
+
+        /* ── HISTORY RENAME INLINE ───────────────────────────────────── */
+        .rename-input {
+            font-size:.95rem; font-weight:600; padding:.2rem .5rem;
+            border:1.5px solid var(--accent); border-radius:6px;
+            background:var(--bg); color:var(--text);
+            width:100%; outline:none;
+        }
+        .about-features    { display:flex; flex-direction:column; gap:.6rem; }
+        .about-feat-row    { display:flex; gap:.75rem; align-items:flex-start; padding:.65rem .75rem; border-radius:10px; background:var(--bg); border:1px solid var(--border-light); }
+        .about-feat-icon   { width:28px; height:28px; background:var(--accent-light); border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+        .about-feat-title  { font-size:.88rem; font-weight:600; color:var(--text); }
+        .about-feat-desc   { font-size:.8rem; color:var(--muted); margin-top:1px; }
+
+        /* ── CUSTOM DIALOG ──────────────────────────────────────────── */
+        .dialog-overlay {
+            position:fixed; inset:0;
+            background:rgba(15,23,42,.5); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+            display:flex; align-items:center; justify-content:center;
+            opacity:0; visibility:hidden; z-index:9999;
+            transition:all .3s ease;
+        }
+        .dialog-overlay.active { opacity:1; visibility:visible; }
+        .dialog-box {
+            background:var(--solid); width:90%; max-width:350px;
+            border-radius:16px; padding:1.5rem;
+            box-shadow:0 20px 25px -5px rgba(0,0,0,.1);
+            transform:scale(.9); transition:all .3s var(--ease-spring);
+        }
+        .dialog-overlay.active .dialog-box { transform:scale(1); }
+        .dialog-title   { font-size:1.15rem; font-weight:600; margin-bottom:.5rem; color:var(--text); display:flex; align-items:center; gap:.5rem; }
+        .dialog-message { font-size:.9rem; color:var(--muted); margin-bottom:1.5rem; line-height:1.5; }
+        .dialog-actions { display:flex; gap:.5rem; justify-content:flex-end; }
+        .dialog-actions button { height:40px; padding:.5rem 1rem; font-size:.85rem; width:auto; }
+
+        /* ── MOBILE ─────────────────────────────────────────────────── */
+        .mobile-nav { display:none; }
+
+        @media (max-width:768px) {
+            .desktop-nav { display:none; }
+            .main-content { padding:1rem; padding-bottom:6rem; }
+            .card    { padding:1rem; }
+            .grid-3  { grid-template-columns:1fr; gap:.75rem; }
+            .grid-2  { grid-template-columns:1fr; }
+            .grid-3-mobile { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.5rem; }
+
+            #cart-table th, #cart-table td { padding:.5rem .4rem; font-size:.82rem; }
+            .qty-btn   { width:24px; height:24px; font-size:1rem; }
+            .qty-value { min-width:28px; font-size:.8rem; line-height:24px; }
+
+            .btn-small { padding:.3rem .5rem; font-size:.75rem; }
+            input, select, .custom-select__trigger { padding:.6rem; font-size:.9rem; height:42px; }
+            button { height:42px; font-size:.9rem; }
+
+            .mobile-nav {
+                display:flex; position:fixed; bottom:0; left:0; width:100%;
+                background:var(--surface); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+                border-top:1px solid var(--border);
+                justify-content:space-around;
+                padding:.5rem max(0px, env(safe-area-inset-right)) 0 max(0px, env(safe-area-inset-left));
+                padding-bottom: max(.5rem, env(safe-area-inset-bottom));
+                z-index:100;
             }
-            .mobile-nav .nav-btn { flex-direction: column; padding: 0.4rem; font-size: 0.75rem; gap: 0.2rem; width: 70px; background: transparent; height: auto;}
-            .mobile-nav .nav-btn.active { color: var(--accent); background: transparent; box-shadow: none;}
-            .mobile-nav .nav-btn svg { transition: var(--transition); }
-            .mobile-nav .nav-btn.active svg { transform: translateY(-3px); stroke-width: 2.5; filter: drop-shadow(0 2px 4px rgba(16,185,129,0.3)); }
+            .mobile-nav .nav-btn { flex-direction:column; padding:.4rem; font-size:.75rem; gap:.2rem; width:70px; background:transparent; height:auto; }
+            .mobile-nav .nav-btn.active { color:var(--accent); background:transparent; box-shadow:none; }
+            .mobile-nav .nav-btn svg { transition:var(--transition); }
+            .mobile-nav .nav-btn.active svg { transform:translateY(-3px); stroke-width:2.5; filter:drop-shadow(0 2px 4px rgba(16,185,129,.3)); }
         }
 
-        /* CUSTOM DIALOG BOXES */
-        .dialog-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: all 0.3s ease; z-index: 9999; }
-        .dialog-overlay.active { opacity: 1; visibility: visible; }
-        .dialog-box { background: var(--solid-surface); width: 90%; max-width: 350px; border-radius: 16px; padding: 1.5rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); transform: scale(0.9); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-        .dialog-overlay.active .dialog-box { transform: scale(1); }
-        .dialog-title { font-size: 1.15rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;}
-        .dialog-message { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.5; }
-        .dialog-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
-        .dialog-actions button { height: 40px; padding: 0.5rem 1rem; font-size: 0.85rem; width: auto; }
+        /* ── PRINT ──────────────────────────────────────────────────── */
+        @media print {
+            .no-print { display:none !important; }
+            .blank-write-space { display:block !important; border-bottom:1px dotted #000; height:1.2rem; width:60px; }
+        }
+        .blank-write-space { display:none; }
 
-        @media print { .no-print { display: none !important; } .blank-write-space { display: block !important; border-bottom: 1px dotted #000; height: 1.2rem; width: 60px; } }
-        .blank-write-space { display: none; }
+        /* ── SHARED INLINE STYLE CLASSES ────────────────────────────── */
+        /* Replaces repeated inline styles scattered through HTML */
+        .text-sm-muted  { font-size:.8rem;  color:var(--muted); }
+        .text-xs-muted  { font-size:.75rem; color:var(--muted); }
+        .mb-1  { margin-bottom:.5rem; }
+        .mb-2  { margin-bottom:1rem; }
+        .mb-4  { margin-bottom:2rem; }
+        .w-100 { width:100%; }
+        .info-box {
+            border:1px solid var(--border); padding:1.5rem;
+            border-radius:12px; text-align:center;
+        }
+        .info-box h3 { margin-bottom:.5rem; font-size:1rem; }
     </style>
 </head>
 <body>
 
+    <!-- ── PDF LOADING OVERLAY ────────────────────────────────────── -->
+    <div id="pdf-overlay">
+        <div class="pdf-spinner"></div>
+        <div class="pdf-overlay-text">Preparing PDF...</div>
+    </div>
+
+    <!-- ── SPLASH ──────────────────────────────────────────────────── -->
     <div id="splash-screen">
         <div class="splash-content">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
@@ -256,83 +621,109 @@
         </div>
     </div>
 
+    <!-- ── CUSTOM DIALOG ───────────────────────────────────────────── -->
     <div id="custom-dialog" class="dialog-overlay">
         <div class="dialog-box">
-            <div id="dialog-title" class="dialog-title">Notice</div>
+            <div id="dialog-title"   class="dialog-title">Notice</div>
             <div id="dialog-message" class="dialog-message">Message</div>
             <div class="dialog-actions">
-                <button id="dialog-cancel" class="btn-outline" style="border:none; color:var(--text-muted);">Cancel</button>
+                <button id="dialog-cancel"  class="btn-outline" style="border:none; color:var(--muted);">Cancel</button>
                 <button id="dialog-confirm">OK</button>
             </div>
         </div>
     </div>
 
+    <!-- ── TOP BAR ────────────────────────────────────────────────── -->
     <header class="top-bar">
         <div class="logo">
-            <svg class="animated-cart" width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            <svg class="animated-cart" width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
             GroceryPro
         </div>
         <nav class="desktop-nav">
-            <button class="nav-btn active" onclick="switchTab('maker', this)">List Maker</button>
-            <button class="nav-btn" onclick="switchTab('inventory', this)">Inventory</button>
-            <button class="nav-btn" onclick="switchTab('history', this)">History</button>
-            <button class="nav-btn" onclick="switchTab('backup', this)">Data</button>
+            <button class="nav-btn active"  onclick="switchTab('maker',     this)">List Maker</button>
+            <button class="nav-btn"         onclick="switchTab('inventory', this)">Inventory</button>
+            <button class="nav-btn"         onclick="switchTab('history',   this)">History</button>
+            <button class="nav-btn"         onclick="switchTab('backup',    this)">Data</button>
+            <button class="nav-btn"         onclick="switchTab('about',     this)">About</button>
         </nav>
+        <button class="theme-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Dark Mode" style="margin-left:.75rem;">
+            <svg id="theme-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+            </svg>
+            <span id="theme-label">Dark</span>
+        </button>
     </header>
 
+    <!-- ── MAIN ───────────────────────────────────────────────────── -->
     <main class="main-content">
-        
+
+        <!-- LIST MAKER -->
         <section id="maker-view" class="view-section active">
             <div class="card animate-entry">
-                <div class="card-header" style="margin-bottom: 0.5rem;">
-                    <h2>Create New List</h2>
+                <!-- Full-width banner — sits above the toggle, spans entire card -->
+                <div class="maker-banner">
+                    <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                    </svg>
+                    <div class="maker-banner-text">
+                        <div class="maker-banner-title">🛒 Build Your Smart List</div>
+                        <div class="maker-banner-sub">Pick items → set quantity → export or save anytime</div>
+                    </div>
+                </div>
+
+                <div class="card-header" style="margin-bottom:.75rem;">
+                    <span></span>
                     <label class="toggle-container">
                         <span class="toggle-label-text">Hide Rates (For Shop)</span>
-                        <input type="checkbox" id="mode-toggle" onchange="toggleMode()" style="display: none;">
+                        <input type="checkbox" id="mode-toggle" onchange="toggleMode()" style="display:none;">
                         <div class="toggle-switch"></div>
                     </label>
                 </div>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.4;">
-                    Select items below to build your shopping list or quotation. 
-                </p>
-                
-                <div class="grid-3 no-print" style="margin-bottom: 1.5rem;">
-                    <div class="input-group">
-                        <label>Select Item</label>
-                        <div id="first-time-hint" class="onboarding-hint">
-                            <div class="hint-arrow"></div>
-                            <p><strong>Item missing in list? 🤔</strong><br>Go to the <b>Inventory Tab</b> to add your custom items, set units (like Mini Milk, Box, Katta), and default rates!</p>
-                            <button onclick="closeHint()">Got it, Thanks!</button>
-                        </div>
 
-                        <div class="custom-select-wrapper">
-                            <div class="custom-select" id="myCustomSelect">
-                                <div class="custom-select__trigger">
-                                    <span id="custom-select-text">Select an item...</span>
-                                    <div class="arrow"></div>
-                                </div>
-                                <div class="custom-options" id="custom-options-list"></div>
+                <!-- Add item form: item + qty on same row, Add button BELOW -->
+                <div class="no-print" style="margin-bottom:1.5rem;">
+                    <div class="grid-2" style="margin-bottom:.75rem;">
+                        <div class="input-group">
+                            <label>Select Item</label>
+                            <!-- Onboarding Hint -->
+                            <div id="first-time-hint" class="onboarding-hint">
+                                <div class="hint-arrow"></div>
+                                <p><strong>Item missing?</strong><br>Go to <b>Inventory Tab</b> to add custom items, units &amp; rates!<br><br><b>Tip:</b> Swipe the list table left ↔ right to see all columns.</p>
+                                <button onclick="closeHint()">Got it, Thanks!</button>
                             </div>
+                            <div class="custom-select-wrapper">
+                                <div class="custom-select" id="myCustomSelect">
+                                    <div class="custom-select__trigger">
+                                        <span id="custom-select-text">Select an item...</span>
+                                        <div class="arrow"></div>
+                                    </div>
+                                    <div class="custom-options" id="custom-options-list"></div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="item-select-value">
                         </div>
-                        <input type="hidden" id="item-select-value">
+                        <div class="input-group">
+                            <label id="qty-label">Quantity</label>
+                            <input type="number" id="qty-input" step="0.01" min="0.01" placeholder="e.g. 1.5" onkeypress="handleEnter(event, addToCart)">
+                        </div>
                     </div>
-
-                    <div class="input-group">
-                        <label id="qty-label">Quantity</label>
-                        <input type="number" id="qty-input" step="0.01" min="0.01" placeholder="e.g. 1.5" onkeypress="handleEnter(event, addToCart)">
-                    </div>
-                    <button onclick="addToCart()">
+                    <!-- Add Item button full-width below the two fields -->
+                    <button onclick="addToCart()" style="width:100%;">
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
-                        Add Item
+                        Add Item to List
                     </button>
                 </div>
 
                 <div id="print-area">
                     <div class="table-responsive">
-                        <table id="cart-table">
-                            <thead></thead>
-                            <tbody id="cart-body"></tbody>
-                        </table>
+                        <table id="cart-table"><thead></thead><tbody id="cart-body"></tbody></table>
+                        <div class="scroll-hint">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                            Swipe to see all columns
+                            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                        </div>
                     </div>
                     <div class="total-row" id="total-row-display">
                         <span>Grand Total:</span>
@@ -340,28 +731,27 @@
                     </div>
                 </div>
 
-                <div class="grid-3-mobile no-print" style="margin-top: 1.5rem;">
-                    <button class="btn-outline" style="border-color: var(--danger); color: var(--danger); padding:0.5rem;" onclick="clearCart()">Clear List</button>
-                    <button class="btn-outline" style="padding:0.5rem;" onclick="saveCurrentList()">Save</button>
-                    <button onclick="exportPDF()" style="padding:0.5rem;">Export PDF</button>
+                <div class="grid-3-mobile no-print" style="margin-top:1.5rem;">
+                    <button class="btn-outline" style="border-color:var(--danger); color:var(--danger); padding:.5rem;" onclick="clearCart()">Clear List</button>
+                    <button class="btn-outline" style="padding:.5rem;" onclick="saveCurrentList()">Save</button>
+                    <button style="padding:.5rem;" onclick="exportPDF()">Export PDF</button>
                 </div>
             </div>
         </section>
 
+        <!-- INVENTORY -->
         <section id="inventory-view" class="view-section">
             <div class="card animate-entry">
                 <h3>Manage Unit Types</h3>
-                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">Add new units like 'Box', 'Katta', 'Dozen' to use them globally.</p>
-                
-                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                    <input type="text" id="new-unit-input" placeholder="e.g. Box" onkeypress="handleEnter(event, addNewUnit)" style="height: 42px;">
-                    <button onclick="addNewUnit()" style="width: auto; height: 42px; padding: 0 1rem;">Add</button>
+                <p class="text-sm-muted mb-2">Add new units like 'Box', 'Katta', 'Dozen' to use them globally.</p>
+                <div style="display:flex; gap:.5rem; margin-bottom:1rem;">
+                    <input type="text" id="new-unit-input" placeholder="e.g. Box" onkeypress="handleEnter(event, addNewUnit)" style="height:42px;">
+                    <button onclick="addNewUnit()" style="width:auto; height:42px; padding:0 1rem;">Add</button>
                 </div>
-
-                <div id="unit-tags-container" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+                <div id="unit-tags-container" style="display:flex; flex-wrap:wrap; gap:.5rem;"></div>
             </div>
 
-            <div class="card animate-entry" style="animation-delay: 0.1s;">
+            <div class="card animate-entry" style="animation-delay:.1s;">
                 <h3>Add New Inventory Item</h3>
                 <div class="grid-3">
                     <div class="input-group">
@@ -377,68 +767,209 @@
                         <input type="number" id="new-item-rate" placeholder="e.g. 50" onkeypress="handleEnter(event, addNewItem)">
                     </div>
                 </div>
-                <button onclick="addNewItem()" style="margin-top: 1rem; width: 100%;">Save to Master Inventory</button>
+                <button onclick="addNewItem()" class="w-100" style="margin-top:1rem;">Save to Master Inventory</button>
             </div>
 
-            <div class="card animate-entry" style="animation-delay: 0.2s;">
+            <div class="card animate-entry" style="animation-delay:.2s;">
                 <h3>Current Master Inventory</h3>
-                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom:1rem;">Changes here will Auto-Update in your Cart and Saved History!</p>
+                <p class="text-sm-muted mb-2">Changes here will Auto-Update in your Cart and Saved History!</p>
+
+                <!-- Search bar -->
+                <div class="search-wrap">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/></svg>
+                    <input type="text" id="inv-search" class="search-input" placeholder="Search items..." oninput="filterInventory(this.value)">
+                    <button class="search-clear" id="search-clear-btn" onclick="clearSearch()" title="Clear">✕</button>
+                </div>
+                <div class="inv-count" id="inv-count"></div>
+
                 <div class="table-responsive">
                     <table id="inventory-table">
                         <thead>
                             <tr>
+                                <th style="width:80px; text-align:center;">Action</th>
                                 <th>Item</th>
                                 <th>Unit</th>
                                 <th>Rate</th>
-                                <th style="text-align: right;">Action</th>
                             </tr>
                         </thead>
                         <tbody id="inventory-body"></tbody>
                     </table>
+                    <div class="scroll-hint">
+                        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        Swipe to see all columns
+                        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </div>
                 </div>
             </div>
         </section>
 
+        <!-- HISTORY -->
         <section id="history-view" class="view-section">
             <div class="card animate-entry">
                 <div class="card-header">
                     <h2>Saved Quotations</h2>
+                    <span class="text-xs-muted">Tap title to rename</span>
                 </div>
-                <div id="history-container" style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));"></div>
+                <div id="history-container" style="display:grid; gap:1rem; margin-top:1rem; grid-template-columns:repeat(auto-fill, minmax(280px,1fr));"></div>
             </div>
         </section>
 
+        <!-- BACKUP / RESTORE -->
         <section id="backup-view" class="view-section">
             <div class="card animate-entry">
                 <h2>Data Management</h2>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 2rem;">Secure your Settings, Custom Units, Inventory, and Lists in a JSON file. 100% Offline.</p>
-                
+                <p class="text-sm-muted mb-4">Secure your Settings, Custom Units, Inventory, and Lists in a JSON file. 100% Offline.</p>
                 <div class="grid-2">
-                    <div style="border: 1px solid var(--border); padding: 1.5rem; border-radius: 12px; text-align: center;">
-                        <svg style="margin: 0 auto 0.5rem; color: var(--accent);" width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                        <h3 style="margin-bottom: 0.5rem; font-size: 1rem;">Backup Data</h3>
-                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem;">Export to a secure JSON file.</p>
-                        <button onclick="downloadBackup()" style="width: 100%;">Download</button>
+                    <div class="info-box">
+                        <svg style="margin:0 auto .5rem; color:var(--accent);" width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        <h3>Backup Data</h3>
+                        <p class="text-xs-muted mb-2">Export to a secure JSON file.</p>
+                        <button onclick="downloadBackup()" class="w-100">Download</button>
                     </div>
-
-                    <div style="border: 1px solid var(--border); padding: 1.5rem; border-radius: 12px; text-align: center;">
-                        <h3 style="margin-bottom: 0.5rem; font-size: 1rem;">Restore Data</h3>
-                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">Upload a previously saved backup.</p>
-                        <div class="file-upload-wrapper" style="margin-bottom: 0.5rem;">
+                    <div class="info-box">
+                        <h3>Restore Data</h3>
+                        <p class="text-xs-muted mb-1">Upload a previously saved backup.</p>
+                        <div class="file-upload-wrapper mb-1">
                             <input type="file" id="restore-file" accept=".json" class="file-upload-input" onchange="handleFileSelect(this)">
-                            <div class="file-upload-label" style="padding: 1rem;">
+                            <div class="file-upload-label" style="padding:1rem;">
                                 <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                                <span style="margin-top: 0.2rem; font-weight: 500; font-size: 0.8rem;">Select JSON</span>
+                                <span style="margin-top:.2rem; font-weight:500; font-size:.8rem;">Select JSON</span>
                             </div>
                         </div>
-                        <div id="file-name-display" class="file-name" style="font-size: 0.7rem;">No file selected</div>
-                        <button class="btn-outline" onclick="restoreBackup()" style="width: 100%; margin-top: 0.5rem;">Restore</button>
+                        <div id="file-name-display" class="file-name" style="font-size:.7rem;">No file selected</div>
+                        <button class="btn-outline w-100" onclick="restoreBackup()" style="margin-top:.5rem;">Restore</button>
                     </div>
                 </div>
             </div>
         </section>
+        <!-- ABOUT -->
+        <section id="about-view" class="view-section">
+
+            <!-- Hero Card -->
+            <div class="card animate-entry" style="text-align:center; padding:2.5rem 1.5rem;">
+                <div style="width:72px; height:72px; background:linear-gradient(135deg,var(--accent),var(--accent-hover)); border-radius:20px; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+                    <svg width="38" height="38" fill="none" stroke="#fff" viewBox="0 0 24 24" stroke-width="2.2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                </div>
+                <h2 style="font-size:1.6rem; color:var(--accent); margin-bottom:.3rem;">GroceryPro</h2>
+                <p style="font-size:.8rem; color:var(--muted); font-weight:600; letter-spacing:1px; text-transform:uppercase; margin-bottom:1rem;">Smart Grocery & Quotation Planner</p>
+                <div style="display:inline-block; background:var(--accent-light); color:var(--accent-hover); font-size:.78rem; font-weight:700; padding:.3rem .9rem; border-radius:20px; letter-spacing:.5px;">Version 1.0</div>
+            </div>
+
+            <!-- What is this app -->
+            <div class="card animate-entry" style="animation-delay:.1s;">
+                <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:1rem;">
+                    <div style="width:36px; height:36px; background:var(--accent-light); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <svg width="18" height="18" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <h3 style="margin:0;">About This App</h3>
+                </div>
+                <p style="font-size:.92rem; line-height:1.7; color:var(--text);">
+                    <strong>GroceryPro</strong> is a smart, offline-first grocery planner and quotation maker — built especially for daily household shopping and small kirana store estimates.
+                </p>
+                <p style="font-size:.92rem; line-height:1.7; color:var(--text); margin-top:.75rem;">
+                    Whether you're heading to the sabzi mandi or preparing a monthly ration list, GroceryPro lets you build itemized lists with rates, quantities, and auto-calculated totals — then export a clean <strong>PDF quotation</strong> in one tap.
+                </p>
+            </div>
+
+            <!-- Features -->
+            <div class="card animate-entry" style="animation-delay:.15s;">
+                <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:1rem;">
+                    <div style="width:36px; height:36px; background:var(--accent-light); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <svg width="18" height="18" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+                    </div>
+                    <h3 style="margin:0;">Key Features</h3>
+                </div>
+                <div class="about-features">
+
+                    <div class="about-feat-row">
+                        <div class="about-feat-icon">
+                            <svg width="16" height="16" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                        </div>
+                        <div><div class="about-feat-title">Smart List Maker</div><div class="about-feat-desc">Add items from your master inventory with qty + rate</div></div>
+                    </div>
+
+                    <div class="about-feat-row">
+                        <div class="about-feat-icon">
+                            <svg width="16" height="16" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                        </div>
+                        <div><div class="about-feat-title">Quotation PDF Export</div><div class="about-feat-desc">One-tap export to clean A4 portrait PDF</div></div>
+                    </div>
+
+                    <div class="about-feat-row">
+                        <div class="about-feat-icon">
+                            <svg width="16" height="16" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                        </div>
+                        <div><div class="about-feat-title">Master Inventory</div><div class="about-feat-desc">Manage all items, units &amp; default rates in one place</div></div>
+                    </div>
+
+                    <div class="about-feat-row">
+                        <div class="about-feat-icon">
+                            <svg width="16" height="16" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"/></svg>
+                        </div>
+                        <div><div class="about-feat-title">Custom Units</div><div class="about-feat-desc">Add Katta, Dozen, Box — any unit you need</div></div>
+                    </div>
+
+                    <div class="about-feat-row">
+                        <div class="about-feat-icon">
+                            <svg width="16" height="16" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636a9 9 0 010 12.728M15.536 8.464a5 5 0 010 7.072M6.343 6.343a9 9 0 000 12.728M9.172 9.172a5 5 0 000 7.071M12 12h.01"/></svg>
+                        </div>
+                        <div><div class="about-feat-title">100% Offline</div><div class="about-feat-desc">No internet required. All data stored on your device</div></div>
+                    </div>
+
+                    <div class="about-feat-row">
+                        <div class="about-feat-icon">
+                            <svg width="16" height="16" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                        </div>
+                        <div><div class="about-feat-title">Dark Mode</div><div class="about-feat-desc">Easy on the eyes at night or in low light</div></div>
+                    </div>
+
+                    <div class="about-feat-row">
+                        <div class="about-feat-icon">
+                            <svg width="16" height="16" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
+                        </div>
+                        <div><div class="about-feat-title">Backup &amp; Restore</div><div class="about-feat-desc">Export your full data as JSON, restore anytime</div></div>
+                    </div>
+
+                    <div class="about-feat-row">
+                        <div class="about-feat-icon">
+                            <svg width="16" height="16" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2v-2a9 9 0 10-12 0v2a2 2 0 002 2z"/></svg>
+                        </div>
+                        <div><div class="about-feat-title">Works as App</div><div class="about-feat-desc">Install as PWA for full app-like experience</div></div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Developer -->
+            <div class="card animate-entry" style="animation-delay:.2s;">
+                <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:1.25rem;">
+                    <div style="width:36px; height:36px; background:var(--accent-light); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <svg width="18" height="18" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                    </div>
+                    <h3 style="margin:0;">Developer</h3>
+                </div>
+                <div style="display:flex; align-items:center; gap:1rem; padding:1rem; border-radius:12px; background:linear-gradient(135deg, var(--accent-light), var(--bg)); border:1.5px solid var(--accent);">
+                    <div style="width:52px; height:52px; background:linear-gradient(135deg,var(--accent),var(--accent-hover)); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:1.4rem; font-weight:700; color:#fff;">A</div>
+                    <div>
+                        <div style="font-size:1.05rem; font-weight:700; color:var(--text);">Aashish Giri</div>
+                        <div style="font-size:.82rem; color:var(--muted); margin-top:2px;">Designer & Developer</div>
+                        <div style="font-size:.78rem; color:var(--accent); margin-top:4px; font-weight:600; display:flex; align-items:center; gap:.3rem;"><svg width="10" height="10" viewBox="0 0 10 10" fill="var(--accent)"><circle cx="5" cy="5" r="5"/></svg> Built with passion for everyday use</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer note -->
+            <div style="text-align:center; padding:1rem 0 2rem; color:var(--muted); font-size:.78rem; line-height:1.8;">
+                Made with <svg width="13" height="13" viewBox="0 0 24 24" fill="#ef4444" style="display:inline-block; vertical-align:middle; margin:0 2px;"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> for households &amp; kirana stores<br>
+                <span style="color:var(--accent); font-weight:600;">GroceryPro</span> — Free, Offline &amp; Private
+            </div>
+
+        </section>
     </main>
 
+    <!-- ── MOBILE NAV ──────────────────────────────────────────────── -->
     <nav class="mobile-nav">
         <button class="nav-btn active" onclick="switchTab('maker', this)">
             <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
@@ -456,534 +987,654 @@
             <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
             Data
         </button>
+        <button class="nav-btn" onclick="switchTab('about', this)">
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            About
+        </button>
     </nav>
 
     <script>
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                const splash = document.getElementById('splash-screen');
-                splash.classList.add('hidden');
-                setTimeout(() => splash.remove(), 500); 
-            }, 1200); 
-        });
+    // ── SECTION 1: BOOT & STATE ───────────────────────────────────────
 
-        function showDialog(type, title, message) {
-            return new Promise((resolve) => {
-                document.getElementById('dialog-title').innerHTML = title;
-                document.getElementById('dialog-message').innerText = message;
-                const overlay = document.getElementById('custom-dialog');
-                const btnConfirm = document.getElementById('dialog-confirm');
-                const btnCancel = document.getElementById('dialog-cancel');
+    const DEFAULT_UNITS     = ["kg", "gram", "Ltr", "Piece", "Packet", "Ladi"];
+    const DEFAULT_INVENTORY = [
+        { id:'i1',  name:'काले चने',            unit:'kg',     rate:90  },
+        { id:'i2',  name:'राजमा (लाल छोटा)',    unit:'kg',     rate:140 },
+        { id:'i3',  name:'छोले (Medium)',        unit:'kg',     rate:120 },
+        { id:'i4',  name:'चावल (पोना)',          unit:'kg',     rate:50  },
+        { id:'i5',  name:'चिन्नी',              unit:'kg',     rate:44  },
+        { id:'i6',  name:'क्लिनिक प्लस शैम्पू', unit:'Ladi',   rate:14  },
+        { id:'i7',  name:'उड़द दाल (धुली)',      unit:'kg',     rate:140 },
+        { id:'i8',  name:'बेसन',                unit:'kg',     rate:120 },
+        { id:'i9',  name:'मैगी (10 वाली)',       unit:'Packet', rate:9   },
+        { id:'i10', name:'मैगी मसाला',           unit:'Packet', rate:5   },
+        { id:'i11', name:'तेल',                 unit:'Piece',  rate:10  },
+    ];
 
-                if (type === 'alert') {
-                    btnCancel.style.display = 'none';
-                    btnConfirm.innerText = 'OK';
-                    btnConfirm.style.backgroundColor = 'var(--accent)';
-                } else {
-                    btnCancel.style.display = 'block';
-                    btnConfirm.innerText = 'Confirm';
-                    btnConfirm.style.backgroundColor = 'var(--danger)';
-                }
+    let appData = JSON.parse(localStorage.getItem('gp_appData')) || {
+        inventory: DEFAULT_INVENTORY,
+        lists:     [],
+        settings:  { listOnlyMode: false },
+        units:     DEFAULT_UNITS,
+    };
+    if (!appData.units) appData.units = DEFAULT_UNITS;   // migration guard
 
-                overlay.classList.add('active');
-                btnConfirm.onclick = () => { overlay.classList.remove('active'); resolve(true); };
-                btnCancel.onclick = () => { overlay.classList.remove('active'); resolve(false); };
-            });
+    let cart          = [];
+    let editingItemId = null;
+
+    function saveData() { localStorage.setItem('gp_appData', JSON.stringify(appData)); }
+
+    // ── DARK MODE ────────────────────────────────────────────────────
+    let isDark = localStorage.getItem('gp_theme') === 'dark';
+
+    function applyTheme() {
+        document.body.classList.toggle('dark', isDark);
+        // Set html background too — browser uses html element color for overscroll/bounce flash
+        document.documentElement.style.background = isDark ? '#0d1f1a' : '#f0fdf4';
+        const icon  = document.getElementById('theme-icon');
+        const label = document.getElementById('theme-label');
+        const meta  = document.getElementById('theme-color-meta');
+        if (isDark) {
+            icon.innerHTML  = `<path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m8.66-9H21M3 12H2m15.07-6.07l-.71.71M6.34 17.66l-.71.71M17.66 17.66l.71.71M6.34 6.34l.71.71M12 5a7 7 0 100 14A7 7 0 0012 5z"/>`;
+            label.innerText = 'Light';
+            meta.content    = '#0d1f1a';
+        } else {
+            icon.innerHTML  = `<path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>`;
+            label.innerText = 'Dark';
+            meta.content    = '#10b981';
         }
-        window.customAlert = (msg) => showDialog('alert', '<svg width="22" height="22" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Notice', msg);
-        window.customConfirm = (msg) => showDialog('confirm', '<svg width="22" height="22" fill="none" stroke="var(--danger)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg> Confirm Action', msg);
+    }
 
-        const defaultInventory = [
-            { id: 'i1', name: 'काले चने', unit: 'kg', rate: 90 },
-            { id: 'i2', name: 'राजमा (लाल छोटा)', unit: 'kg', rate: 140 },
-            { id: 'i3', name: 'छोले (Medium)', unit: 'kg', rate: 120 },
-            { id: 'i4', name: 'चावल (पोना)', unit: 'kg', rate: 50 },
-            { id: 'i5', name: 'चिन्नी', unit: 'kg', rate: 44 },
-            { id: 'i6', name: 'क्लिनिक प्लस शैम्पू', unit: 'Ladi', rate: 14 },
-            { id: 'i7', name: 'उड़द दाल (धुली)', unit: 'kg', rate: 140 },
-            { id: 'i8', name: 'बेसन', unit: 'kg', rate: 120 },
-            { id: 'i9', name: 'मैगी (10 वाली)', unit: 'Packet', rate: 9 },
-            { id: 'i10', name: 'मैगी मसाला', unit: 'Packet', rate: 5 },
-            { id: 'i11', name: 'तेल', unit: 'Piece', rate: 10 }
-        ];
+    function toggleTheme() {
+        isDark = !isDark;
+        localStorage.setItem('gp_theme', isDark ? 'dark' : 'light');
+        applyTheme();
+    }
 
-        let appData = JSON.parse(localStorage.getItem('gp_appData')) || {
-            inventory: defaultInventory,
-            lists: [],
-            settings: { listOnlyMode: false },
-            units: ["kg", "gram", "Ltr", "Piece", "Packet", "Ladi"] 
-        };
-        
-        if(!appData.units) appData.units = ["kg", "gram", "Ltr", "Piece", "Packet", "Ladi"];
+    function init() {
+        applyTheme();
+        document.getElementById('mode-toggle').checked = appData.settings.listOnlyMode;
+        renderUnitManager();
+        renderUnitDropdowns();
+        renderCustomDropdown();
+        renderCart();
+        renderInventoryTable();
+        renderHistory();
+        checkFirstTime();
+    }
 
-        let cart = [];
-        let editingItemId = null; 
+    // Splash fade-out
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            const splash = document.getElementById('splash-screen');
+            splash.classList.add('hidden');
+            setTimeout(() => splash.remove(), 500);
+        }, 1200);
+    });
 
-        function init() {
-            document.getElementById('mode-toggle').checked = appData.settings.listOnlyMode;
-            renderUnitManager();
-            renderUnitDropdowns();
-            renderCustomDropdown();
-            renderCart();
-            renderInventoryTable();
-            renderHistory();
-            checkFirstTime(); 
-        }
 
-        function checkFirstTime() {
-            if(!localStorage.getItem('gp_hint_shown')) {
-                const hint = document.getElementById('first-time-hint');
-                if(hint) hint.style.display = 'block';
-            }
-        }
-        function closeHint() {
-            document.getElementById('first-time-hint').style.display = 'none';
-            localStorage.setItem('gp_hint_shown', 'true');
-        }
+    // ── SECTION 2: DIALOG SYSTEM ─────────────────────────────────────
 
-        function saveData() { localStorage.setItem('gp_appData', JSON.stringify(appData)); }
-        function handleEnter(e, callback) { if (e.key === 'Enter') { e.preventDefault(); callback(); } }
+    function showDialog(type, title, message) {
+        return new Promise(resolve => {
+            const overlay    = document.getElementById('custom-dialog');
+            const btnConfirm = document.getElementById('dialog-confirm');
+            const btnCancel  = document.getElementById('dialog-cancel');
 
-        function switchTab(tabId, btnElement) {
-            document.querySelectorAll('.view-section').forEach(el => { el.classList.remove('active'); el.style.animation = 'none'; el.offsetHeight; el.style.animation = null; });
-            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(`${tabId}-view`).classList.add('active');
-            
-            const tabIndex = Array.from(btnElement.parentElement.children).indexOf(btnElement);
-            document.querySelectorAll('.desktop-nav .nav-btn')[tabIndex]?.classList.add('active');
-            document.querySelectorAll('.mobile-nav .nav-btn')[tabIndex]?.classList.add('active');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+            document.getElementById('dialog-title').innerHTML   = title;
+            document.getElementById('dialog-message').innerText = message;
 
-        function renderUnitManager() {
-            const container = document.getElementById('unit-tags-container');
-            container.innerHTML = '';
-            appData.units.forEach(u => {
-                container.innerHTML += `<div class="unit-pill">${u}<button onclick="deleteUnit('${u}')" title="Delete Unit">✕</button></div>`;
-            });
-        }
-
-        function renderUnitDropdowns() {
-            const select = document.getElementById('new-item-unit');
-            select.innerHTML = '';
-            appData.units.forEach(u => select.innerHTML += `<option value="${u}">Per ${u}</option>`);
-        }
-
-        async function addNewUnit() {
-            const input = document.getElementById('new-unit-input');
-            const val = input.value.trim();
-            if(!val) return;
-            if(appData.units.map(u => u.toLowerCase()).includes(val.toLowerCase())) { await customAlert("This unit already exists!"); return; }
-            appData.units.push(val); saveData(); input.value = ''; renderUnitManager(); renderUnitDropdowns(); renderInventoryTable();
-        }
-
-        async function deleteUnit(unitName) {
-            const inUse = appData.inventory.some(i => i.unit === unitName);
-            if(inUse) { await customAlert(`Cannot delete '${unitName}'. It is currently being used by items in your inventory. Change their units first.`); return; }
-            const confirmed = await customConfirm(`Are you sure you want to remove '${unitName}' from your available units?`);
-            if(!confirmed) return;
-            appData.units = appData.units.filter(u => u !== unitName); saveData(); renderUnitManager(); renderUnitDropdowns(); renderInventoryTable();
-        }
-
-        function renderCustomDropdown() {
-            const optionsContainer = document.getElementById('custom-options-list');
-            optionsContainer.innerHTML = '';
-            appData.inventory.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'custom-option';
-                div.innerHTML = `${item.name} <span style="color:#94a3b8; font-size:0.8em; float:right;">₹${item.rate}/${item.unit}</span>`;
-                div.onclick = function() {
-                    document.getElementById('custom-select-text').innerText = item.name;
-                    document.getElementById('item-select-value').value = item.id;
-                    document.getElementById('myCustomSelect').classList.remove('open');
-                    document.querySelectorAll('.custom-option').forEach(el => el.classList.remove('selected'));
-                    this.classList.add('selected');
-                    document.getElementById('qty-label').innerText = `Qty (${item.unit})`;
-                    document.getElementById('qty-input').focus();
-                };
-                optionsContainer.appendChild(div);
-            });
-        }
-
-        document.querySelector('.custom-select__trigger').addEventListener('click', function() { document.getElementById('myCustomSelect').classList.toggle('open'); });
-        window.addEventListener('click', function(e) { const select = document.querySelector('.custom-select'); if (!select.contains(e.target)) select.classList.remove('open'); });
-
-        function toggleMode() { appData.settings.listOnlyMode = document.getElementById('mode-toggle').checked; saveData(); renderCart(); }
-
-        async function addToCart() {
-            const id = document.getElementById('item-select-value').value;
-            const qty = parseFloat(document.getElementById('qty-input').value);
-            if (!id || isNaN(qty) || qty <= 0) { await customAlert("Please select an item and enter a valid quantity!"); return; }
-
-            const item = appData.inventory.find(i => i.id === id);
-            const existing = cart.find(c => c.id === item.id);
-            if (existing) existing.qty += qty; else cart.push({ ...item, qty });
-
-            document.getElementById('item-select-value').value = "";
-            document.getElementById('custom-select-text').innerText = "Select an item...";
-            document.querySelectorAll('.custom-option').forEach(el => el.classList.remove('selected'));
-            document.getElementById('qty-input').value = "";
-            document.getElementById('qty-label').innerText = 'Quantity';
-            renderCart();
-        }
-
-        // QTY CONTROL BUTTON LOGIC
-        function updateQty(idx, change) {
-            const newQty = cart[idx].qty + change;
-            if (newQty <= 0) removeCartItem(idx); else { cart[idx].qty = Math.round(newQty * 100) / 100; renderCart(); }
-        }
-
-        function removeCartItem(idx) { cart.splice(idx, 1); renderCart(); }
-
-        async function clearCart() {
-            if(cart.length === 0) return;
-            const confirmed = await customConfirm("Are you sure you want to clear the entire list?");
-            if(confirmed) { cart = []; renderCart(); }
-        }
-
-        function renderCart() {
-            const isListOnly = appData.settings.listOnlyMode;
-            const thead = document.querySelector('#cart-table thead');
-            const tbody = document.getElementById('cart-body');
-            const totalRow = document.getElementById('total-row-display');
-            
-            if (isListOnly) {
-                thead.innerHTML = `<tr><th>Item</th><th style="text-align:center;">Qty</th><th>Rate (Fill)</th><th class="no-print" style="text-align:center;">Del</th></tr>`;
-                totalRow.style.display = 'none';
+            if (type === 'alert') {
+                btnCancel.style.display        = 'none';
+                btnConfirm.innerText           = 'OK';
+                btnConfirm.style.backgroundColor = 'var(--accent)';
             } else {
-                thead.innerHTML = `<tr><th>Item</th><th>Rate</th><th style="text-align:center;">Qty</th><th>Total(₹)</th><th class="no-print" style="text-align:center;">Del</th></tr>`;
-                totalRow.style.display = 'flex';
+                btnCancel.style.display        = 'block';
+                btnConfirm.innerText           = 'Confirm';
+                btnConfirm.style.backgroundColor = 'var(--danger)';
             }
 
-            tbody.innerHTML = ''; let total = 0;
-            if (cart.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="${isListOnly ? 4 : 5}" style="text-align:center; color:#64748b; padding:3rem 1rem;">No items yet. Add something from above!</td></tr>`;
-                document.getElementById('grand-total').innerText = '0.00'; return;
-            }
+            overlay.classList.add('active');
+            btnConfirm.onclick = () => { overlay.classList.remove('active'); resolve(true);  };
+            btnCancel.onclick  = () => { overlay.classList.remove('active'); resolve(false); };
+        });
+    }
 
-            cart.forEach((item, idx) => {
-                const amt = item.rate * item.qty; total += amt;
-                
-                // + / - Buttons added straight into the Maker table row
-                const qtyControls = `
-                    <div class="qty-controls">
-                        <button class="qty-btn no-print" onclick="updateQty(${idx}, -1)">-</button>
-                        <div class="qty-value">${item.qty} <span style="font-size:0.75em; color:var(--text-muted); font-weight:normal;">${item.unit}</span></div>
-                        <button class="qty-btn no-print" onclick="updateQty(${idx}, 1)">+</button>
-                    </div>
-                `;
+    const ICON_INFO  = `<svg width="22" height="22" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+    const ICON_WARN  = `<svg width="22" height="22" fill="none" stroke="var(--danger)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
 
-                if (isListOnly) {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td style="font-weight: 500;">${item.name}</td>
-                            <td>${qtyControls}</td>
-                            <td><div class="blank-write-space" style="display:block;"></div></td>
-                            <td class="no-print" style="text-align:center;"><button style="background:transparent; color:var(--danger); border:none; padding:0.2rem; cursor:pointer;" onclick="removeCartItem(${idx})">✕</button></td>
-                        </tr>
-                    `;
-                } else {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td style="font-weight: 500;">${item.name}</td>
-                            <td style="color:var(--text-muted)">₹${item.rate}</td>
-                            <td>${qtyControls}</td>
-                            <td style="font-weight: 600; color:var(--text-main);">₹${amt.toFixed(2)}</td>
-                            <td class="no-print" style="text-align:center;"><button style="background:transparent; color:var(--danger); border:none; padding:0.2rem; cursor:pointer;" onclick="removeCartItem(${idx})">✕</button></td>
-                        </tr>
-                    `;
-                }
-            });
-            document.getElementById('grand-total').innerText = total.toFixed(2);
+    window.customAlert   = msg => showDialog('alert',   `${ICON_INFO} Notice`,         msg);
+    window.customConfirm = msg => showDialog('confirm', `${ICON_WARN} Confirm Action`, msg);
+
+
+    // ── SECTION 3: NAVIGATION ────────────────────────────────────────
+
+    function switchTab(tabId, btnElement) {
+        document.querySelectorAll('.view-section').forEach(el => {
+            el.classList.remove('active');
+            el.style.animation = 'none'; el.offsetHeight; el.style.animation = null; // reflow trick
+        });
+        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(`${tabId}-view`).classList.add('active');
+
+        const tabIndex = Array.from(btnElement.parentElement.children).indexOf(btnElement);
+        document.querySelectorAll('.desktop-nav .nav-btn')[tabIndex]?.classList.add('active');
+        document.querySelectorAll('.mobile-nav  .nav-btn')[tabIndex]?.classList.add('active');
+        window.scrollTo({ top:0, behavior:'smooth' });
+    }
+
+    function handleEnter(e, cb) { if (e.key === 'Enter') { e.preventDefault(); cb(); } }
+
+
+    // ── SECTION 4: HINT BOX ──────────────────────────────────────────
+
+    function checkFirstTime() {
+        const hint = document.getElementById('first-time-hint');
+        if (hint) hint.style.display = 'block';
+    }
+    function closeHint() {
+        document.getElementById('first-time-hint').style.display = 'none';
+    }
+
+
+    // ── SECTION 5: UNIT MANAGER ──────────────────────────────────────
+
+    let inventoryFilter = '';   // current search query
+
+    function filterInventory(query) {
+        inventoryFilter = query.trim().toLowerCase();
+        document.getElementById('search-clear-btn').classList.toggle('visible', inventoryFilter.length > 0);
+        renderInventoryTable();
+    }
+
+    function clearSearch() {
+        document.getElementById('inv-search').value = '';
+        filterInventory('');
+        document.getElementById('inv-search').focus();
+    }
+
+    function renderUnitManager() {
+        document.getElementById('unit-tags-container').innerHTML =
+            appData.units.map(u =>
+                `<div class="unit-pill">${u}<button onclick="deleteUnit('${u}')" title="Delete Unit">✕</button></div>`
+            ).join('');
+    }
+
+    function renderUnitDropdowns() {
+        document.getElementById('new-item-unit').innerHTML =
+            appData.units.map(u => `<option value="${u}">Per ${u}</option>`).join('');
+    }
+
+    async function addNewUnit() {
+        const input = document.getElementById('new-unit-input');
+        const val   = input.value.trim();
+        if (!val) return;
+        if (appData.units.map(u => u.toLowerCase()).includes(val.toLowerCase())) {
+            await customAlert("This unit already exists!"); return;
+        }
+        appData.units.push(val); saveData(); input.value = '';
+        renderUnitManager(); renderUnitDropdowns(); renderInventoryTable();
+    }
+
+    async function deleteUnit(unitName) {
+        if (appData.inventory.some(i => i.unit === unitName)) {
+            await customAlert(`Cannot delete '${unitName}'. It is used by inventory items.`); return;
+        }
+        if (!await customConfirm(`Remove '${unitName}' from available units?`)) return;
+        appData.units = appData.units.filter(u => u !== unitName);
+        saveData(); renderUnitManager(); renderUnitDropdowns(); renderInventoryTable();
+    }
+
+
+    // ── SECTION 6: INVENTORY CRUD ────────────────────────────────────
+
+    function renderCustomDropdown() {
+        const container = document.getElementById('custom-options-list');
+        container.innerHTML = '';
+        appData.inventory.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'custom-option';
+            div.innerHTML = `${item.name} <span style="color:#94a3b8; font-size:.8em;">₹${item.rate}/${item.unit}</span>`;
+            div.onclick = () => {
+                document.getElementById('custom-select-text').innerText  = item.name;
+                document.getElementById('item-select-value').value       = item.id;
+                document.getElementById('myCustomSelect').classList.remove('open');
+                document.querySelectorAll('.custom-option').forEach(el => el.classList.remove('selected'));
+                div.classList.add('selected');
+                document.getElementById('qty-label').innerText  = `Qty (${item.unit})`;
+                document.getElementById('qty-input').focus();
+            };
+            container.appendChild(div);
+        });
+    }
+
+    // Custom dropdown open/close
+    document.querySelector('.custom-select__trigger').addEventListener('click', () =>
+        document.getElementById('myCustomSelect').classList.toggle('open')
+    );
+    window.addEventListener('click', e => {
+        if (!document.querySelector('.custom-select').contains(e.target))
+            document.getElementById('myCustomSelect').classList.remove('open');
+    });
+
+    function renderInventoryTable() {
+        const filtered = inventoryFilter
+            ? appData.inventory.filter(i => i.name.toLowerCase().includes(inventoryFilter))
+            : appData.inventory;
+
+        // Show item count
+        const countEl = document.getElementById('inv-count');
+        if (countEl) {
+            countEl.textContent = inventoryFilter
+                ? `${filtered.length} of ${appData.inventory.length} items`
+                : `${appData.inventory.length} item${appData.inventory.length !== 1 ? 's' : ''}`;
         }
 
-        // --- PDF GENERATOR (FIXED PDF WIDTH CUT OFF) ---
-        async function exportPDF() {
-            if(cart.length === 0) { await customAlert("The list is currently empty. Please add items first."); return; }
-            const isListOnly = appData.settings.listOnlyMode;
-            
-            const container = document.createElement('div');
-            container.style.padding = '20px'; 
-            container.style.background = '#ffffff'; 
-            container.style.color = '#0f172a'; 
-            container.style.fontFamily = "'Inter', sans-serif"; 
-            container.style.width = '100%'; // Fixed: Letting it take natural width of page, no hardcoded pixels
-            
-            let html = `
-                <div style="border-bottom: 2px solid #10b981; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: flex-end;">
-                    <div>
-                        <h1 style="color: #10b981; margin: 0; font-size: 26px;">GroceryPro</h1>
-                        <div style="color: #64748b; font-size: 14px; margin-top: 5px; font-weight: 500;">${isListOnly ? 'Grocery List (Manual Entry)' : 'Quotation / Estimate'}</div>
-                    </div>
-                    <div style="color: #64748b; font-size: 14px; text-align: right; line-height: 1.5;">
-                        <strong>Date:</strong> ${new Date().toLocaleDateString()}<br>
-                        <strong>Time:</strong> ${new Date().toLocaleTimeString()}
-                    </div>
-                </div>
-                <table style="width:100%; table-layout:fixed; border-collapse: collapse; margin-bottom: 25px;">
-                    <thead>
-                        <tr style="background:#f0fdf4; text-transform:uppercase; font-size:12px; color:#059669;">
-                            <th style="width:40%; padding:14px; border:1px solid #cbd5e1; text-align:left;">Item Description</th>
-                            ${isListOnly ? '' : '<th style="width:15%; padding:14px; border:1px solid #cbd5e1; text-align:right;">Rate</th>'}
-                            <th style="width:25%; padding:14px; border:1px solid #cbd5e1; text-align:right;">Quantity</th>
-                            <th style="width:20%; padding:14px; border:1px solid #cbd5e1; text-align:${isListOnly ? 'left' : 'right'};">${isListOnly ? 'Amount (Write)' : 'Total (₹)'}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            
-            let total = 0;
-            cart.forEach((item, index) => {
-                const amt = item.rate * item.qty; 
-                total += amt;
-                const bg = index % 2 === 0 ? '#ffffff' : '#f1f5f9';
-                
-                html += `<tr style="background:${bg};">
-                    <td style="padding:12px 14px; border:1px solid #cbd5e1; font-weight:500; font-size: 14px; word-wrap:break-word; overflow-wrap:break-word; white-space:normal;">${item.name}</td>
-                    ${isListOnly ? '' : `<td style="padding:12px 14px; border:1px solid #cbd5e1; text-align:right; color:#64748b; font-size: 14px;">₹${item.rate}</td>`}
-                    <td style="padding:12px 14px; border:1px solid #cbd5e1; text-align:right; font-weight:600; font-size: 14px;">${item.qty} <span style="font-size:12px; color:#64748b;">${item.unit}</span></td>
-                    <td style="padding:12px 14px; border:1px solid #cbd5e1; text-align:${isListOnly ? 'left' : 'right'}; font-weight:600; font-size: 14px; color: #0f172a;">
-                        ${isListOnly ? '<div style="border-bottom:1px dotted #94a3b8; height:18px; width:80px;"></div>' : `₹${amt.toFixed(2)}`}
-                    </td>
-                </tr>`;
-            });
-            html += `</tbody></table>`;
-            
-            if (!isListOnly) {
-                html += `<div style="text-align:right; font-size:20px; font-weight:700; margin-top:20px; padding:20px; background:#f0fdf4; border:1px solid #10b981; border-radius:8px; color:#0f172a;">Grand Total: <span style="color:#10b981;">₹${total.toFixed(2)}</span></div>`;
-            }
-            
-            container.innerHTML = html;
-            
-            // Fixed margin constraints
-            html2pdf().set({ 
-                margin: [0.5, 0.5, 0.5, 0.5], 
-                filename: `GroceryPro_${new Date().toLocaleDateString().replace(/\//g,'-')}.pdf`, 
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, letterRendering: true }, 
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } 
-            }).from(container).save();
-        }
-
-        async function addNewItem() {
-            const name = document.getElementById('new-item-name').value.trim();
-            const unit = document.getElementById('new-item-unit').value;
-            const rate = parseFloat(document.getElementById('new-item-rate').value);
-
-            if (!name || isNaN(rate) || rate < 0) { await customAlert("Please fill all fields correctly to add a new item."); return; }
-            appData.inventory.push({ id: 'item_' + Date.now(), name, unit, rate }); saveData();
-            
-            document.getElementById('new-item-name').value = ''; document.getElementById('new-item-rate').value = '';
-            renderCustomDropdown(); renderInventoryTable(); document.getElementById('new-item-name').focus();
-        }
-
-        function renderInventoryTable() {
-            const tbody = document.getElementById('inventory-body'); tbody.innerHTML = '';
-            appData.inventory.forEach(item => {
+        document.getElementById('inventory-body').innerHTML =
+            filtered.length === 0
+            ? `<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:2rem;">No items match "${inventoryFilter}"</td></tr>`
+            : filtered.map(item => {
                 if (editingItemId === item.id) {
-                    let selectHtml = `<select id="edit-unit-${item.id}" style="padding:0.4rem; font-size:0.85rem; height:35px;">`;
-                    appData.units.forEach(u => { selectHtml += `<option value="${u}" ${item.unit === u ? 'selected' : ''}>${u}</option>`; });
-                    selectHtml += `</select>`;
-                    tbody.innerHTML += `
+                    const opts = appData.units.map(u =>
+                        `<option value="${u}" ${item.unit === u ? 'selected' : ''}>${u}</option>`
+                    ).join('');
+                    return `
                         <tr style="background:#e0f2fe !important;">
-                            <td><input type="text" id="edit-name-${item.id}" value="${item.name}" style="padding:0.4rem; font-size:0.85rem; height:35px; width:100%;"></td>
-                            <td>${selectHtml}</td>
-                            <td><input type="number" id="edit-rate-${item.id}" value="${item.rate}" style="width:65px; padding:0.4rem; height:35px;"></td>
                             <td>
                                 <div class="action-cell">
                                     <button class="btn-small" onclick="saveEditItem('${item.id}')" style="height:30px;">Save</button>
-                                    <button class="btn-outline btn-small" onclick="cancelEdit()" style="height:30px;">X</button>
+                                    <button class="btn-outline btn-small" onclick="cancelEdit()" style="height:30px;">✕</button>
                                 </div>
                             </td>
-                        </tr>
-                    `;
-                } else {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td style="font-weight: 500;">${item.name}</td>
-                            <td>${item.unit}</td>
-                            <td>₹${item.rate}</td>
-                            <td>
-                                <div class="action-cell">
-                                    <button class="btn-outline btn-small" onclick="startEditItem('${item.id}')">Edit</button>
-                                    <button class="btn-danger btn-small" onclick="deleteItem('${item.id}')">Del</button>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
+                            <td><input type="text"   id="edit-name-${item.id}" value="${item.name}" style="padding:.4rem; font-size:.85rem; height:35px; width:100%;"></td>
+                            <td><select id="edit-unit-${item.id}" style="padding:.4rem; font-size:.85rem; height:35px;">${opts}</select></td>
+                            <td><input type="number" id="edit-rate-${item.id}" value="${item.rate}" style="width:65px; padding:.4rem; height:35px;"></td>
+                        </tr>`;
                 }
-            });
+                return `
+                    <tr>
+                        <td>
+                            <div class="action-cell">
+                                <button class="btn-outline btn-small" onclick="startEditItem('${item.id}')">Edit</button>
+                                <button class="btn-danger  btn-small" onclick="deleteItem('${item.id}')">Del</button>
+                            </div>
+                        </td>
+                        <td style="font-weight:500;">${item.name}</td>
+                        <td>${item.unit}</td>
+                        <td>₹${item.rate}</td>
+                    </tr>`;
+            }).join('');
+    }
+
+    function startEditItem(id) { editingItemId = id; renderInventoryTable(); }
+    function cancelEdit()      { editingItemId = null; renderInventoryTable(); }
+
+    async function saveEditItem(id) {
+        const name = document.getElementById(`edit-name-${id}`).value.trim();
+        const unit = document.getElementById(`edit-unit-${id}`).value;
+        const rate = parseFloat(document.getElementById(`edit-rate-${id}`).value);
+
+        if (!name || isNaN(rate) || rate < 0) {
+            await customAlert("Invalid input! Rate must be a number and name cannot be empty."); return;
+        }
+        const item = appData.inventory.find(i => i.id === id);
+        Object.assign(item, { name, unit, rate });
+
+        // Sync cart & history
+        const cartItem = cart.find(c => c.id === id);
+        if (cartItem) Object.assign(cartItem, { name, unit, rate });
+        appData.lists.forEach(list => {
+            let changed = false;
+            list.items.forEach(li => { if (li.id === id) { Object.assign(li, { name, unit, rate }); changed = true; } });
+            if (changed) list.total = list.items.reduce((s, i) => s + i.rate * i.qty, 0);
+        });
+
+        editingItemId = null; saveData();
+        renderCustomDropdown(); renderInventoryTable(); renderCart(); renderHistory();
+        await customAlert("Item Updated! Synced with Cart & History.");
+    }
+
+    async function addNewItem() {
+        const name = document.getElementById('new-item-name').value.trim();
+        const unit = document.getElementById('new-item-unit').value;
+        const rate = parseFloat(document.getElementById('new-item-rate').value);
+        if (!name || isNaN(rate) || rate < 0) {
+            await customAlert("Please fill all fields correctly."); return;
+        }
+        appData.inventory.push({ id: 'item_' + Date.now(), name, unit, rate });
+        saveData();
+        document.getElementById('new-item-name').value = '';
+        document.getElementById('new-item-rate').value = '';
+        renderCustomDropdown(); renderInventoryTable();
+        document.getElementById('new-item-name').focus();
+    }
+
+    async function deleteItem(id) {
+        if (!await customConfirm("Permanently delete this item from inventory?")) return;
+        appData.inventory = appData.inventory.filter(i => i.id !== id);
+        saveData(); renderCustomDropdown(); renderInventoryTable();
+    }
+
+
+    // ── SECTION 7: CART ──────────────────────────────────────────────
+
+    function toggleMode() {
+        appData.settings.listOnlyMode = document.getElementById('mode-toggle').checked;
+        saveData(); renderCart();
+    }
+
+    async function addToCart() {
+        const id  = document.getElementById('item-select-value').value;
+        const qty = parseFloat(document.getElementById('qty-input').value);
+        if (!id || isNaN(qty) || qty <= 0) {
+            await customAlert("Please select an item and enter a valid quantity!"); return;
+        }
+        const item     = appData.inventory.find(i => i.id === id);
+        const existing = cart.find(c => c.id === item.id);
+        if (existing) existing.qty += qty; else cart.push({ ...item, qty });
+
+        // Reset form
+        document.getElementById('item-select-value').value              = '';
+        document.getElementById('custom-select-text').innerText         = 'Select an item...';
+        document.querySelectorAll('.custom-option').forEach(el => el.classList.remove('selected'));
+        document.getElementById('qty-input').value                      = '';
+        document.getElementById('qty-label').innerText                  = 'Quantity';
+        renderCart();
+    }
+
+    function updateQty(idx, change) {
+        const newQty = cart[idx].qty + change;
+        if (newQty <= 0) removeCartItem(idx);
+        else { cart[idx].qty = Math.round(newQty * 100) / 100; renderCart(); }
+    }
+
+    function removeCartItem(idx) { cart.splice(idx, 1); renderCart(); }
+
+    async function clearCart() {
+        if (!cart.length) return;
+        if (await customConfirm("Clear the entire list?")) { cart = []; renderCart(); }
+    }
+
+    // Shared delete button HTML (reused in every row)
+    const delBtn = idx =>
+        `<button class="btn-del-row no-print" onclick="removeCartItem(${idx})">✕</button>`;
+
+    // Shared qty pill HTML
+    const qtyPill = (item, idx) => `
+        <div class="qty-controls">
+            <button class="qty-btn no-print" onclick="updateQty(${idx},-1)">−</button>
+            <div class="qty-value">${item.qty} <span style="font-size:.75em; color:var(--muted); font-weight:normal;">${item.unit}</span></div>
+            <button class="qty-btn no-print" onclick="updateQty(${idx},1)">+</button>
+        </div>`;
+
+    function renderCart() {
+        const isListOnly = appData.settings.listOnlyMode;
+        const thead      = document.querySelector('#cart-table thead');
+        const tbody      = document.getElementById('cart-body');
+        const totalRow   = document.getElementById('total-row-display');
+
+        thead.innerHTML = isListOnly
+            ? `<tr><th class="no-print" style="width:36px;"></th><th>Item</th><th style="text-align:center;">Qty</th><th>Rate (Fill)</th></tr>`
+            : `<tr><th class="no-print" style="width:36px;"></th><th>Item</th><th>Rate</th><th style="text-align:center;">Qty</th><th>Total(₹)</th></tr>`;
+        totalRow.style.display = isListOnly ? 'none' : 'flex';
+
+        if (!cart.length) {
+            tbody.innerHTML = `<tr><td colspan="${isListOnly ? 4 : 5}" style="text-align:center; color:#64748b; padding:3rem 1rem;">No items yet. Add something from above!</td></tr>`;
+            document.getElementById('grand-total').innerText = '0.00';
+            return;
         }
 
-        function startEditItem(id) { editingItemId = id; renderInventoryTable(); }
-        function cancelEdit() { editingItemId = null; renderInventoryTable(); }
-
-        async function saveEditItem(id) {
-            const newName = document.getElementById(`edit-name-${id}`).value.trim();
-            const newUnit = document.getElementById(`edit-unit-${id}`).value;
-            const newRate = parseFloat(document.getElementById(`edit-rate-${id}`).value);
-
-            if (!newName || isNaN(newRate) || newRate < 0) { await customAlert("Invalid input! Rate must be a number and name cannot be empty."); return; }
-
-            const item = appData.inventory.find(i => i.id === id);
-            item.name = newName; item.unit = newUnit; item.rate = newRate;
-            
-            const cartItem = cart.find(c => c.id === id); if(cartItem) { cartItem.name = newName; cartItem.unit = newUnit; cartItem.rate = newRate; }
-            appData.lists.forEach(list => { let listChanged = false; list.items.forEach(li => { if(li.id === id) { li.name = newName; li.unit = newUnit; li.rate = newRate; listChanged = true; } }); if(listChanged) list.total = list.items.reduce((sum, i) => sum + (i.rate * i.qty), 0); });
-
-            editingItemId = null; saveData();
-            renderCustomDropdown(); renderInventoryTable(); renderCart(); renderHistory();
-            await customAlert("Item Updated Successfully! Synced with Cart & History.");
-        }
-
-        async function deleteItem(id) {
-            const confirmed = await customConfirm("Permanently delete this item from inventory?");
-            if(!confirmed) return;
-            appData.inventory = appData.inventory.filter(i => i.id !== id);
-            saveData(); renderCustomDropdown(); renderInventoryTable();
-        }
-
-        function renderHistory() {
-            const container = document.getElementById('history-container'); container.innerHTML = '';
-            if (appData.lists.length === 0) { container.innerHTML = `<p style="color:var(--text-muted); grid-column: 1/-1; text-align:center; padding: 2rem;">No saved lists yet.</p>`; return; }
-            appData.lists.slice().reverse().forEach(list => {
-                container.innerHTML += `
-                    <div class="card" style="margin-bottom:0; display:flex; flex-direction:column;">
-                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">${list.date}</div>
-                        <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.5rem;">${list.title}</div>
-                        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom: 1rem;">${list.items.length} Items | Total: <span style="color:var(--text-main); font-weight:600;">₹${list.total.toFixed(2)}</span></p>
-                        <div class="grid-3-action" style="margin-top: auto;">
-                            <button class="btn-outline" style="padding:0.4rem; font-size:0.85rem;" onclick="loadList('${list.id}')">Load</button>
-                            <button class="btn-outline" style="padding:0.4rem; font-size:0.85rem; color:var(--text-main); border-color:var(--text-muted);" onclick="downloadHistoryPDF('${list.id}')">PDF</button>
-                            <button class="btn-danger" style="padding:0.4rem; font-size:0.85rem;" onclick="deleteList('${list.id}')">Del</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function downloadHistoryPDF(id) {
-            const list = appData.lists.find(l => l.id === id); if(!list) return;
-            const isListOnly = appData.settings.listOnlyMode;
-            
-            const container = document.createElement('div');
-            container.style.padding = '20px'; 
-            container.style.background = '#ffffff'; 
-            container.style.color = '#0f172a'; 
-            container.style.fontFamily = "'Inter', sans-serif"; 
-            container.style.width = '100%'; 
-            
-            let html = `
-                <div style="border-bottom: 2px solid #10b981; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: flex-end;">
-                    <div>
-                        <h1 style="color: #10b981; margin: 0; font-size: 26px;">GroceryPro</h1>
-                        <div style="color: #64748b; font-size: 14px; margin-top: 5px; font-weight: 500;">${list.title}</div>
-                    </div>
-                    <div style="color: #64748b; font-size: 14px; text-align: right; line-height: 1.5;">
-                        <strong>Saved On:</strong><br>${list.date}
-                    </div>
-                </div>
-                <table style="width:100%; table-layout:fixed; border-collapse: collapse; margin-bottom: 25px;">
-                    <thead>
-                        <tr style="background:#f0fdf4; text-transform:uppercase; font-size:12px; color:#059669;">
-                            <th style="width:40%; padding:14px; border:1px solid #cbd5e1; text-align:left;">Item Description</th>
-                            ${isListOnly ? '' : '<th style="width:15%; padding:14px; border:1px solid #cbd5e1; text-align:right;">Rate</th>'}
-                            <th style="width:25%; padding:14px; border:1px solid #cbd5e1; text-align:right;">Quantity</th>
-                            <th style="width:20%; padding:14px; border:1px solid #cbd5e1; text-align:${isListOnly ? 'left' : 'right'};">${isListOnly ? 'Amount (Write)' : 'Total (₹)'}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            
-            list.items.forEach((item, index) => {
-                const amt = item.rate * item.qty; 
-                const bg = index % 2 === 0 ? '#ffffff' : '#f1f5f9';
-                
-                html += `<tr style="background:${bg};">
-                    <td style="padding:12px 14px; border:1px solid #cbd5e1; font-weight:500; font-size: 14px; word-wrap:break-word; overflow-wrap:break-word; white-space:normal;">${item.name}</td>
-                    ${isListOnly ? '' : `<td style="padding:12px 14px; border:1px solid #cbd5e1; text-align:right; color:#64748b; font-size: 14px;">₹${item.rate}</td>`}
-                    <td style="padding:12px 14px; border:1px solid #cbd5e1; text-align:right; font-weight:600; font-size: 14px;">${item.qty} <span style="font-size:12px; color:#64748b;">${item.unit}</span></td>
-                    <td style="padding:12px 14px; border:1px solid #cbd5e1; text-align:${isListOnly ? 'left' : 'right'}; font-weight:600; font-size: 14px; color: #0f172a;">
-                        ${isListOnly ? '<div style="border-bottom:1px dotted #94a3b8; height:18px; width:80px;"></div>' : `₹${amt.toFixed(2)}`}
-                    </td>
+        let total = 0;
+        tbody.innerHTML = cart.map((item, idx) => {
+            const amt = item.rate * item.qty; total += amt;
+            return isListOnly ? `
+                <tr>
+                    <td class="no-print" style="text-align:center; padding:.4rem;">${delBtn(idx)}</td>
+                    <td style="font-weight:500;">${item.name}</td>
+                    <td>${qtyPill(item, idx)}</td>
+                    <td><div class="blank-write-space" style="display:block;"></div></td>
+                </tr>` : `
+                <tr>
+                    <td class="no-print" style="text-align:center; padding:.4rem;">${delBtn(idx)}</td>
+                    <td style="font-weight:500;">${item.name}</td>
+                    <td style="color:var(--muted);">₹${item.rate}</td>
+                    <td>${qtyPill(item, idx)}</td>
+                    <td style="font-weight:600; color:var(--text);">₹${amt.toFixed(2)}</td>
                 </tr>`;
-            });
-            html += `</tbody></table>`;
-            
-            if (!isListOnly) {
-                html += `<div style="text-align:right; font-size:20px; font-weight:700; margin-top:20px; padding:20px; background:#f0fdf4; border:1px solid #10b981; border-radius:8px; color:#0f172a;">Grand Total: <span style="color:#10b981;">₹${list.total.toFixed(2)}</span></div>`;
-            }
-            
-            container.innerHTML = html;
-            
-            html2pdf().set({ 
-                margin: [0.5, 0.5, 0.5, 0.5], 
-                filename: `${list.title.replace(/\s+/g, '_')}.pdf`, 
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, letterRendering: true }, 
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } 
-            }).from(container).save();
-        }
+        }).join('');
 
-        async function saveCurrentList() {
-            if (cart.length === 0) { await customAlert("Cart is empty! Cannot save."); return; }
-            const total = cart.reduce((sum, item) => sum + (item.rate * item.qty), 0);
-            appData.lists.push({ id: 'list_' + Date.now(), date: new Date().toLocaleString(), title: `List - ${new Date().toLocaleDateString()}`, items: [...cart], total: total });
-            saveData(); renderHistory(); await customAlert("List Saved to History successfully!");
-            cart = []; renderCart();
-        }
+        document.getElementById('grand-total').innerText = total.toFixed(2);
+    }
 
-        function loadList(id) {
-            const listObj = appData.lists.find(l => l.id === id);
-            cart = JSON.parse(JSON.stringify(listObj.items)); renderCart();
-            switchTab('maker', document.querySelector('.desktop-nav .nav-btn'));
-        }
 
-        async function deleteList(id) {
-            const confirmed = await customConfirm("Delete this saved list? This action cannot be undone.");
-            if(!confirmed) return;
-            appData.lists = appData.lists.filter(l => l.id !== id); saveData(); renderHistory();
-        }
+    // ── SECTION 8: HISTORY ───────────────────────────────────────────
 
-        function downloadBackup() {
-            const jsonStr = JSON.stringify(appData);
-            const blob = new Blob([jsonStr], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `GroceryPro_Backup_${new Date().toLocaleDateString().replace(/\//g,'-')}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+    function renderHistory() {
+        const container = document.getElementById('history-container');
+        if (!appData.lists.length) {
+            container.innerHTML = `<p style="color:var(--muted); grid-column:1/-1; text-align:center; padding:2rem;">No saved lists yet.</p>`;
+            return;
         }
+        container.innerHTML = [...appData.lists].reverse().map(list => `
+            <div class="card" style="margin-bottom:0; display:flex; flex-direction:column;">
+                <div class="text-sm-muted mb-1">${list.date}</div>
+                <div id="title-display-${list.id}" style="font-weight:600; font-size:1.05rem; margin-bottom:.5rem; cursor:pointer; color:var(--accent);" onclick="startRename('${list.id}')" title="Tap to rename">${list.title}</div>
+                <div id="title-edit-${list.id}" style="display:none; margin-bottom:.5rem;">
+                    <input class="rename-input" id="rename-input-${list.id}" value="${list.title}"
+                        onkeydown="handleRenameKey(event,'${list.id}')"
+                        onblur="saveRename('${list.id}')">
+                </div>
+                <p class="text-sm-muted mb-2">${list.items.length} Items | Total: <span style="color:var(--text); font-weight:600;">₹${list.total.toFixed(2)}</span></p>
+                <div style="display:flex; gap:.5rem; margin-top:auto;">
+                    <button class="btn-outline" style="padding:.4rem; font-size:.85rem; flex:1;" onclick="loadList('${list.id}')">Load</button>
+                    <button class="btn-outline" style="padding:.4rem; font-size:.85rem; flex:1; color:var(--text); border-color:var(--muted);" onclick="downloadHistoryPDF('${list.id}')">PDF</button>
+                    <button class="btn-danger"  style="padding:.4rem; font-size:.85rem; flex:1;" onclick="deleteList('${list.id}')">Del</button>
+                </div>
+            </div>`).join('');
+    }
 
-        function handleFileSelect(input) {
-            const display = document.getElementById('file-name-display');
-            if (input.files && input.files[0]) { display.innerText = "Selected: " + input.files[0].name; display.style.color = "var(--accent)"; } 
-            else { display.innerText = "No file selected"; display.style.color = "var(--text-muted)"; }
-        }
+    // #10 — Rename helpers
+    function startRename(id) {
+        document.getElementById(`title-display-${id}`).style.display = 'none';
+        const editDiv = document.getElementById(`title-edit-${id}`);
+        editDiv.style.display = 'block';
+        const inp = document.getElementById(`rename-input-${id}`);
+        inp.focus(); inp.select();
+    }
 
-        async function restoreBackup() {
-            const fileInput = document.getElementById('restore-file');
-            if (!fileInput.files.length) { await customAlert("Please select a JSON backup file first."); return; }
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                try {
-                    const parsed = JSON.parse(e.target.result);
-                    if (parsed.inventory && parsed.lists && parsed.settings) {
-                        appData = parsed; 
-                        if(!appData.units) appData.units = ["kg", "gram", "Ltr", "Piece", "Packet", "Ladi"];
-                        saveData(); init(); 
-                        await customAlert("Data Restored Successfully!");
-                        fileInput.value = ""; document.getElementById('file-name-display').innerText = "No file selected";
-                    } else { await customAlert("Invalid backup file format."); }
-                } catch (err) { await customAlert("Error reading file."); }
-            };
-            reader.readAsText(fileInput.files[0]);
-        }
+    function saveRename(id) {
+        const inp  = document.getElementById(`rename-input-${id}`);
+        const name = inp ? inp.value.trim() : '';
+        const list = appData.lists.find(l => l.id === id);
+        if (list && name) { list.title = name; saveData(); }
+        renderHistory();
+    }
 
-        init();
+    function handleRenameKey(e, id) {
+        if (e.key === 'Enter')  { e.preventDefault(); saveRename(id); }
+        if (e.key === 'Escape') { renderHistory(); }
+    }
+
+    async function saveCurrentList() {
+        if (!cart.length) { await customAlert("Cart is empty! Cannot save."); return; }
+        const total = cart.reduce((s, item) => s + item.rate * item.qty, 0);
+        appData.lists.push({
+            id:    'list_' + Date.now(),
+            date:  new Date().toLocaleString(),
+            title: `List - ${new Date().toLocaleDateString()}`,
+            items: [...cart],
+            total,
+        });
+        saveData(); renderHistory();
+        await customAlert("List Saved to History successfully!");
+        cart = []; renderCart();
+    }
+
+    function loadList(id) {
+        cart = JSON.parse(JSON.stringify(appData.lists.find(l => l.id === id).items));
+        renderCart();
+        switchTab('maker', document.querySelector('.desktop-nav .nav-btn'));
+    }
+
+    async function deleteList(id) {
+        if (!await customConfirm("Delete this saved list? This cannot be undone.")) return;
+        appData.lists = appData.lists.filter(l => l.id !== id);
+        saveData(); renderHistory();
+    }
+
+
+    // ── SECTION 9: PDF EXPORT ────────────────────────────────────────
+
+    // Shared: build offscreen PDF container
+    function makePDFContainer() {
+        const el = document.createElement('div');
+        Object.assign(el.style, {
+            padding: '30px', background: '#ffffff', color: '#0f172a',
+            fontFamily: "'Inter', sans-serif", width: '700px',
+            boxSizing: 'border-box', position: 'fixed', left: '-9999px', top: '0',
+        });
+        return el;
+    }
+
+    // Shared: PDF table HTML for a list of items
+    function buildPDFTable(items, isListOnly) {
+        const colItem  = isListOnly ? '45%' : '35%';
+        const colLast  = isListOnly ? '35%' : '30%';
+        const lastHead = isListOnly ? 'Amount (Write)' : 'Total (₹)';
+        const lastAlign= isListOnly ? 'left' : 'right';
+        const cellStyle= 'padding:10px 12px; border:1px solid #cbd5e1; font-size:13px;';
+
+        const rows = items.map((item, i) => {
+            const bg  = i % 2 === 0 ? '#ffffff' : '#f1f5f9';
+            const amt = item.rate * item.qty;
+            return `<tr style="background:${bg};">
+                <td style="${cellStyle} font-weight:500; word-wrap:break-word; overflow-wrap:break-word; white-space:normal;">${item.name}</td>
+                ${isListOnly ? '' : `<td style="${cellStyle} text-align:right; color:#64748b;">₹${item.rate}</td>`}
+                <td style="${cellStyle} text-align:right; font-weight:600;">${item.qty} <span style="font-size:11px; color:#64748b;">${item.unit}</span></td>
+                <td style="${cellStyle} text-align:${lastAlign}; font-weight:600; color:#0f172a;">
+                    ${isListOnly ? '<div style="border-bottom:1px dotted #94a3b8; height:18px; width:80%;"></div>' : `₹${amt.toFixed(2)}`}
+                </td>
+            </tr>`;
+        }).join('');
+
+        return `
+            <table style="width:100%; table-layout:fixed; border-collapse:collapse; margin-bottom:25px; word-wrap:break-word;">
+                <thead>
+                    <tr style="background:#f0fdf4; text-transform:uppercase; font-size:11px; color:#059669;">
+                        <th style="width:${colItem}; padding:12px 10px; border:1px solid #cbd5e1; text-align:left;">Item Description</th>
+                        ${isListOnly ? '' : '<th style="width:15%; padding:12px 10px; border:1px solid #cbd5e1; text-align:right;">Rate</th>'}
+                        <th style="width:20%; padding:12px 10px; border:1px solid #cbd5e1; text-align:right;">Quantity</th>
+                        <th style="width:${colLast}; padding:12px 10px; border:1px solid #cbd5e1; text-align:${lastAlign};">${lastHead}</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+    }
+
+    function buildPDFHeader(leftHTML, rightHTML) {
+        return `<div style="border-bottom:2px solid #10b981; padding-bottom:15px; margin-bottom:25px; display:flex; justify-content:space-between; align-items:flex-end;">
+            <div><h1 style="color:#10b981; margin:0; font-size:26px;">GroceryPro</h1>${leftHTML}</div>
+            <div style="color:#64748b; font-size:14px; text-align:right; line-height:1.5;">${rightHTML}</div>
+        </div>`;
+    }
+
+    function buildTotalFooter(total) {
+        return `<div style="text-align:right; font-size:18px; font-weight:700; margin-top:20px; padding:18px; background:#f0fdf4; border:1px solid #10b981; border-radius:8px; color:#0f172a;">Grand Total: <span style="color:#10b981;">₹${total.toFixed(2)}</span></div>`;
+    }
+
+    const PDF_OPTIONS = filename => ({
+        margin:      [0.5, 0.4, 0.5, 0.4],
+        filename,
+        image:       { type:'jpeg', quality:0.98 },
+        html2canvas: { scale:2, letterRendering:true, useCORS:true },
+        jsPDF:       { unit:'in', format:'a4', orientation:'portrait' },
+    });
+
+    function showPDFOverlay()  { document.getElementById('pdf-overlay').classList.add('active'); }
+    function hidePDFOverlay()  { document.getElementById('pdf-overlay').classList.remove('active'); }
+
+    function renderPDF(container, filename) {
+        showPDFOverlay();
+        document.body.appendChild(container);
+        html2pdf().set(PDF_OPTIONS(filename)).from(container).save()
+            .then(() => {
+                document.body.removeChild(container);
+                hidePDFOverlay();
+            })
+            .catch(() => hidePDFOverlay());
+    }
+
+    async function exportPDF() {
+        if (window._pdfLibMissing) { await customAlert("PDF export needs internet connection to load the PDF library. Please connect and try again."); return; }
+        if (!cart.length) { await customAlert("The list is currently empty. Please add items first."); return; }
+        const isListOnly = appData.settings.listOnlyMode;
+        const total      = cart.reduce((s, i) => s + i.rate * i.qty, 0);
+        const container  = makePDFContainer();
+        const header     = buildPDFHeader(
+            `<div style="color:#64748b; font-size:14px; margin-top:5px; font-weight:500;">${isListOnly ? 'Grocery List (Manual Entry)' : 'Quotation / Estimate'}</div>`,
+            `<strong>Date:</strong> ${new Date().toLocaleDateString()}<br><strong>Time:</strong> ${new Date().toLocaleTimeString()}`
+        );
+        container.innerHTML = header + buildPDFTable(cart, isListOnly) + (!isListOnly ? buildTotalFooter(total) : '');
+        renderPDF(container, `GroceryPro_${new Date().toLocaleDateString().replace(/\//g,'-')}.pdf`);
+    }
+
+    async function downloadHistoryPDF(id) {
+        if (window._pdfLibMissing) { await customAlert("PDF export needs internet connection to load the PDF library. Please connect and try again."); return; }
+        const list       = appData.lists.find(l => l.id === id); if (!list) return;
+        const isListOnly = appData.settings.listOnlyMode;
+        const container  = makePDFContainer();
+        const header     = buildPDFHeader(
+            `<div style="color:#64748b; font-size:14px; margin-top:5px; font-weight:500;">${list.title}</div>`,
+            `<strong>Saved On:</strong><br>${list.date}`
+        );
+        container.innerHTML = header + buildPDFTable(list.items, isListOnly) + (!isListOnly ? buildTotalFooter(list.total) : '');
+        renderPDF(container, `${list.title.replace(/\s+/g,'_')}.pdf`);
+    }
+
+
+    // ── SECTION 10: DATA BACKUP / RESTORE ────────────────────────────
+
+    function downloadBackup() {
+        const blob = new Blob([JSON.stringify(appData)], { type:'application/json' });
+        const url  = URL.createObjectURL(blob);
+        const a    = Object.assign(document.createElement('a'), {
+            href:     url,
+            download: `GroceryPro_Backup_${new Date().toLocaleDateString().replace(/\//g,'-')}.json`,
+        });
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+
+    function handleFileSelect(input) {
+        const display = document.getElementById('file-name-display');
+        display.innerText  = input.files?.[0] ? `Selected: ${input.files[0].name}` : 'No file selected';
+        display.style.color = input.files?.[0] ? 'var(--accent)' : 'var(--muted)';
+    }
+
+    async function restoreBackup() {
+        const fileInput = document.getElementById('restore-file');
+        if (!fileInput.files.length) { await customAlert("Please select a JSON backup file first."); return; }
+        const reader = new FileReader();
+        reader.onload = async e => {
+            try {
+                const parsed = JSON.parse(e.target.result);
+                if (parsed.inventory && parsed.lists && parsed.settings) {
+                    appData = parsed;
+                    if (!appData.units) appData.units = DEFAULT_UNITS;
+                    cart = [];          // #12 fix: clear in-memory cart on restore
+                    inventoryFilter = ''; // also reset search
+                    saveData(); init();
+                    await customAlert("Data Restored Successfully!");
+                    fileInput.value = '';
+                    document.getElementById('file-name-display').innerText = 'No file selected';
+                } else { await customAlert("Invalid backup file format."); }
+            } catch { await customAlert("Error reading file."); }
+        };
+        reader.readAsText(fileInput.files[0]);
+    }
+
+    // ── BOOT ─────────────────────────────────────────────────────────
+    init();
     </script>
 </body>
 </html>
