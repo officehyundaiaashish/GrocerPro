@@ -139,6 +139,20 @@
 const CACHE = 'quotepad-v1';
 const URLS  = [self.location.pathname || '/'];
 
+// ── Sarcastic nudge messages ──────────────────────────────────────
+const NUDGES = [
+    { title: 'Arre bhai...', body: 'Quotation banana tha na? Ya bas sochte rehna hai?' },
+    { title: 'QuotePad yahan hai', body: 'Items toh bahut hai list mein, rate toh daal do yaar.' },
+    { title: 'Paisa hi paisa hoga', body: 'Bas ek quotation banana baaki hai. Haan, wahi wala.' },
+    { title: 'Reminder hai ya award?', body: 'List bani nahi abhi tak. QuotePad wait kar raha hai — patiently.' },
+    { title: 'Socha toh hoga', body: 'Quotation bhi kabhi bana lena bhai. App khali pada hai.' },
+    { title: 'Samay aa gaya', body: 'Nahi nahi, jaldi nahi. Bas... quotation.' },
+    { title: 'Invoice nahi, quotation', body: 'Chhota sa kaam hai. QuotePad mein 2 minute lagte hain.' },
+    { title: 'Koi nahi poochh raha', body: 'Bas yaad dilana tha ki list banaao. Bas.' },
+    { title: 'Shopping list bhi chalega', body: 'Rates nahi chahiye toh Hide Rates wala button hai. Jaao!' },
+    { title: 'App install hai yahan', body: 'Kaam aata toh hai, use bhi karo kabhi.' },
+];
+
 self.addEventListener('install', e => {
     e.waitUntil(caches.open(CACHE).then(c => c.addAll(URLS)).then(() => self.skipWaiting()));
 });
@@ -158,6 +172,46 @@ self.addEventListener('fetch', e => {
                 return res;
             })
             .catch(() => caches.match(e.request))
+    );
+});
+
+// ── Listen for messages from main app ────────────────────────────
+self.addEventListener('message', e => {
+    if (e.data?.type === 'SHOW_BACKUP_NOTIF') {
+        self.registration.showNotification('QuotePad Backup', {
+            body: e.data.body || 'Aaj ka auto backup le liya gaya. Data safe hai!',
+            icon: e.data.icon || '',
+            badge: e.data.icon || '',
+            tag: 'qp-backup',
+            silent: false,
+        });
+    }
+    if (e.data?.type === 'SCHEDULE_NUDGE') {
+        // Store next nudge time in SW scope
+        self._nudgeDelay = e.data.delayMs;
+        if (self._nudgeTimer) clearTimeout(self._nudgeTimer);
+        self._nudgeTimer = setTimeout(() => {
+            const pick = NUDGES[Math.floor(Math.random() * NUDGES.length)];
+            self.registration.showNotification(pick.title, {
+                body: pick.body,
+                icon: e.data.icon || '',
+                badge: e.data.icon || '',
+                tag: 'qp-nudge',
+                renotify: true,
+                silent: true,
+            });
+        }, self._nudgeDelay);
+    }
+});
+
+// ── Notification click → open app ────────────────────────────────
+self.addEventListener('notificationclick', e => {
+    e.notification.close();
+    e.waitUntil(
+        clients.matchAll({ type:'window', includeUncontrolled:true }).then(list => {
+            if (list.length) return list[0].focus();
+            return clients.openWindow('./');
+        })
     );
 });`;
         const swBlob = new Blob([swCode], {type:'application/javascript'});
@@ -223,6 +277,11 @@ self.addEventListener('fetch', e => {
         body.dark .dialog-box           { background:#132920; }
         body.dark .unit-pill            { background:#0d2b1f; border-color:#1e4a38; color:#6ee7b7; }
         body.dark .unit-pill-add        { border-color:#10b981; color:#10b981; }
+        body.dark .note-wrap { background:var(--accent-light); border-color:#1e4a38; }
+        body.dark .note-wrap:focus-within { background:#0d3326; border-color:var(--accent); }
+        body.dark .note-input::placeholder { color:#6ee7b7; }
+        body.dark .note-input { color:var(--muted); }
+        body.dark .note-input:focus { color:var(--text); }
         body.dark .scroll-hint          { background:#0d2b1f; border-color:#1e4a38; }
         body.dark .qty-value            { background:var(--accent-light); color:#10b981; }
         body.dark .btn-danger           { background:#2d1515; color:#f87171; }
@@ -313,10 +372,13 @@ self.addEventListener('fetch', e => {
         .tax-input { width:70px; padding:.3rem .5rem; border:1.5px solid var(--border); border-radius:7px; font-size:.88rem; background:var(--solid); color:var(--text); text-align:center; }
         .tax-input:focus { border-color:var(--accent); outline:none; }
         .tax-result { margin-left:auto; font-size:.88rem; font-weight:700; color:var(--accent-hover); white-space:nowrap; }
-        .note-row { padding:.25rem .75rem .5rem 2.5rem; }
-        .note-input { width:100%; font-size:.78rem; color:var(--muted); border:none; border-bottom:1px dashed var(--border); background:transparent; outline:none; padding:.15rem 0; }
-        .note-input::placeholder { color:var(--border); }
-        .note-input:focus { border-color:var(--accent); color:var(--text); }
+        .note-row { padding:.3rem .6rem .5rem .6rem; }
+        .note-wrap { display:flex; align-items:center; gap:.4rem; background:var(--accent-light); border:1.5px dashed var(--accent); border-radius:20px; padding:.3rem .7rem; transition:border-color .15s, background .15s; }
+        .note-wrap:focus-within { background:#d1fae5; border-style:solid; border-color:var(--accent); }
+        .note-wrap svg { flex-shrink:0; opacity:.55; }
+        .note-input { flex:1; font-size:.78rem; color:var(--muted); border:none; background:transparent; outline:none; padding:0; }
+        .note-input::placeholder { color:var(--accent); opacity:.55; font-style:italic; }
+        .note-input:focus { color:var(--text); }
         .ph-badge { display:inline-block; font-size:.68rem; padding:.1rem .45rem; border-radius:20px; font-weight:700; margin:1px; }
         .ph-up   { background:#dcfce7; color:#166534; }
         .ph-down { background:#fee2e2; color:#991b1b; }
@@ -325,6 +387,8 @@ self.addEventListener('fetch', e => {
         .currency-pill.active, .currency-pill:hover { border-color:var(--accent); background:var(--accent); color:#fff; }
         .wa-btn { background:#25D366; border:none; color:#fff; display:flex; align-items:center; justify-content:center; gap:.4rem; }
         .wa-btn:hover { background:#1ebe5d; }
+        .action-btn-hover:hover  { transform:translateY(-2px); box-shadow:0 4px 10px rgba(0,0,0,.15) !important; }
+        .action-btn-hover:active { transform:scale(.96); }
 
 
         /* ── QUICK-ADD ITEM SHEET ───────────────────────────────────── */
@@ -642,6 +706,11 @@ self.addEventListener('fetch', e => {
         }
         input[type="checkbox"]:checked + .toggle-switch            { background:var(--accent); }
         input[type="checkbox"]:checked + .toggle-switch::after     { transform:translateX(20px); }
+        #mode-toggle:checked ~ * { color:var(--accent); }
+        #hide-rates-btn:has(#mode-toggle:checked) { background:var(--accent); border-color:var(--accent-hover); }
+        #hide-rates-btn:has(#mode-toggle:checked) .toggle-switch { background:rgba(255,255,255,0.35); }
+        #hide-rates-btn:has(#mode-toggle:checked) div { color:#fff !important; }
+        #hide-rates-btn:has(#mode-toggle:checked) .toggle-switch::after { transform:translateX(20px); }
 
         /* ── UNIT PILL TAGS ─────────────────────────────────────────── */
 
@@ -1006,14 +1075,7 @@ self.addEventListener('fetch', e => {
                     </div>
                 </div>
 
-                <div class="card-header" style="margin-bottom:.75rem;">
-                    <span></span>
-                    <label class="toggle-container">
-                        <span class="toggle-label-text">Hide Rates (For Shop)</span>
-                        <input type="checkbox" id="mode-toggle" onchange="toggleMode()" style="display:none;">
-                        <div class="toggle-switch"></div>
-                    </label>
-                </div>
+
                 <!-- Hidden list name input (used by save/PDF only) -->
                 <input type="hidden" id="list-name-input">
 
@@ -1062,12 +1124,12 @@ self.addEventListener('fetch', e => {
                                     <input type="text" id="qa-new-unit-input" placeholder="Unit name..." maxlength="12"
                                         onkeydown="qaNewUnitKey(event)">
                                     <button onclick="qaNewUnitSave()" style="background:var(--accent);">Add</button>
-                                    <button onclick="qaNewUnitCancel()" style="background:transparent;border:1.5px solid var(--border);color:var(--muted);">✕</button>
+                                    <button onclick="qaNewUnitCancel()" style="background:transparent;border:1.5px solid var(--border);color:var(--muted);"><svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
                                 </div>
                             </div>
                             <div class="qa-actions">
                                 <button class="qa-save" onclick="quickAddSave()">Save &amp; Select</button>
-                                <button class="qa-cancel" onclick="quickAddClose()" title="Cancel">✕</button>
+                                <button class="qa-cancel" onclick="quickAddClose()" title="Cancel"><svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
                             </div>
                         </div>
                         <div class="input-group">
@@ -1192,20 +1254,80 @@ self.addEventListener('fetch', e => {
                     </div>
                 </div>
 
-                <div class="grid-3-mobile no-print" style="margin-top:1.5rem;">
-                    <button class="btn-outline" style="border-color:var(--danger); color:var(--danger); padding:.5rem;" onclick="clearCart()">Clear List</button>
-                    <button class="btn-outline" style="padding:.5rem;" onclick="saveCurrentList()">Save in History</button>
-                    <button style="padding:.5rem;" onclick="exportPDF()">Export PDF</button>
-                </div>
-                <div class="grid-3-mobile no-print" style="margin-top:.6rem;">
-                    <button class="wa-btn" style="padding:.5rem; flex:1;" onclick="shareWhatsApp()">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                        WhatsApp
+                <div class="no-print" style="margin-top:1.5rem; display:flex; flex-direction:column; gap:.65rem;">
+                    <!-- Row 1: Save + Export PDF -->
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:.65rem;">
+                        <button onclick="saveCurrentList()" class="action-btn-hover" style="
+                            display:flex; align-items:center; justify-content:center; gap:.45rem;
+                            background:linear-gradient(135deg,#10b981,#059669);
+                            color:#fff; border:none; border-radius:16px;
+                            padding:.75rem .5rem; font-size:.88rem; font-weight:700;
+                            box-shadow:0 2px 6px rgba(0,0,0,.12);
+                            transition:transform .15s, box-shadow .15s; cursor:pointer;">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5v14l7-4 7 4V5a2 2 0 00-2-2H7a2 2 0 00-2 2z"/></svg>
+                            Save
+                        </button>
+                        <button onclick="exportPDF()" class="action-btn-hover" style="
+                            display:flex; align-items:center; justify-content:center; gap:.45rem;
+                            background:linear-gradient(135deg,#6366f1,#4f46e5);
+                            color:#fff; border:none; border-radius:16px;
+                            padding:.75rem .5rem; font-size:.88rem; font-weight:700;
+                            box-shadow:0 2px 6px rgba(0,0,0,.12);
+                            transition:transform .15s, box-shadow .15s; cursor:pointer;">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2zM12 3v6h6"/></svg>
+                            Export PDF
+                        </button>
+                    </div>
+                    <!-- Row 2: WhatsApp + Excel -->
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:.65rem;">
+                        <button onclick="shareWhatsApp()" class="action-btn-hover" style="
+                            display:flex; align-items:center; justify-content:center; gap:.45rem;
+                            background:linear-gradient(135deg,#25d366,#1aab55);
+                            color:#fff; border:none; border-radius:16px;
+                            padding:.75rem .5rem; font-size:.88rem; font-weight:700;
+                            box-shadow:0 2px 6px rgba(0,0,0,.12);
+                            transition:transform .15s, box-shadow .15s; cursor:pointer;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                            WhatsApp
+                        </button>
+                        <button onclick="exportExcel()" class="action-btn-hover" style="
+                            display:flex; align-items:center; justify-content:center; gap:.45rem;
+                            background:linear-gradient(135deg,#f0fdf4,#dcfce7);
+                            color:#059669; border:1.5px solid #a7f3d0; border-radius:16px;
+                            padding:.75rem .5rem; font-size:.88rem; font-weight:700;
+                            box-shadow:0 2px 6px rgba(0,0,0,.06);
+                            transition:transform .15s, box-shadow .15s; cursor:pointer;">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            Excel
+                        </button>
+                    </div>
+                    <!-- Row 3: Clear List — small, subtle -->
+                    <button onclick="clearCart()" style="
+                        display:flex; align-items:center; justify-content:center; gap:.4rem;
+                        background:transparent; color:#ef4444;
+                        border:1.5px dashed #fca5a5; border-radius:12px;
+                        padding:.5rem; font-size:.8rem; font-weight:600;
+                        transition:all .15s; cursor:pointer; width:100%;">
+                        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        Clear List
                     </button>
-                    <button class="btn-outline" style="padding:.5rem; flex:1;" onclick="exportExcel()">
-                        <svg width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        Excel
-                    </button>
+
+                    <!-- Hide Rates Toggle — cute pill -->
+                    <label id="hide-rates-btn" style="
+                        display:flex; align-items:center; justify-content:space-between;
+                        background:var(--accent-light); border:1.5px solid var(--accent);
+                        border-radius:16px; padding:.65rem 1rem;
+                        cursor:pointer; transition:background .2s; user-select:none;">
+                        <div style="display:flex; align-items:center; gap:.55rem;">
+                            <svg width="18" height="18" fill="none" stroke="var(--accent-hover)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                            <div>
+                                <div style="font-size:.88rem; font-weight:700; color:var(--accent-hover);">Hide Rates</div>
+                                <div style="font-size:.72rem; color:var(--muted); margin-top:1px;">Shopping list mode — rates chhupa do</div>
+                            </div>
+                        </div>
+                        <input type="checkbox" id="mode-toggle" onchange="toggleMode()" style="display:none;">
+                        <div class="toggle-switch"></div>
+                    </label>
                 </div>
             </div>
         </section>
@@ -1215,7 +1337,7 @@ self.addEventListener('fetch', e => {
             <div class="card animate-entry">
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.6rem;">
                     <h3 style="margin:0;">Unit Types</h3>
-                    <span class="text-xs-muted">Tap ✕ to delete</span>
+                    <span class="text-xs-muted">Tap X to delete</span>
                 </div>
                 <div id="unit-tags-container" style="display:flex; flex-wrap:wrap; gap:.5rem; align-items:center;"></div>
                 <!-- Inline add-unit input — hidden until + tapped -->
@@ -1224,7 +1346,7 @@ self.addEventListener('fetch', e => {
                         <input type="text" id="new-unit-input" placeholder="e.g. Box, Dozen, Katta" maxlength="15"
                             onkeydown="handleUnitKey(event)" style="height:38px; font-size:.9rem; flex:1;">
                         <button onclick="addNewUnit()" style="width:auto; height:38px; padding:0 1rem; font-size:.85rem;">Add</button>
-                        <button onclick="hideUnitAdd()" style="width:38px; height:38px; padding:0; background:transparent; border:1.5px solid var(--border); color:var(--muted); font-size:1rem;">✕</button>
+                        <button onclick="hideUnitAdd()" style="width:38px; height:38px; padding:0; background:transparent; border:1.5px solid var(--border); color:var(--muted); font-size:1rem;"><svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
                     </div>
                 </div>
             </div>
@@ -1256,7 +1378,7 @@ self.addEventListener('fetch', e => {
                 <div class="search-wrap">
                     <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/></svg>
                     <input type="text" id="inv-search" class="search-input" placeholder="Search items..." oninput="filterInventory(this.value)">
-                    <button class="search-clear" id="search-clear-btn" onclick="clearSearch()" title="Clear">✕</button>
+                    <button class="search-clear" id="search-clear-btn" onclick="clearSearch()" title="Clear"><svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
                 </div>
                 <div class="inv-count" id="inv-count"></div>
 
@@ -1302,7 +1424,100 @@ self.addEventListener('fetch', e => {
                     <div id="currency-pills"></div>
                 </div>
             </div>
-            <div class="card animate-entry" style="animation-delay:.05s;">
+
+            <!-- AUTO BACKUP PANEL (shown only in PWA/app mode) -->
+            <div class="card animate-entry" id="auto-backup-card" style="animation-delay:.04s; display:none;">
+                <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:1rem;">
+                    <div style="width:38px; height:38px; background:linear-gradient(135deg,#10b981,#059669); border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <svg width="20" height="20" fill="none" stroke="#fff" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-size:1rem; font-weight:700; color:var(--text);">Auto Backup</div>
+                        <div style="font-size:.75rem; color:var(--muted);">Roz subah 7 baje apne aap save hoga</div>
+                    </div>
+                    <div id="auto-backup-badge" style="margin-left:auto; font-size:.7rem; font-weight:700; padding:.25rem .65rem; border-radius:20px; background:#dcfce7; color:#166534;">ON</div>
+                </div>
+
+                <!-- Location hint -->
+                <div style="background:linear-gradient(135deg,#f0fdf4,#d1fae5); border:1.5px solid #a7f3d0; border-radius:14px; padding:.85rem 1rem; margin-bottom:1rem;">
+                    <div style="display:flex; align-items:flex-start; gap:.6rem;">
+                        <svg width="20" height="20" fill="none" stroke="#059669" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+                        <div>
+                            <div style="font-size:.82rem; font-weight:700; color:#065f46; margin-bottom:.3rem;">Backup kahaan save hota hai?</div>
+                            <div style="font-size:.78rem; color:#047857; line-height:1.6;">
+                                Android mein backup yahan milega:<br>
+                                <span style="font-family:monospace; background:rgba(255,255,255,.7); padding:.1rem .4rem; border-radius:5px; font-size:.74rem;">Downloads / QuotePad_Backup_*.json</span><br>
+                                <span style="font-size:.72rem; color:#059669; margin-top:.3rem; display:flex; align-items:center; gap:.3rem;"><svg width="11" height="11" fill="none" stroke="#059669" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m1.636-6.364l.707.707M6.343 17.657l-.707.707M17.657 17.657l.707.707M12 6a6 6 0 100 12A6 6 0 0012 6z"/></svg> File Manager → Downloads folder mein dekho</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Saved backups list -->
+                <div style="font-size:.8rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:.5rem;">Saved Backups (max 10)</div>
+                <div id="auto-backup-list" style="display:flex; flex-direction:column; gap:.4rem; margin-bottom:.75rem;">
+                    <div style="text-align:center; color:var(--muted); font-size:.82rem; padding:1rem;">Loading backups...</div>
+                </div>
+
+                <button onclick="triggerManualBackup()" style="
+                    width:100%; display:flex; align-items:center; justify-content:center; gap:.5rem;
+                    background:linear-gradient(135deg,#10b981,#059669); color:#fff;
+                    border:none; border-radius:14px; padding:.75rem; font-size:.88rem; font-weight:700;
+                    box-shadow:0 2px 6px rgba(0,0,0,.12); cursor:pointer; transition:transform .15s;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Abhi Backup Lo
+                </button>
+            </div>
+
+            <!-- RESTORE PANEL (PWA mode) -->
+            <div class="card animate-entry" id="pwa-restore-card" style="animation-delay:.08s; display:none;">
+                <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:1rem;">
+                    <div style="width:38px; height:38px; background:linear-gradient(135deg,#6366f1,#4f46e5); border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <svg width="20" height="20" fill="none" stroke="#fff" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-size:1rem; font-weight:700; color:var(--text);">Restore Backup</div>
+                        <div style="font-size:.75rem; color:var(--muted);">Latest backup se restore karo — ya khud choose karo</div>
+                    </div>
+                </div>
+
+                <!-- Latest backup highlight -->
+                <div id="latest-backup-box" style="background:var(--accent-light); border:1.5px solid var(--accent); border-radius:14px; padding:.85rem 1rem; margin-bottom:.75rem; display:none;">
+                    <div style="font-size:.72rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:.3rem; display:flex; align-items:center; gap:.3rem;"><svg width="11" height="11" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Latest Backup</div>
+                    <div id="latest-backup-name" style="font-size:.88rem; font-weight:700; color:var(--accent-hover);"></div>
+                    <div id="latest-backup-date" style="font-size:.75rem; color:var(--muted); margin-top:.15rem;"></div>
+                </div>
+
+                <button id="restore-latest-btn" onclick="restoreLatestBackup()" style="
+                    width:100%; display:flex; align-items:center; justify-content:center; gap:.5rem;
+                    background:linear-gradient(135deg,#6366f1,#4f46e5); color:#fff;
+                    border:none; border-radius:14px; padding:.75rem; font-size:.88rem; font-weight:700;
+                    box-shadow:0 2px 6px rgba(0,0,0,.12); cursor:pointer; transition:transform .15s;
+                    margin-bottom:.6rem; display:none;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12"/></svg>
+                    Latest Backup Restore Karo
+                </button>
+
+                <!-- Divider -->
+                <div style="display:flex; align-items:center; gap:.5rem; margin:.5rem 0;">
+                    <div style="flex:1; height:1px; background:var(--border-light);"></div>
+                    <span style="font-size:.72rem; color:var(--muted); font-weight:600;">YA KHUD CHOOSE KARO</span>
+                    <div style="flex:1; height:1px; background:var(--border-light);"></div>
+                </div>
+
+                <div class="file-upload-wrapper" style="margin-top:.4rem;">
+                    <input type="file" id="restore-file" accept=".json" class="file-upload-input" onchange="handleFileSelect(this)">
+                    <div class="file-upload-label" style="padding:.85rem; border-radius:12px;">
+                        <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                        <span style="margin-top:.2rem; font-weight:600; font-size:.82rem;">Browse karke JSON select karo</span>
+                    </div>
+                </div>
+                <div id="file-name-display" class="file-name" style="font-size:.75rem; margin:.4rem 0 .5rem; text-align:center;">Koi file select nahi ki</div>
+                <button class="btn-outline w-100" onclick="restoreBackup()" style="border-radius:12px; padding:.65rem;">Is File Se Restore Karo</button>
+            </div>
+
+            <!-- WEBSITE MODE: original simple backup/restore -->
+            <div class="card animate-entry" id="web-backup-card" style="animation-delay:.05s;">
                 <h2>Data Management</h2>
                 <p class="text-sm-muted mb-4">Secure your Settings, Custom Units, Inventory, and Lists in a JSON file. 100% Offline.</p>
                 <div class="grid-2">
@@ -1316,14 +1531,14 @@ self.addEventListener('fetch', e => {
                         <h3>Restore Data</h3>
                         <p class="text-xs-muted mb-1">Upload a previously saved backup.</p>
                         <div class="file-upload-wrapper mb-1">
-                            <input type="file" id="restore-file" accept=".json" class="file-upload-input" onchange="handleFileSelect(this)">
+                            <input type="file" id="restore-file-web" accept=".json" class="file-upload-input" onchange="handleFileSelectWeb(this)">
                             <div class="file-upload-label" style="padding:1rem;">
                                 <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                                 <span style="margin-top:.2rem; font-weight:500; font-size:.8rem;">Select JSON</span>
                             </div>
                         </div>
-                        <div id="file-name-display" class="file-name" style="font-size:.7rem;">No file selected</div>
-                        <button class="btn-outline w-100" onclick="restoreBackup()" style="margin-top:.5rem;">Restore</button>
+                        <div id="file-name-display-web" class="file-name" style="font-size:.7rem;">No file selected</div>
+                        <button class="btn-outline w-100" onclick="restoreBackupWeb()" style="margin-top:.5rem;">Restore</button>
                     </div>
                 </div>
             </div>
@@ -1553,6 +1768,7 @@ self.addEventListener('fetch', e => {
         renderHistory();
         renderCurrencyPills();
         checkFirstTime();
+        initBackupUI();
     }
 
     // Splash — show every time, 1.8s visible then smooth fade
@@ -1671,7 +1887,7 @@ self.addEventListener('fetch', e => {
             pill.className = 'unit-pill';
             var txt = document.createTextNode(u);
             var del = document.createElement('button');
-            del.title = 'Delete'; del.textContent = '✕';
+            del.title = 'Delete'; del.innerHTML = '<svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>';
             del.onclick = function(e) { e.stopPropagation(); deleteUnit(u); };
             pill.appendChild(txt); pill.appendChild(del);
             c.appendChild(pill);
@@ -1782,7 +1998,7 @@ self.addEventListener('fetch', e => {
                             <td>
                                 <div class="action-cell">
                                     <button class="btn-small" onclick="saveEditItem('${item.id}')" style="height:30px;">Save</button>
-                                    <button class="btn-outline btn-small" onclick="cancelEdit()" style="height:30px;">✕</button>
+                                    <button class="btn-outline btn-small" onclick="cancelEdit()" style="height:30px;"><svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
                                 </div>
                             </td>
                             <td><input type="text"   id="edit-name-${item.id}" value="${item.name}" style="padding:.4rem; font-size:.85rem; height:35px; width:100%;"></td>
@@ -1909,7 +2125,7 @@ self.addEventListener('fetch', e => {
 
     // Shared delete button HTML (reused in every row)
     const delBtn = idx =>
-        `<button class="btn-del-row no-print" onclick="removeCartItem(${idx})">✕</button>`;
+        `<button class="btn-del-row no-print" onclick="removeCartItem(${idx})"><svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>`;
 
     // Shared qty pill HTML
     const qtyPill = (item, idx) => `
@@ -1942,7 +2158,7 @@ self.addEventListener('fetch', e => {
         let total = 0;
         tbody.innerHTML = cart.map((item, idx) => {
             const amt = item.rate * item.qty; total += amt;
-            const noteRow = `<tr class="no-print"><td colspan="${isListOnly?4:5}" class="note-row"><input class="note-input" placeholder="Add a note..." value="${(item.note||'').replace(/"/g,'&quot;')}" oninput="updateNote(${idx},this.value)"></td></tr>`;
+            const noteRow = `<tr class="no-print"><td colspan="${isListOnly?4:5}" class="note-row"><div class="note-wrap"><svg width="12" height="12" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 13l-4 1 1-4L15.232 5.232a2 2 0 012.828 0l.708.708a2 2 0 010 2.828L9 13z"/></svg><input class="note-input" placeholder="Add a note..." value="${(item.note||'').replace(/"/g,'&quot;')}" oninput="updateNote(${idx},this.value)"></div></td></tr>`;
             const mainRow = isListOnly ? `
                 <tr>
                     <td class="no-print" style="text-align:center; padding:.4rem;">${delBtn(idx)}</td>
@@ -2325,77 +2541,310 @@ self.addEventListener('fetch', e => {
 
     // ── SECTION 10: DATA BACKUP / RESTORE ────────────────────────────
 
-    // Detect if running inside a WebView / PWA (no proper download support)
-    function isWebView() {
-        const ua = navigator.userAgent || '';
-        return (
-            /wv/.test(ua) ||                          // Android WebView flag
-            /Version\/[\d.]+.*Mobile.*Safari/.test(ua) === false && /Safari/.test(ua) === false ||
-            (typeof window.Android !== 'undefined') || // Android JS bridge
-            window.navigator.standalone === true       // iOS PWA standalone
-        );
+    const MAX_BACKUPS   = 10;
+    const BACKUP_STORE  = 'gp_autoBackups';   // localStorage key → array of {name, date, ts, data}
+
+    // PWA / standalone detection
+    function isPWA() {
+        return window.navigator.standalone === true ||
+               window.matchMedia('(display-mode: standalone)').matches ||
+               window.matchMedia('(display-mode: fullscreen)').matches;
     }
 
+    // ── Init backup UI based on mode ──────────────────────────────────
+    function initBackupUI() {
+        const pwa = isPWA();
+        document.getElementById('auto-backup-card').style.display  = pwa ? 'block' : 'none';
+        document.getElementById('pwa-restore-card').style.display  = pwa ? 'block' : 'none';
+        document.getElementById('web-backup-card').style.display   = pwa ? 'none'  : 'block';
+        if (pwa) {
+            renderBackupList();
+            scheduleAutoBackup();
+            initNotifications();
+        }
+    }
+
+    // ── NOTIFICATION SYSTEM (PWA only) ───────────────────────────────
+
+    const NOTIF_PERM_KEY  = 'gp_notifAsked';
+    const NOTIF_NUDGE_KEY = 'gp_nextNudge';
+
+    // Get SW icon from manifest icon192 (already generated as data URL)
+    function getSwIcon() {
+        return document.getElementById('apple-touch-icon')?.href || '';
+    }
+
+    async function initNotifications() {
+        if (!('Notification' in window)) return;
+        if (!('serviceWorker' in navigator)) return;
+
+        // Ask permission once — politely, not immediately
+        const alreadyAsked = localStorage.getItem(NOTIF_PERM_KEY);
+        if (!alreadyAsked && Notification.permission === 'default') {
+            // Wait 30s after install before asking — let user explore first
+            setTimeout(async () => {
+                const granted = await Notification.requestPermission();
+                localStorage.setItem(NOTIF_PERM_KEY, '1');
+                if (granted === 'granted') scheduleNextNudge();
+            }, 30000);
+        } else if (Notification.permission === 'granted') {
+            scheduleNextNudge();
+        }
+    }
+
+    // ── Schedule next sarcastic nudge ────────────────────────────────
+    // Sends 1 nudge every 2–4 days randomly — not more
+    function scheduleNextNudge() {
+        if (Notification.permission !== 'granted') return;
+        const now      = Date.now();
+        const nextTime = parseInt(localStorage.getItem(NOTIF_NUDGE_KEY) || '0');
+
+        if (nextTime && now < nextTime) {
+            // Not time yet — schedule the remaining delay
+            const remaining = nextTime - now;
+            sendNudgeAfter(remaining);
+        } else {
+            // Time has come — send nudge + set next
+            sendNudgeNow();
+            setNextNudgeTime();
+        }
+    }
+
+    function setNextNudgeTime() {
+        // Random between 2 days (172800000ms) and 4 days (345600000ms)
+        const delay = (2 + Math.random() * 2) * 24 * 60 * 60 * 1000;
+        localStorage.setItem(NOTIF_NUDGE_KEY, (Date.now() + delay).toString());
+        sendNudgeAfter(delay);
+    }
+
+    function sendNudgeAfter(delayMs) {
+        navigator.serviceWorker.ready.then(reg => {
+            reg.active?.postMessage({
+                type:    'SCHEDULE_NUDGE',
+                delayMs: Math.min(delayMs, 2147483647), // max safe setTimeout
+                icon:    getSwIcon(),
+            });
+        });
+        // Also re-check when app is opened again (SW timer resets on close)
+        // so we persist next time via localStorage check in scheduleNextNudge
+    }
+
+    function sendNudgeNow() {
+        navigator.serviceWorker.ready.then(reg => {
+            reg.active?.postMessage({
+                type:    'SCHEDULE_NUDGE',
+                delayMs: 1000, // fire almost immediately
+                icon:    getSwIcon(),
+            });
+        });
+    }
+
+    // ── Called after auto backup completes ───────────────────────────
+    function notifyBackupDone(dateStr) {
+        if (!isPWA()) return;
+        if (Notification.permission !== 'granted') return;
+        navigator.serviceWorker.ready.then(reg => {
+            reg.active?.postMessage({
+                type: 'SHOW_BACKUP_NOTIF',
+                body: `Aaj ka backup ho gaya (${dateStr}). Data ekdum safe hai!`,
+                icon: getSwIcon(),
+            });
+        });
+    }
+
+    // ── Read/write backup list from localStorage ──────────────────────
+    function getBackups() {
+        try { return JSON.parse(localStorage.getItem(BACKUP_STORE)) || []; }
+        catch { return []; }
+    }
+    function saveBackups(list) {
+        localStorage.setItem(BACKUP_STORE, JSON.stringify(list));
+    }
+
+    // ── Create one backup entry ───────────────────────────────────────
+    function createBackup(label) {
+        let backups = getBackups();
+        const now   = new Date();
+        const dateStr = now.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+        const timeStr = now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+        const name  = label || `Backup — ${dateStr}, ${timeStr}`;
+
+        // Remove oldest if over limit
+        if (backups.length >= MAX_BACKUPS) {
+            backups.sort((a,b) => a.ts - b.ts);
+            backups.shift();
+        }
+
+        backups.push({ name, date: `${dateStr} ${timeStr}`, ts: now.getTime(), data: JSON.stringify(appData) });
+        saveBackups(backups);
+        renderBackupList();
+        // Notify only for auto backups (no label = auto)
+        if (!label) notifyBackupDone(dateStr);
+    }
+
+    // ── Manual backup button ──────────────────────────────────────────
+    async function triggerManualBackup() {
+        createBackup();
+        await customAlert('Backup le liya!\n\nYeh backup is device ke storage mein save hai.');
+    }
+
+    // ── Render saved backup list ──────────────────────────────────────
+    function renderBackupList() {
+        const backups = getBackups();
+        const el      = document.getElementById('auto-backup-list');
+        const latestBox  = document.getElementById('latest-backup-box');
+        const latestName = document.getElementById('latest-backup-name');
+        const latestDate = document.getElementById('latest-backup-date');
+        const restoreBtn = document.getElementById('restore-latest-btn');
+
+        if (!backups.length) {
+            el.innerHTML = `<div style="text-align:center; color:var(--muted); font-size:.82rem; padding:1rem; background:var(--bg); border-radius:10px;">
+                Abhi tak koi backup nahi hai.<br>Upar wala button dabao!
+            </div>`;
+            if (latestBox) latestBox.style.display = 'none';
+            if (restoreBtn) restoreBtn.style.display = 'none';
+            return;
+        }
+
+        // Sort newest first
+        const sorted = [...backups].sort((a,b) => b.ts - a.ts);
+        const latest = sorted[0];
+
+        // Update latest backup highlight
+        if (latestBox)  { latestBox.style.display  = 'block'; }
+        if (latestName) latestName.textContent = latest.name;
+        if (latestDate) latestDate.textContent = latest.date;
+        if (restoreBtn) restoreBtn.style.display = 'flex';
+
+        el.innerHTML = sorted.map((b, i) => `
+            <div style="display:flex; align-items:center; gap:.6rem;
+                background:${i===0 ? 'var(--accent-light)' : 'var(--bg)'};
+                border:1.5px solid ${i===0 ? 'var(--accent)' : 'var(--border-light)'};
+                border-radius:12px; padding:.6rem .85rem;">
+                <span style="font-size:1rem;">${i===0
+                    ? `<svg width="15" height="15" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>`
+                    : `<svg width="15" height="15" fill="none" stroke="var(--muted)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>`
+                }</span>
+                <div style="flex:1; min-width:0;">
+                    <div style="font-size:.8rem; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${b.name}</div>
+                    <div style="font-size:.7rem; color:var(--muted);">${b.date}</div>
+                </div>
+                <button onclick="restoreFromSlot(${b.ts})" style="
+                    flex-shrink:0; font-size:.7rem; font-weight:700;
+                    background:var(--accent); color:#fff; border:none;
+                    border-radius:8px; padding:.25rem .6rem; cursor:pointer;">
+                    Restore
+                </button>
+            </div>`).join('');
+    }
+
+    // ── Restore latest backup ─────────────────────────────────────────
+    async function restoreLatestBackup() {
+        const backups = getBackups();
+        if (!backups.length) { await customAlert('Koi backup nahi mila!'); return; }
+        const latest = backups.sort((a,b) => b.ts - a.ts)[0];
+        await doRestore(latest.data, latest.name);
+    }
+
+    // ── Restore from a specific slot ─────────────────────────────────
+    async function restoreFromSlot(ts) {
+        const backups = getBackups();
+        const entry   = backups.find(b => b.ts === ts);
+        if (!entry) { await customAlert('Backup nahi mila!'); return; }
+        await doRestore(entry.data, entry.name);
+    }
+
+    // ── Common restore logic ──────────────────────────────────────────
+    async function doRestore(jsonStr, label) {
+        if (!await customConfirm(`"${label}" se restore karo?\n\nCurrent data replace ho jaayega.`)) return;
+        try {
+            const parsed = JSON.parse(jsonStr);
+            if (parsed.inventory && parsed.lists && parsed.settings) {
+                appData = parsed;
+                if (!appData.units)        appData.units        = DEFAULT_UNITS;
+                if (!appData.currency)     appData.currency     = '₹';
+                if (!appData.priceHistory) appData.priceHistory = {};
+                cart = []; inventoryFilter = '';
+                saveData(); init();
+                switchTab('maker', document.querySelector('.desktop-nav .nav-btn'));
+                await customAlert('Restore ho gaya!\n\nAapka data wapas aa gaya.');
+            } else { await customAlert('Yeh file sahi format mein nahi hai.'); }
+        } catch { await customAlert('File padhne mein kuch gadbad ho gayi.'); }
+    }
+
+    // ── Schedule auto backup at 7 AM daily ───────────────────────────
+    function scheduleAutoBackup() {
+        const LAST_KEY = 'gp_lastAutoBackup';
+        const now      = new Date();
+        const today7am = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 7, 0, 0);
+        const lastRun  = parseInt(localStorage.getItem(LAST_KEY) || '0');
+        const lastDate = new Date(lastRun);
+
+        // If it's past 7am today AND we haven't backed up today yet
+        const alreadyRanToday = lastDate.toDateString() === now.toDateString() && lastRun >= today7am.getTime();
+        if (now >= today7am && !alreadyRanToday) {
+            createBackup(`Auto — ${now.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'})}`);
+            localStorage.setItem(LAST_KEY, now.getTime().toString());
+        }
+
+        // Schedule next check — time until next 7am
+        const tomorrow7am = new Date(today7am.getTime() + 24*60*60*1000);
+        const msUntilNext = (now < today7am ? today7am : tomorrow7am).getTime() - now.getTime();
+        setTimeout(() => { scheduleAutoBackup(); }, Math.min(msUntilNext, 60*60*1000)); // recheck max every 1hr
+    }
+
+    // ── Web mode: original simple backup/restore ──────────────────────
     async function downloadBackup() {
         const jsonStr  = JSON.stringify(appData, null, 2);
         const filename = `QuotePad_Backup_${new Date().toLocaleDateString('en-IN').replace(/\//g,'-')}.json`;
-
-        // Method 1: Web Share API (works great in PWA & Android)
         if (navigator.share && navigator.canShare) {
             try {
                 const file = new File([jsonStr], filename, { type: 'application/json' });
                 if (navigator.canShare({ files: [file] })) {
-                    await navigator.share({ files: [file], title: 'QuotePad Backup' });
-                    return;
+                    await navigator.share({ files: [file], title: 'QuotePad Backup' }); return;
                 }
-            } catch(e) { /* fall through */ }
+            } catch(e) {}
         }
-
-        // Method 2: Standard anchor download (works in browser)
         try {
             const blob = new Blob([jsonStr], { type: 'application/json' });
             const url  = URL.createObjectURL(blob);
             const a    = Object.assign(document.createElement('a'), { href: url, download: filename });
             document.body.appendChild(a); a.click();
-            document.body.removeChild(a); URL.revokeObjectURL(url);
-            return;
-        } catch(e) { /* fall through */ }
-
-        // Method 3: Copy to clipboard fallback (WebView last resort)
+            document.body.removeChild(a); URL.revokeObjectURL(url); return;
+        } catch(e) {}
         try {
             await navigator.clipboard.writeText(jsonStr);
-            await customAlert("Download not supported in this app view.\n\nYour backup data has been COPIED TO CLIPBOARD.\n\nPaste it in any notes app and save as .json file.");
-        } catch(e) {
-            await customAlert("Could not download. Please open this app in Chrome browser for backup/export features.");
-        }
+            await customAlert("Download not supported here.\n\nData copied to clipboard — paste in any notes app and save as .json");
+        } catch(e) { await customAlert("Could not download. Please open in Chrome browser."); }
     }
 
     function handleFileSelect(input) {
         const display = document.getElementById('file-name-display');
-        display.innerText  = input.files?.[0] ? `Selected: ${input.files[0].name}` : 'No file selected';
-        display.style.color = input.files?.[0] ? 'var(--accent)' : 'var(--muted)';
+        if (display) {
+            display.innerText   = input.files?.[0] ? input.files[0].name : 'Koi file select nahi ki';
+            display.style.color = input.files?.[0] ? 'var(--accent)' : 'var(--muted)';
+        }
+    }
+    function handleFileSelectWeb(input) {
+        const display = document.getElementById('file-name-display-web');
+        if (display) {
+            display.innerText   = input.files?.[0] ? `Selected: ${input.files[0].name}` : 'No file selected';
+            display.style.color = input.files?.[0] ? 'var(--accent)' : 'var(--muted)';
+        }
     }
 
     async function restoreBackup() {
         const fileInput = document.getElementById('restore-file');
-        if (!fileInput.files.length) { await customAlert("Please select a JSON backup file first."); return; }
+        if (!fileInput || !fileInput.files.length) { await customAlert("Please select a JSON backup file first."); return; }
         const reader = new FileReader();
-        reader.onload = async e => {
-            try {
-                const parsed = JSON.parse(e.target.result);
-                if (parsed.inventory && parsed.lists && parsed.settings) {
-                    appData = parsed;
-                    if (!appData.units) appData.units = DEFAULT_UNITS;
-                    cart = [];          // #12 fix: clear in-memory cart on restore
-                    inventoryFilter = ''; // also reset search
-                    saveData(); init();
-                    switchTab('maker', document.querySelector('.desktop-nav .nav-btn'));
-                    await customAlert("Data Restored Successfully!");
-                    fileInput.value = '';
-                    document.getElementById('file-name-display').innerText = 'No file selected';
-                } else { await customAlert("Invalid backup file format."); }
-            } catch { await customAlert("Error reading file."); }
-        };
+        reader.onload = async e => { await doRestore(e.target.result, fileInput.files[0].name); fileInput.value = ''; handleFileSelect(fileInput); };
+        reader.readAsText(fileInput.files[0]);
+    }
+    async function restoreBackupWeb() {
+        const fileInput = document.getElementById('restore-file-web');
+        if (!fileInput || !fileInput.files.length) { await customAlert("Please select a JSON backup file first."); return; }
+        const reader = new FileReader();
+        reader.onload = async e => { await doRestore(e.target.result, fileInput.files[0].name); fileInput.value = ''; handleFileSelectWeb(fileInput); };
         reader.readAsText(fileInput.files[0]);
     }
 
@@ -2435,7 +2884,7 @@ self.addEventListener('fetch', e => {
         const file = input.files?.[0];
         const nameEl = document.getElementById('excel-file-name');
         if (!file) { nameEl.textContent = 'No file selected'; return; }
-        nameEl.textContent = '📄 ' + file.name;
+        nameEl.textContent = file.name;
         nameEl.style.color = 'var(--accent)';
 
         const reader = new FileReader();
@@ -2588,7 +3037,7 @@ self.addEventListener('fetch', e => {
         renderCart();
         switchTab('maker', document.querySelector('.desktop-nav .nav-btn'));
         if (saveToInv && addedToInv > 0) {
-            await customAlert(`✅ Done!\n\n${_excelParsed.length} items loaded into Cart\n${addedToInv} new item(s) added to Inventory`);
+            await customAlert(`Done!\n\n${_excelParsed.length} items loaded into Cart\n${addedToInv} new item(s) added to Inventory`);
         }
         resetExcelImport();
     }
