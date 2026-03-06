@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="apple-status-bar-meta">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="GroceryPro">
+    <meta name="apple-mobile-web-app-title" content="QuotePad">
     <link rel="apple-touch-icon" id="apple-touch-icon">
     <!-- Instantly apply saved theme before render to prevent flash & fix status bar -->
     <script>
@@ -21,7 +21,7 @@
         // Light mode: keep green (#10b981) during splash — will update to white after splash hides
     })();
     </script>
-    <title>GroceryPro - Minimalist Planner</title>
+    <title>QuotePad - Smart Quotation Maker</title>
     <link rel="manifest" id="pwa-manifest-link">
     <script>
     // ── PWA: Inline Manifest Generator ───────────────────────────────
@@ -111,9 +111,9 @@
         const icon512 = makeIconPNG(512);
 
         const manifest = {
-            name: "GroceryPro - Smart Planner",
-            short_name: "GroceryPro",
-            description: "Offline grocery list and quotation maker",
+            name: "QuotePad - Smart Quotation Maker",
+            short_name: "QuotePad",
+            description: "Offline quotation and invoice maker for anything",
             start_url: "./",
             display: "standalone",
             orientation: "portrait",
@@ -136,7 +136,7 @@
     // ── PWA: Service Worker Registration ─────────────────────────────
     if ('serviceWorker' in navigator) {
         const swCode = `
-const CACHE = 'grocerypro-v1';
+const CACHE = 'quotepad-v1';
 const URLS  = [self.location.pathname || '/'];
 
 self.addEventListener('install', e => {
@@ -186,7 +186,7 @@ self.addEventListener('fetch', e => {
             --shadow:         0 10px 15px -3px rgba(0,0,0,.05), 0 4px 6px -2px rgba(0,0,0,.025);
             --ease:           cubic-bezier(0.4,0,0.2,1);
             --ease-spring:    cubic-bezier(0.16,1,0.3,1);
-            --transition:     all 0.3s var(--ease);
+            --transition:     all 0.15s var(--ease);
         }
 
         /* ── DARK MODE TOKENS ───────────────────────────────────────── */
@@ -221,7 +221,8 @@ self.addEventListener('fetch', e => {
         body.dark #inventory-table tbody tr:hover { background:#1a3d2e; }
         body.dark .total-row            { background:#132920; }
         body.dark .dialog-box           { background:#132920; }
-        body.dark .unit-pill            { background:#0d2b1f; border-color:#1e4a38; }
+        body.dark .unit-pill            { background:#0d2b1f; border-color:#1e4a38; color:#6ee7b7; }
+        body.dark .unit-pill-add        { border-color:#10b981; color:#10b981; }
         body.dark .scroll-hint          { background:#0d2b1f; border-color:#1e4a38; }
         body.dark .qty-value            { background:var(--accent-light); color:#10b981; }
         body.dark .btn-danger           { background:#2d1515; color:#f87171; }
@@ -244,7 +245,7 @@ self.addEventListener('fetch', e => {
             overscroll-behavior: none;
         }
         html.dark-html { background: #0d1f1a; }
-        html.app-ready { background: #f0fdf4; }
+        html.app-ready { background: #ffffff; }
         html.app-ready.dark-html { background: #0d1f1a; }
 
         body {
@@ -277,13 +278,13 @@ self.addEventListener('fetch', e => {
         }
 
         .animate-entry  {
-            animation: fadeSlideUp 0.45s var(--ease-spring) both;
+            animation: fadeSlideUp 0.2s var(--ease-spring) both;
             will-change: transform, opacity;
         }
         .animate-entry:nth-child(1) { animation-delay: 0s; }
-        .animate-entry:nth-child(2) { animation-delay: .06s; }
-        .animate-entry:nth-child(3) { animation-delay: .12s; }
-        .animate-entry:nth-child(4) { animation-delay: .18s; }
+        .animate-entry:nth-child(2) { animation-delay: .03s; }
+        .animate-entry:nth-child(3) { animation-delay: .06s; }
+        .animate-entry:nth-child(4) { animation-delay: .09s; }
         .animated-cart  { animation: driveCart 2.5s infinite ease-in-out; display:inline-block; }
 
         /* ── SPLASH SCREEN ──────────────────────────────────────────── */
@@ -293,7 +294,7 @@ self.addEventListener('fetch', e => {
             display: flex; flex-direction: column;
             justify-content: center; align-items: center;
             z-index: 999999;
-            transition: opacity .5s ease-in-out, visibility .5s ease-in-out;
+            transition: opacity .3s ease-in-out, visibility .3s ease-in-out;
             /* Extend behind status bar to eliminate any gap/line */
             padding-top: env(safe-area-inset-top);
             margin-top: calc(-1 * env(safe-area-inset-top));
@@ -305,10 +306,104 @@ self.addEventListener('fetch', e => {
             padding: 0 24px;
         }
 
+
+        /* ── NEW FEATURES CSS ───────────────────────────────────────── */
+        .tax-row { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; padding:.6rem 1rem; background:var(--accent-light); border-radius:10px; margin-top:.5rem; }
+        .tax-row label { font-size:.72rem; color:var(--accent-hover); font-weight:700; text-transform:uppercase; letter-spacing:.4px; white-space:nowrap; }
+        .tax-input { width:70px; padding:.3rem .5rem; border:1.5px solid var(--border); border-radius:7px; font-size:.88rem; background:var(--solid); color:var(--text); text-align:center; }
+        .tax-input:focus { border-color:var(--accent); outline:none; }
+        .tax-result { margin-left:auto; font-size:.88rem; font-weight:700; color:var(--accent-hover); white-space:nowrap; }
+        .note-row { padding:.25rem .75rem .5rem 2.5rem; }
+        .note-input { width:100%; font-size:.78rem; color:var(--muted); border:none; border-bottom:1px dashed var(--border); background:transparent; outline:none; padding:.15rem 0; }
+        .note-input::placeholder { color:var(--border); }
+        .note-input:focus { border-color:var(--accent); color:var(--text); }
+        .ph-badge { display:inline-block; font-size:.68rem; padding:.1rem .45rem; border-radius:20px; font-weight:700; margin:1px; }
+        .ph-up   { background:#dcfce7; color:#166534; }
+        .ph-down { background:#fee2e2; color:#991b1b; }
+        .ph-same { background:#f1f5f9; color:#64748b; }
+        .currency-pill { display:inline-block; padding:.3rem .75rem; border:1.5px solid var(--border); border-radius:8px; cursor:pointer; font-size:.9rem; font-weight:600; margin:.25rem; transition:all .2s; }
+        .currency-pill.active, .currency-pill:hover { border-color:var(--accent); background:var(--accent); color:#fff; }
+        .wa-btn { background:#25D366; border:none; color:#fff; display:flex; align-items:center; justify-content:center; gap:.4rem; }
+        .wa-btn:hover { background:#1ebe5d; }
+
+
+        /* ── QUICK-ADD ITEM SHEET ───────────────────────────────────── */
+        .quick-add-option {
+            display:flex; align-items:center; gap:.6rem;
+            padding:.75rem 1rem; font-size:.92rem; font-weight:600;
+            color:var(--accent); cursor:pointer;
+            background:var(--accent-light);
+            border-bottom:2px solid var(--border-light);
+            position:sticky; top:0; z-index:2;
+            transition:background .15s;
+        }
+        .quick-add-option:hover { background:#bbf7d0; }
+        #quick-add-sheet {
+            display:none;
+            background:var(--solid);
+            border:1.5px solid var(--accent);
+            border-radius:12px;
+            padding:1rem;
+            margin-top:.5rem;
+            animation:fadeSlideUp .15s var(--ease-spring) both;
+            box-shadow:0 8px 24px rgba(16,185,129,.15);
+        }
+        #quick-add-sheet .qa-title {
+            font-size:.78rem; font-weight:700; color:var(--accent-hover);
+            text-transform:uppercase; letter-spacing:.5px;
+            margin-bottom:.75rem; display:flex; align-items:center; gap:.4rem;
+        }
+        #quick-add-sheet .qa-row {
+            display:grid; grid-template-columns:1fr 1fr; gap:.5rem; margin-bottom:.5rem;
+        }
+        #quick-add-sheet .qa-row.single { grid-template-columns:1fr; }
+        #quick-add-sheet input {
+            padding:.55rem .75rem; font-size:.9rem; height:40px;
+        }
+        #quick-add-sheet .unit-chips {
+            display:flex; flex-wrap:wrap; gap:.3rem; padding:.4rem 0;
+        }
+        #quick-add-sheet .unit-chip {
+            padding:.2rem .65rem; border-radius:20px; font-size:.78rem; font-weight:600;
+            border:1.5px solid var(--border); cursor:pointer; transition:all .15s;
+            background:var(--bg); color:var(--text); white-space:nowrap;
+        }
+        #quick-add-sheet .unit-chip.sel { background:var(--accent); color:#fff; border-color:var(--accent); }
+        #quick-add-sheet .qa-actions {
+            display:flex; gap:.5rem; margin-top:.75rem;
+        }
+        #quick-add-sheet .qa-save {
+            flex:1; height:40px; font-size:.9rem;
+        }
+        #quick-add-sheet .qa-cancel {
+            height:40px; width:40px; background:transparent;
+            border:1.5px solid var(--border); border-radius:10px;
+            color:var(--muted); font-size:1.1rem; cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+            flex-shrink:0; padding:0;
+        }
+        #quick-add-sheet .qa-cancel:hover { border-color:var(--danger); color:var(--danger); background:transparent; }
+
+
+        #quick-add-sheet .unit-chip-add {
+            padding:.2rem .65rem; border-radius:20px; font-size:.78rem; font-weight:700;
+            border:1.5px dashed var(--accent); cursor:pointer; transition:all .1s;
+            background:transparent; color:var(--accent); white-space:nowrap;
+            display:inline-flex; align-items:center; gap:.25rem;
+        }
+        #quick-add-sheet .unit-chip-add:hover { background:var(--accent); color:#fff; border-style:solid; }
+        #qa-new-unit-wrap {
+            display:none; align-items:center; gap:.3rem; margin-top:.3rem;
+        }
+        #qa-new-unit-wrap input {
+            flex:1; padding:.25rem .5rem; font-size:.82rem; height:30px; border-radius:8px;
+        }
+        #qa-new-unit-wrap button {
+            height:30px; padding:0 .6rem; font-size:.78rem; width:auto; border-radius:8px;
+        }
         /* ── TOP BAR ────────────────────────────────────────────────── */
         .top-bar {
-            background: var(--surface);
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            background: var(--solid);
             display: flex; align-items: center;
             padding: 1rem 1.5rem;
             /* Safe area for notch / Dynamic Island */
@@ -316,6 +411,7 @@ self.addEventListener('fetch', e => {
             padding-left:  max(1.5rem, env(safe-area-inset-left));
             padding-right: max(1.5rem, env(safe-area-inset-right));
             position: sticky; top: 0; z-index: 10;
+            border-bottom: 1px solid var(--border-light);
         }
         .logo { font-size:1.25rem; font-weight:700; color:var(--accent); margin-right:auto; display:flex; align-items:center; gap:.5rem; }
         .desktop-nav { display:flex; gap:.5rem; }
@@ -341,7 +437,7 @@ self.addEventListener('fetch', e => {
         .view-section { display:none; max-width:900px; margin:0 auto; padding-bottom:4rem; }
         .view-section.active {
             display:block;
-            animation: fadeSlideUp .32s cubic-bezier(0.16,1,0.3,1) both;
+            animation: fadeSlideUp .14s cubic-bezier(0.16,1,0.3,1) both;
             will-change: transform, opacity;
         }
 
@@ -419,7 +515,7 @@ self.addEventListener('fetch', e => {
         .arrow {
             width:8px; height:8px; flex-shrink:0;
             border-top:2px solid var(--muted); border-right:2px solid var(--muted);
-            transform:rotate(135deg); transition:transform .3s;
+            transform:rotate(135deg); transition:transform .15s;
         }
         .custom-select.open .arrow { transform:rotate(-45deg); border-color:#fff; }
 
@@ -432,7 +528,7 @@ self.addEventListener('fetch', e => {
             max-height:240px; overflow-y:auto;
             opacity:0; visibility:hidden; pointer-events:none;
             transform:translateY(-6px);
-            transition:all .25s var(--ease-spring);
+            transition:all .15s var(--ease-spring);
         }
         .custom-select.open .custom-options { opacity:1; visibility:visible; pointer-events:all; transform:translateY(0); }
 
@@ -440,7 +536,7 @@ self.addEventListener('fetch', e => {
             display:flex; align-items:center; justify-content:space-between;
             padding:.75rem 1rem; font-size:.92rem; color:var(--text);
             cursor:pointer; border-bottom:1px solid #f1f5f9;
-            transition:all .15s ease;
+            transition:all .08s ease;
         }
         .custom-option:last-child { border-bottom:none; }
         .custom-option:hover          { background:var(--accent); color:#fff; padding-left:1.2rem; }
@@ -455,7 +551,7 @@ self.addEventListener('fetch', e => {
             padding:1.2rem; border-radius:12px; width:260px;
             z-index:1000; display:none; border:2px solid var(--accent-hover);
             box-shadow:0 10px 25px rgba(16,185,129,.4);
-            animation:fadeSlideUp .5s var(--ease-spring) forwards;
+            animation:fadeSlideUp .2s var(--ease-spring) forwards;
         }
         .onboarding-hint .hint-arrow {
             position:absolute; top:-9px; left:22px;
@@ -507,10 +603,10 @@ self.addEventListener('fetch', e => {
             opacity: 1;
         }
         button.rippling::after {
-            animation: ripple .5s cubic-bezier(0.4,0,0.2,1) forwards;
+            animation: ripple .35s cubic-bezier(0.4,0,0.2,1) forwards;
         }
         button:hover   { background:var(--accent-hover); transform:translateY(-1px); box-shadow:0 6px 16px rgba(16,185,129,.25); }
-        button:active  { transform:translateY(1px) scale(.97); box-shadow:none; transition-duration:.08s; }
+        button:active  { transform:translateY(1px) scale(.97); box-shadow:none; transition-duration:.05s; }
 
         .btn-outline { background:transparent; color:var(--accent); border:1.5px solid var(--accent); }
         .btn-outline:hover { background:var(--accent); color:#fff; }
@@ -548,9 +644,33 @@ self.addEventListener('fetch', e => {
         input[type="checkbox"]:checked + .toggle-switch::after     { transform:translateX(20px); }
 
         /* ── UNIT PILL TAGS ─────────────────────────────────────────── */
-        .unit-pill { display:inline-flex; align-items:center; background:#f1f5f9; color:var(--text); font-size:.85rem; padding:.3rem .8rem; border-radius:20px; border:1px solid var(--border); }
-        .unit-pill button { background:transparent; border:none; padding:0 0 0 .5rem; color:var(--muted); height:auto; display:flex; align-items:center; margin:0; box-shadow:none; }
-        .unit-pill button:hover { color:var(--danger); transform:none; background:transparent; }
+
+        /* ── UNIT PILLS + INLINE ADD ───────────────────────────────── */
+        .unit-pill {
+            display:inline-flex; align-items:center;
+            background:var(--accent-light); color:var(--accent-hover);
+            font-size:.82rem; font-weight:600; padding:.3rem .75rem;
+            border-radius:20px; border:1.5px solid var(--border-light);
+            transition:all .08s; gap:.3rem;
+            animation: fadeSlideUp .12s var(--ease-spring) both;
+        }
+        .unit-pill button {
+            background:transparent; border:none; padding:0; color:var(--muted);
+            height:auto; display:flex; align-items:center; margin:0;
+            box-shadow:none; font-size:.8rem; line-height:1;
+            transition:color .08s; cursor:pointer;
+        }
+        .unit-pill button:hover { color:var(--danger); transform:none; background:transparent; box-shadow:none; }
+        .unit-pill-add {
+            display:inline-flex; align-items:center; justify-content:center;
+            width:30px; height:30px; border-radius:50%;
+            background:transparent; border:1.5px dashed var(--accent);
+            color:var(--accent); font-size:1.1rem; font-weight:700;
+            cursor:pointer; transition:all .08s; flex-shrink:0;
+        }
+        .unit-pill-add:hover { background:var(--accent); color:#fff; transform:scale(1.08); }
+        .unit-pill-add:active { transform:scale(.94); }
+
 
         /* ── DATA TABLE (CART & INVENTORY) ─────────────────────────── */
         .table-responsive {
@@ -812,7 +932,7 @@ self.addEventListener('fetch', e => {
             <svg width="48" height="48" fill="none" stroke="#ffffff" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
                 <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
             </svg>
-            <span style="color:#ffffff; font-size:2rem; font-weight:700; letter-spacing:-0.5px; white-space:nowrap; flex-shrink:0;">GroceryPro</span>
+            <span style="color:#ffffff; font-size:2rem; font-weight:700; letter-spacing:-0.5px; white-space:nowrap; flex-shrink:0;">QuotePad</span>
         </div>
     </div>
 
@@ -852,7 +972,7 @@ self.addEventListener('fetch', e => {
             <svg class="animated-cart" width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
             </svg>
-            GroceryPro
+            QuotePad
         </div>
         <nav class="desktop-nav">
             <button class="nav-btn active"  onclick="switchTab('maker',     this)">List Maker</button>
@@ -918,6 +1038,37 @@ self.addEventListener('fetch', e => {
                                 </div>
                             </div>
                             <input type="hidden" id="item-select-value">
+                        </div>
+                        <!-- Quick Add Sheet — slides in below dropdown -->
+                        <div id="quick-add-sheet">
+                            <div class="qa-title">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                                Quick Add to Inventory
+                            </div>
+                            <div class="qa-row">
+                                <div class="input-group" style="gap:.25rem;">
+                                    <label>Item Name</label>
+                                    <input type="text" id="qa-name" placeholder="e.g. Tomatoes" onkeydown="qaKeydown(event)">
+                                </div>
+                                <div class="input-group" style="gap:.25rem;">
+                                    <label>Rate (<span class="cur-sym">₹</span>)</label>
+                                    <input type="number" id="qa-rate" placeholder="0" step="0.01" min="0" onkeydown="qaKeydown(event)">
+                                </div>
+                            </div>
+                            <div class="input-group" style="gap:.25rem; margin-bottom:0;">
+                                <label>Unit</label>
+                                <div class="unit-chips" id="qa-unit-chips"></div>
+                                <div id="qa-new-unit-wrap">
+                                    <input type="text" id="qa-new-unit-input" placeholder="Unit name..." maxlength="12"
+                                        onkeydown="qaNewUnitKey(event)">
+                                    <button onclick="qaNewUnitSave()" style="background:var(--accent);">Add</button>
+                                    <button onclick="qaNewUnitCancel()" style="background:transparent;border:1.5px solid var(--border);color:var(--muted);">✕</button>
+                                </div>
+                            </div>
+                            <div class="qa-actions">
+                                <button class="qa-save" onclick="quickAddSave()">Save &amp; Select</button>
+                                <button class="qa-cancel" onclick="quickAddClose()" title="Cancel">✕</button>
+                            </div>
                         </div>
                         <div class="input-group">
                             <label id="qty-label">Quantity</label>
@@ -1029,14 +1180,32 @@ self.addEventListener('fetch', e => {
                     </div>
                     <div class="total-row" id="total-row-display">
                         <span>Grand Total:</span>
-                        <span>₹<span id="grand-total">0.00</span></span>
+                        <span><span class="cur-sym">₹</span><span id="grand-total">0.00</span></span>
+                    </div>
+                    <!-- GST + Discount row -->
+                    <div class="tax-row no-print" id="tax-discount-row" style="display:none;">
+                        <label>Disc%</label>
+                        <input class="tax-input" id="discount-input" type="number" min="0" max="100" step="0.1" placeholder="0" oninput="recalcTax()">
+                        <label style="margin-left:.5rem;">GST%</label>
+                        <input class="tax-input" id="gst-input" type="number" min="0" max="100" step="0.1" placeholder="0" oninput="recalcTax()">
+                        <span class="tax-result" id="tax-result"></span>
                     </div>
                 </div>
 
                 <div class="grid-3-mobile no-print" style="margin-top:1.5rem;">
                     <button class="btn-outline" style="border-color:var(--danger); color:var(--danger); padding:.5rem;" onclick="clearCart()">Clear List</button>
-                    <button class="btn-outline" style="padding:.5rem;" onclick="saveCurrentList()">Save</button>
+                    <button class="btn-outline" style="padding:.5rem;" onclick="saveCurrentList()">Save in History</button>
                     <button style="padding:.5rem;" onclick="exportPDF()">Export PDF</button>
+                </div>
+                <div class="grid-3-mobile no-print" style="margin-top:.6rem;">
+                    <button class="wa-btn" style="padding:.5rem; flex:1;" onclick="shareWhatsApp()">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                        WhatsApp
+                    </button>
+                    <button class="btn-outline" style="padding:.5rem; flex:1;" onclick="exportExcel()">
+                        <svg width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        Excel
+                    </button>
                 </div>
             </div>
         </section>
@@ -1044,13 +1213,20 @@ self.addEventListener('fetch', e => {
         <!-- INVENTORY -->
         <section id="inventory-view" class="view-section">
             <div class="card animate-entry">
-                <h3>Manage Unit Types</h3>
-                <p class="text-sm-muted mb-2">Add new units like 'Box', 'Katta', 'Dozen' to use them globally.</p>
-                <div style="display:flex; gap:.5rem; margin-bottom:1rem;">
-                    <input type="text" id="new-unit-input" placeholder="e.g. Box" onkeypress="handleEnter(event, addNewUnit)" style="height:42px;">
-                    <button onclick="addNewUnit()" style="width:auto; height:42px; padding:0 1rem;">Add</button>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.6rem;">
+                    <h3 style="margin:0;">Unit Types</h3>
+                    <span class="text-xs-muted">Tap ✕ to delete</span>
                 </div>
-                <div id="unit-tags-container" style="display:flex; flex-wrap:wrap; gap:.5rem;"></div>
+                <div id="unit-tags-container" style="display:flex; flex-wrap:wrap; gap:.5rem; align-items:center;"></div>
+                <!-- Inline add-unit input — hidden until + tapped -->
+                <div id="unit-add-wrap" style="display:none; margin-top:.6rem; animation:fadeSlideUp .12s var(--ease-spring) both;">
+                    <div style="display:flex; gap:.4rem;">
+                        <input type="text" id="new-unit-input" placeholder="e.g. Box, Dozen, Katta" maxlength="15"
+                            onkeydown="handleUnitKey(event)" style="height:38px; font-size:.9rem; flex:1;">
+                        <button onclick="addNewUnit()" style="width:auto; height:38px; padding:0 1rem; font-size:.85rem;">Add</button>
+                        <button onclick="hideUnitAdd()" style="width:38px; height:38px; padding:0; background:transparent; border:1.5px solid var(--border); color:var(--muted); font-size:1rem;">✕</button>
+                    </div>
+                </div>
             </div>
 
             <div class="card animate-entry" style="animation-delay:.1s;">
@@ -1065,7 +1241,7 @@ self.addEventListener('fetch', e => {
                         <select id="new-item-unit"></select>
                     </div>
                     <div class="input-group">
-                        <label>Rate (₹)</label>
+                        <label>Rate (<span class="cur-sym">₹</span>)</label>
                         <input type="number" id="new-item-rate" placeholder="e.g. 50" onkeypress="handleEnter(event, addNewItem)">
                     </div>
                 </div>
@@ -1092,6 +1268,7 @@ self.addEventListener('fetch', e => {
                                 <th>Item</th>
                                 <th>Unit</th>
                                 <th>Rate</th>
+                                <th style="width:60px; text-align:center;">History</th>
                             </tr>
                         </thead>
                         <tbody id="inventory-body"></tbody>
@@ -1119,6 +1296,13 @@ self.addEventListener('fetch', e => {
         <!-- BACKUP / RESTORE -->
         <section id="backup-view" class="view-section">
             <div class="card animate-entry">
+                <h3>Preferences</h3>
+                <div style="margin-bottom:1.5rem;">
+                    <label style="display:block; margin-bottom:.5rem;">Currency Symbol</label>
+                    <div id="currency-pills"></div>
+                </div>
+            </div>
+            <div class="card animate-entry" style="animation-delay:.05s;">
                 <h2>Data Management</h2>
                 <p class="text-sm-muted mb-4">Secure your Settings, Custom Units, Inventory, and Lists in a JSON file. 100% Offline.</p>
                 <div class="grid-2">
@@ -1154,8 +1338,8 @@ self.addEventListener('fetch', e => {
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                     </svg>
                 </div>
-                <h2 style="font-size:1.6rem; color:var(--accent); margin-bottom:.3rem;">GroceryPro</h2>
-                <p style="font-size:.8rem; color:var(--muted); font-weight:600; letter-spacing:1px; text-transform:uppercase; margin-bottom:1rem;">Smart Grocery & Quotation Planner</p>
+                <h2 style="font-size:1.6rem; color:var(--accent); margin-bottom:.3rem;">QuotePad</h2>
+                <p style="font-size:.8rem; color:var(--muted); font-weight:600; letter-spacing:1px; text-transform:uppercase; margin-bottom:1rem;">Smart Quotation Maker</p>
                 <div style="display:inline-block; background:var(--accent-light); color:var(--accent-hover); font-size:.78rem; font-weight:700; padding:.3rem .9rem; border-radius:20px; letter-spacing:.5px;">Version 1.0</div>
             </div>
 
@@ -1168,10 +1352,10 @@ self.addEventListener('fetch', e => {
                     <h3 style="margin:0;">About This App</h3>
                 </div>
                 <p style="font-size:.92rem; line-height:1.7; color:var(--text);">
-                    <strong>GroceryPro</strong> is a smart, offline-first grocery planner and quotation maker — built especially for daily household shopping and small kirana store estimates.
+                    <strong>QuotePad</strong> is a smart, offline-first quotation maker — built for anyone who needs to create quick, professional estimates for anything.
                 </p>
                 <p style="font-size:.92rem; line-height:1.7; color:var(--text); margin-top:.75rem;">
-                    Whether you're heading to the sabzi mandi or preparing a monthly ration list, GroceryPro lets you build itemized lists with rates, quantities, and auto-calculated totals — then export a clean <strong>PDF quotation</strong> in one tap.
+                    Whether you're quoting for groceries, construction, events, or services — QuotePad lets you build itemized lists with rates, quantities, and auto-calculated totals — then export a clean <strong>PDF quotation</strong> in one tap.
                 </p>
             </div>
 
@@ -1262,11 +1446,7 @@ self.addEventListener('fetch', e => {
                 </div>
             </div>
 
-            <!-- Footer note -->
-            <div style="text-align:center; padding:1rem 0 2rem; color:var(--muted); font-size:.78rem; line-height:1.8;">
-                Made with <svg width="13" height="13" viewBox="0 0 24 24" fill="#ef4444" style="display:inline-block; vertical-align:middle; margin:0 2px;"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> for households &amp; kirana stores<br>
-                <span style="color:var(--accent); font-weight:600;">GroceryPro</span> — Free, Offline &amp; Private
-            </div>
+
 
         </section>
     </main>
@@ -1318,8 +1498,13 @@ self.addEventListener('fetch', e => {
         lists:     [],
         settings:  { listOnlyMode: false },
         units:     DEFAULT_UNITS,
+        currency:  '\u20b9',
+        priceHistory: {},
     };
-    if (!appData.units) appData.units = DEFAULT_UNITS;   // migration guard
+    // migration guards
+    if (!appData.units)        appData.units        = DEFAULT_UNITS;
+    if (!appData.currency)     appData.currency     = '\u20b9';
+    if (!appData.priceHistory) appData.priceHistory = {};
 
     let cart          = [];
     let editingItemId = null;
@@ -1366,6 +1551,7 @@ self.addEventListener('fetch', e => {
         renderCart();
         renderInventoryTable();
         renderHistory();
+        renderCurrencyPills();
         checkFirstTime();
     }
 
@@ -1382,7 +1568,7 @@ self.addEventListener('fetch', e => {
             if (appleBarMeta) appleBarMeta.content = isDark ? 'black-translucent' : 'default';
             document.documentElement.classList.add('app-ready'); // restore html bg
             setTimeout(() => splash.remove(), 500);
-        }, 1800);
+        }, 1200);
     });
 
 
@@ -1477,10 +1663,38 @@ self.addEventListener('fetch', e => {
     }
 
     function renderUnitManager() {
-        document.getElementById('unit-tags-container').innerHTML =
-            appData.units.map(u =>
-                `<div class="unit-pill">${u}<button onclick="deleteUnit('${u}')" title="Delete Unit">✕</button></div>`
-            ).join('');
+        const c = document.getElementById('unit-tags-container');
+        if (!c) return;
+        c.innerHTML = '';
+        appData.units.forEach(function(u) {
+            var pill = document.createElement('div');
+            pill.className = 'unit-pill';
+            var txt = document.createTextNode(u);
+            var del = document.createElement('button');
+            del.title = 'Delete'; del.textContent = '✕';
+            del.onclick = function(e) { e.stopPropagation(); deleteUnit(u); };
+            pill.appendChild(txt); pill.appendChild(del);
+            c.appendChild(pill);
+        });
+        // ＋ chip at end
+        var add = document.createElement('div');
+        add.className = 'unit-pill-add'; add.title = 'Add unit'; add.textContent = '+';
+        add.onclick = showUnitAdd;
+        c.appendChild(add);
+    }
+
+    function showUnitAdd() {
+        var wrap = document.getElementById('unit-add-wrap');
+        wrap.style.display = 'block';
+        setTimeout(function() { document.getElementById('new-unit-input').focus(); }, 40);
+    }
+    function hideUnitAdd() {
+        document.getElementById('unit-add-wrap').style.display = 'none';
+        document.getElementById('new-unit-input').value = '';
+    }
+    function handleUnitKey(e) {
+        if (e.key === 'Enter')  { e.preventDefault(); addNewUnit(); }
+        if (e.key === 'Escape') hideUnitAdd();
     }
 
     function renderUnitDropdowns() {
@@ -1496,6 +1710,7 @@ self.addEventListener('fetch', e => {
             await customAlert("This unit already exists!"); return;
         }
         appData.units.push(val); saveData(); input.value = '';
+        hideUnitAdd();
         renderUnitManager(); renderUnitDropdowns(); renderInventoryTable();
     }
 
@@ -1514,19 +1729,20 @@ self.addEventListener('fetch', e => {
     function renderCustomDropdown() {
         const container = document.getElementById('custom-options-list');
         container.innerHTML = '';
+
+        // ── Sticky "＋ Add New Item" at top ──
+        const addBtn = document.createElement('div');
+        addBtn.className = 'quick-add-option';
+        addBtn.innerHTML = `<svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg> New Item`;
+        addBtn.onclick = (e) => { e.stopPropagation(); quickAddOpen(); };
+        container.appendChild(addBtn);
+
+        // ── Inventory items ──
         appData.inventory.forEach(item => {
             const div = document.createElement('div');
             div.className = 'custom-option';
-            div.innerHTML = `${item.name} <span style="color:#94a3b8; font-size:.8em;">₹${item.rate}/${item.unit}</span>`;
-            div.onclick = () => {
-                document.getElementById('custom-select-text').innerText  = item.name;
-                document.getElementById('item-select-value').value       = item.id;
-                document.getElementById('myCustomSelect').classList.remove('open');
-                document.querySelectorAll('.custom-option').forEach(el => el.classList.remove('selected'));
-                div.classList.add('selected');
-                document.getElementById('qty-label').innerText  = `Qty (${item.unit})`;
-                document.getElementById('qty-input').focus();
-            };
+            div.innerHTML = `${item.name} <span style="color:#94a3b8; font-size:.8em;">${appData.currency}${item.rate}/${item.unit}</span>`;
+            div.onclick = () => { selectDropdownItem(item); };
             container.appendChild(div);
         });
     }
@@ -1574,6 +1790,13 @@ self.addEventListener('fetch', e => {
                             <td><input type="number" id="edit-rate-${item.id}" value="${item.rate}" style="width:65px; padding:.4rem; height:35px;"></td>
                         </tr>`;
                 }
+                const hist = appData.priceHistory[item.id] || [];
+                const lastTwo = hist.slice(-2);
+                const trend = lastTwo.length < 2 ? '' : lastTwo[1].rate > lastTwo[0].rate
+                    ? '<span class="ph-badge ph-up">▲</span>'
+                    : lastTwo[1].rate < lastTwo[0].rate
+                    ? '<span class="ph-badge ph-down">▼</span>'
+                    : '<span class="ph-badge ph-same">—</span>';
                 return `
                     <tr>
                         <td>
@@ -1584,7 +1807,8 @@ self.addEventListener('fetch', e => {
                         </td>
                         <td style="font-weight:500;">${item.name}</td>
                         <td>${item.unit}</td>
-                        <td>₹${item.rate}</td>
+                        <td>${appData.currency}${item.rate}</td>
+                        <td style="text-align:center;">${trend}<button class="btn-outline btn-small" style="font-size:.65rem; padding:.15rem .35rem;" onclick="showPriceHistory('${item.id}','${item.name.replace(/'/g,"\\'")}')">Log</button></td>
                     </tr>`;
             }).join('');
     }
@@ -1601,6 +1825,7 @@ self.addEventListener('fetch', e => {
             await customAlert("Invalid input! Rate must be a number and name cannot be empty."); return;
         }
         const item = appData.inventory.find(i => i.id === id);
+        recordPriceHistory(id, item.rate, rate);
         Object.assign(item, { name, unit, rate });
 
         // Sync cart & history
@@ -1696,14 +1921,17 @@ self.addEventListener('fetch', e => {
 
     function renderCart() {
         const isListOnly = appData.settings.listOnlyMode;
+        const sym        = appData.currency;
         const thead      = document.querySelector('#cart-table thead');
         const tbody      = document.getElementById('cart-body');
         const totalRow   = document.getElementById('total-row-display');
+        const taxRow     = document.getElementById('tax-discount-row');
 
         thead.innerHTML = isListOnly
             ? `<tr><th class="no-print" style="width:36px;"></th><th>Item</th><th style="text-align:center;">Qty</th><th>Rate (Fill)</th></tr>`
-            : `<tr><th class="no-print" style="width:36px;"></th><th>Item</th><th>Rate</th><th style="text-align:center;">Qty</th><th>Total(₹)</th></tr>`;
+            : `<tr><th class="no-print" style="width:36px;"></th><th>Item</th><th>Rate</th><th style="text-align:center;">Qty</th><th>Total</th></tr>`;
         totalRow.style.display = isListOnly ? 'none' : 'flex';
+        if (taxRow) taxRow.style.display = (!isListOnly && cart.length) ? 'flex' : 'none';
 
         if (!cart.length) {
             tbody.innerHTML = `<tr><td colspan="${isListOnly ? 4 : 5}" style="text-align:center; color:#64748b; padding:3rem 1rem;">No items yet. Add something from above!</td></tr>`;
@@ -1714,7 +1942,8 @@ self.addEventListener('fetch', e => {
         let total = 0;
         tbody.innerHTML = cart.map((item, idx) => {
             const amt = item.rate * item.qty; total += amt;
-            return isListOnly ? `
+            const noteRow = `<tr class="no-print"><td colspan="${isListOnly?4:5}" class="note-row"><input class="note-input" placeholder="Add a note..." value="${(item.note||'').replace(/"/g,'&quot;')}" oninput="updateNote(${idx},this.value)"></td></tr>`;
+            const mainRow = isListOnly ? `
                 <tr>
                     <td class="no-print" style="text-align:center; padding:.4rem;">${delBtn(idx)}</td>
                     <td style="font-weight:500;">${item.name}</td>
@@ -1724,13 +1953,16 @@ self.addEventListener('fetch', e => {
                 <tr>
                     <td class="no-print" style="text-align:center; padding:.4rem;">${delBtn(idx)}</td>
                     <td style="font-weight:500;">${item.name}</td>
-                    <td style="color:var(--muted);">₹${item.rate}</td>
+                    <td style="color:var(--muted);">${sym}${item.rate}</td>
                     <td>${qtyPill(item, idx)}</td>
-                    <td style="font-weight:600; color:var(--text);">₹${amt.toFixed(2)}</td>
+                    <td style="font-weight:600; color:var(--text);">${sym}${amt.toFixed(2)}</td>
                 </tr>`;
+            return mainRow + noteRow;
         }).join('');
 
         document.getElementById('grand-total').innerText = total.toFixed(2);
+        document.querySelectorAll('.cur-sym').forEach(el => el.textContent = sym);
+        recalcTax();
     }
 
 
@@ -1751,7 +1983,7 @@ self.addEventListener('fetch', e => {
                         onkeydown="handleRenameKey(event,'${list.id}')"
                         onblur="saveRename('${list.id}')">
                 </div>
-                <p class="text-sm-muted mb-2">${list.items.length} Items | Total: <span style="color:var(--text); font-weight:600;">₹${list.total.toFixed(2)}</span></p>
+                <p class="text-sm-muted mb-2">${list.items.length} items${list.disc||list.gst ? ' &nbsp;·&nbsp; <span style="font-size:.72rem; background:#f0fdf4; color:#059669; border:1px solid #a7f3d0; border-radius:20px; padding:.1rem .45rem; font-weight:700;">' + (list.disc?'Disc '+list.disc+'%':'') + (list.disc&&list.gst?' + ':'') + (list.gst?'GST '+list.gst+'%':'') + '</span>' : ''} &nbsp;|&nbsp; <span style="color:var(--text); font-weight:600;">${appData.currency}${list.total.toFixed(2)}</span></p>
                 <div style="display:flex; gap:.5rem; margin-top:auto;">
                     <button class="btn-outline" style="padding:.4rem; font-size:.85rem; flex:1;" onclick="loadList('${list.id}')">Load</button>
                     <button class="btn-outline" style="padding:.4rem; font-size:.85rem; flex:1; color:var(--text); border-color:var(--muted);" onclick="downloadHistoryPDF('${list.id}')">PDF</button>
@@ -1804,15 +2036,22 @@ self.addEventListener('fetch', e => {
     async function saveCurrentList() {
         if (!cart.length) { await customAlert("Cart is empty! Cannot save."); return; }
         const name  = await askListName();
-        if (name === null) return;   // user cancelled
+        if (name === null) return;
         const title = name || `List — ${new Date().toLocaleDateString()}`;
-        const total = cart.reduce((s, item) => s + item.rate * item.qty, 0);
+        const base  = cart.reduce((s, item) => s + item.rate * item.qty, 0);
+        const disc  = parseFloat(document.getElementById('discount-input')?.value) || 0;
+        const gst   = parseFloat(document.getElementById('gst-input')?.value)      || 0;
+        const after = base - (base * disc / 100);
+        const total = after + (after * gst / 100);
         appData.lists.push({
             id:    'list_' + Date.now(),
             date:  new Date().toLocaleString(),
             title,
             items: [...cart],
-            total,
+            subtotal: +base.toFixed(2),
+            disc,
+            gst,
+            total: +total.toFixed(2),
         });
         saveData(); renderHistory();
         document.getElementById('list-name-input').value = title;
@@ -1823,6 +2062,10 @@ self.addEventListener('fetch', e => {
         const list = appData.lists.find(l => l.id === id);
         cart = JSON.parse(JSON.stringify(list.items));
         document.getElementById('list-name-input').value = list.title || '';
+        const discEl = document.getElementById('discount-input');
+        const gstEl  = document.getElementById('gst-input');
+        if (discEl) discEl.value = list.disc || '';
+        if (gstEl)  gstEl.value  = list.gst  || '';
         renderCart();
         switchTab('maker', document.querySelector('.desktop-nav .nav-btn'));
     }
@@ -1847,21 +2090,26 @@ self.addEventListener('fetch', e => {
     function showPDFOverlay() { document.getElementById('pdf-overlay').classList.add('active'); }
     function hidePDFOverlay() { document.getElementById('pdf-overlay').classList.remove('active'); }
 
-    function buildPDFHTML(items, isListOnly, titleLine, dateLine) {
+    function buildPDFHTML(items, isListOnly, titleLine, dateLine, discIn, gstIn) {
         const now   = new Date();
         const date  = dateLine || now.toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
         const time  = now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
-        const total = items.reduce((s, i) => s + i.rate * i.qty, 0);
+        const sym   = appData.currency;
+        const disc  = discIn !== undefined ? discIn : (parseFloat(document.getElementById('discount-input')?.value) || 0);
+        const gst   = gstIn  !== undefined ? gstIn  : (parseFloat(document.getElementById('gst-input')?.value)      || 0);
+        const base  = items.reduce((s, i) => s + i.rate * i.qty, 0);
+        const after = base - (base * disc / 100);
+        const total = after + (after * gst / 100);
 
         const tableRows = items.map((item, i) => {
             const bg  = i % 2 === 0 ? '#ffffff' : '#f0fdf4';
             const amt = (item.rate * item.qty).toFixed(2);
             return `<tr style="background:${bg};">
-                <td style="padding:9px 12px; border:1px solid #a7f3d0; font-size:12.5px; font-weight:500; color:#0f172a;">${item.name}</td>
-                ${isListOnly ? '' : `<td style="padding:9px 12px; border:1px solid #a7f3d0; font-size:12.5px; text-align:right; color:#059669; font-weight:600;">&#8377;${item.rate} / ${item.unit}</td>`}
+                <td style="padding:9px 12px; border:1px solid #a7f3d0; font-size:12.5px; font-weight:500; color:#0f172a;">${item.name}${item.note?`<div style="font-size:10px;color:#94a3b8;">${item.note}</div>`:''}</td>
+                ${isListOnly ? '' : `<td style="padding:9px 12px; border:1px solid #a7f3d0; font-size:12.5px; text-align:right; color:#059669; font-weight:600;">${sym}${item.rate} / ${item.unit}</td>`}
                 <td style="padding:9px 12px; border:1px solid #a7f3d0; font-size:12.5px; text-align:center; font-weight:700; color:#0f172a;">${item.qty} ${item.unit}</td>
                 <td style="padding:9px 12px; border:1px solid #a7f3d0; font-size:12.5px; text-align:right; font-weight:700; color:#059669;">
-                    ${(item.rate > 0) ? `&#8377;${amt}` : '<span style="color:#94a3b8; font-size:11px;">—</span>'}
+                    ${(item.rate > 0) ? `${sym}${amt}` : '<span style="color:#94a3b8; font-size:11px;">—</span>'}
                 </td>
             </tr>`;
         }).join('');
@@ -1941,7 +2189,6 @@ self.addEventListener('fetch', e => {
         return `<div style="font-family:'Noto Sans Devanagari','Noto Sans',Arial,sans-serif; background:#ffffff; padding:20px; width:680px; color:#0f172a; overflow:hidden;">
   <style>@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Noto+Sans:wght@400;500;600;700;800&display=swap');</style>
 
-  <!-- HEADER -->
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#10b981; border-radius:10px; margin-bottom:22px;">
     <tr>
       <td style="padding:18px 22px;">
@@ -1950,7 +2197,7 @@ self.addEventListener('fetch', e => {
             <td>
               <div style="color:#ffffff; font-size:24px; font-weight:800; letter-spacing:0.5px; line-height:1.2; display:flex; align-items:center; gap:10px;">
                 <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyOCcgaGVpZ2h0PScyOCcgdmlld0JveD0nMCAwIDI0IDI0JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmZmZmYnIHN0cm9rZS13aWR0aD0nMi4yJyBzdHJva2UtbGluZWNhcD0ncm91bmQnIHN0cm9rZS1saW5lam9pbj0ncm91bmQnPjxwYXRoIGQ9J00zIDNoMmwuNCAyTTcgMTNoMTBsNC04SDUuNE03IDEzTDUuNCA1TTcgMTNsLTIuMjkzIDIuMjkzYy0uNjMuNjMtLjE4NCAxLjcwNy43MDcgMS43MDdIMTdtMCAwYTIgMiAwIDEwMCA0IDIgMiAwIDAwMC00em0tOCAyYTIgMiAwIDExLTQgMCAyIDIgMCAwMTQgMHonLz48L3N2Zz4=" width="28" height="28" style="vertical-align:middle; margin-top:-2px;">
-                GroceryPro
+                QuotePad
               </div>
               ${titleLine ? `<div style="color:#ffffff; font-size:20px; font-weight:800; margin-top:6px; letter-spacing:.3px; line-height:1.2;">${titleLine}</div>` : ''}
               <div style="color:rgba(255,255,255,0.78); font-size:11.5px; margin-top:4px; font-weight:500;">${isListOnly ? 'Shopping List' : 'Quotation / Estimate'}</div>
@@ -1966,10 +2213,8 @@ self.addEventListener('fetch', e => {
     </tr>
   </table>
 
-  <!-- SUMMARY -->
   ${summaryRow}
 
-  <!-- TABLE -->
   <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; border:1.5px solid #a7f3d0; border-radius:8px;">
     <thead>
       <tr style="background:#059669;">
@@ -1985,17 +2230,16 @@ self.addEventListener('fetch', e => {
     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; border:1.5px solid #a7f3d0; border-top:none; border-radius:0 0 8px 8px;">
     <tfoot>
       <tr style="background:#059669;">
-        <td colspan="${isListOnly ? 2 : 3}" style="padding:13px 12px; font-size:13px; font-weight:700; color:#fff; text-align:right;">Grand Total</td>
-        <td style="padding:13px 12px; font-size:15px; font-weight:800; color:#fff; text-align:right;">&#8377;${total.toFixed(2)}</td>
+        <td colspan="${isListOnly ? 2 : 3}" style="padding:13px 12px; font-size:11px; font-weight:700; color:#fff; text-align:right;">${disc||gst?`Subtotal ${sym}${base.toFixed(2)}${disc?` · Disc ${disc}%`:''}${gst?` · GST ${gst}%`:''}<br>`:''}Grand Total</td>
+        <td style="padding:13px 12px; font-size:15px; font-weight:800; color:#fff; text-align:right;">${sym}${total.toFixed(2)}</td>
       </tr>
     </tfoot>
     </table>
 
-  <!-- FOOTER -->
   <div style="page-break-inside:avoid; -webkit-column-break-inside:avoid; break-inside:avoid;">
   <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px; border-top:1.5px dashed #a7f3d0;">
     <tr>
-      <td style="padding-top:12px; font-size:10.5px; color:#94a3b8;">Generated by <span style="color:#10b981; font-weight:700;">GroceryPro</span> &mdash; Smart Grocery &amp; Quotation Planner</td>
+      <td style="padding-top:12px; font-size:10.5px; color:#94a3b8;">Generated by <span style="color:#10b981; font-weight:700;">QuotePad</span> &mdash; Smart Quotation Maker</td>
       <td style="padding-top:12px; font-size:10.5px; color:#94a3b8; text-align:right;">${date} &bull; ${time}</td>
     </tr>
   </table>
@@ -2046,7 +2290,7 @@ self.addEventListener('fetch', e => {
         // Method 3: Share as HTML text (last resort for locked WebViews)
         if (navigator.share) {
             try {
-                await navigator.share({ title: filename, text: 'GroceryPro PDF Export', url: window.location.href });
+                await navigator.share({ title: filename, text: 'QuotePad PDF Export', url: window.location.href });
                 return;
             } catch(e) {}
         }
@@ -2059,8 +2303,8 @@ self.addEventListener('fetch', e => {
         if (!cart.length) { await customAlert("List is empty. Add items first."); return; }
         const isListOnly = appData.settings.listOnlyMode;
         const nameInput  = document.getElementById('list-name-input').value.trim();
-        const title      = nameInput || (isListOnly ? 'Grocery Shopping List' : 'Grocery Quotation / Estimate');
-        const fname      = `${(nameInput || 'GroceryPro').replace(/\s+/g,'_')}_${new Date().toLocaleDateString('en-IN').replace(/\//g,'-')}.pdf`;
+        const title      = nameInput || (isListOnly ? 'Shopping List' : 'Quotation / Estimate');
+        const fname      = `${(nameInput || 'QuotePad').replace(/\s+/g,'_')}_${new Date().toLocaleDateString('en-IN').replace(/\//g,'-')}.pdf`;
         const html       = buildPDFHTML(cart, isListOnly, title, null);
         renderPDF(html, fname);
     }
@@ -2070,7 +2314,7 @@ self.addEventListener('fetch', e => {
         const list = appData.lists.find(l => l.id === id);
         if (!list) return;
         const isListOnly = appData.settings.listOnlyMode;
-        const html  = buildPDFHTML(list.items, isListOnly, list.title, list.date);
+        const html  = buildPDFHTML(list.items, isListOnly, list.title, list.date, list.disc || 0, list.gst || 0);
         const fname = `${list.title.replace(/\s+/g,'_')}.pdf`;
         renderPDF(html, fname);
     }
@@ -2091,14 +2335,14 @@ self.addEventListener('fetch', e => {
 
     async function downloadBackup() {
         const jsonStr  = JSON.stringify(appData, null, 2);
-        const filename = `GroceryPro_Backup_${new Date().toLocaleDateString('en-IN').replace(/\//g,'-')}.json`;
+        const filename = `QuotePad_Backup_${new Date().toLocaleDateString('en-IN').replace(/\//g,'-')}.json`;
 
         // Method 1: Web Share API (works great in PWA & Android)
         if (navigator.share && navigator.canShare) {
             try {
                 const file = new File([jsonStr], filename, { type: 'application/json' });
                 if (navigator.canShare({ files: [file] })) {
-                    await navigator.share({ files: [file], title: 'GroceryPro Backup' });
+                    await navigator.share({ files: [file], title: 'QuotePad Backup' });
                     return;
                 }
             } catch(e) { /* fall through */ }
@@ -2277,7 +2521,7 @@ self.addEventListener('fetch', e => {
                 <td style="padding:.45rem .75rem; font-weight:600; color:var(--text);">${row.name}</td>
                 <td style="padding:.45rem .75rem; text-align:center; color:var(--text);">${row.qty}</td>
                 <td style="padding:.45rem .75rem; text-align:center;">${unitBadge}</td>
-                <td style="padding:.45rem .75rem; text-align:right; color:var(--accent-hover);">${row.rate > 0 ? '₹' + row.rate : '—'}</td>
+                <td style="padding:.45rem .75rem; text-align:right; color:var(--accent-hover);">${row.rate > 0 ? appData.currency + row.rate : '—'}</td>
             </tr>`;
         }).join('');
 
@@ -2358,6 +2602,211 @@ self.addEventListener('fetch', e => {
         document.getElementById('excel-toggle-arrow').style.transform = 'rotate(0deg)';
     }
 
+
+
+    // ── NEW FEATURES ─────────────────────────────────────────────
+
+    // Currency
+    const CURRENCIES = ['\u20b9','$','\u20ac','\u00a3','\u00a5'];
+    function renderCurrencyPills() {
+        const el = document.getElementById('currency-pills');
+        if (!el) return;
+        el.innerHTML = CURRENCIES.map(c =>
+            `<span class="currency-pill${appData.currency===c?' active':''}" onclick="setCurrency('${c}')">${c} ${c==='\u20b9'?'INR':c==='$'?'USD':c==='\u20ac'?'EUR':c==='\u00a3'?'GBP':'JPY'}</span>`
+        ).join('');
+    }
+    function setCurrency(sym) {
+        appData.currency = sym; saveData();
+        document.querySelectorAll('.cur-sym').forEach(el => el.textContent = sym);
+        renderCurrencyPills(); renderCart(); recalcTax();
+    }
+
+    // GST + Discount
+    function recalcTax() {
+        const base     = cart.reduce((s,i) => s + i.rate * i.qty, 0);
+        const disc     = parseFloat(document.getElementById('discount-input')?.value) || 0;
+        const gst      = parseFloat(document.getElementById('gst-input')?.value)      || 0;
+        const afterDisc = base - (base * disc / 100);
+        const final     = afterDisc + (afterDisc * gst / 100);
+        const el = document.getElementById('tax-result');
+        if (el) el.textContent = disc||gst ? `Final: ${appData.currency}${final.toFixed(2)}` : '';
+    }
+
+    // Item Notes — stored on cart item
+    function updateNote(idx, val) { cart[idx].note = val; }
+
+    // WhatsApp Share
+    function shareWhatsApp() {
+        if (!cart.length) { customAlert("List is empty!"); return; }
+        const sym  = appData.currency;
+        const disc = parseFloat(document.getElementById('discount-input')?.value) || 0;
+        const gst  = parseFloat(document.getElementById('gst-input')?.value)      || 0;
+        const itemLines = cart.map(function(item, n) {
+            return (n+1) + '. ' + item.name + ' - ' + item.qty + ' ' + item.unit + ' x ' + sym + item.rate + ' = ' + sym + (item.rate * item.qty).toFixed(2) + (item.note ? ' (' + item.note + ')' : '');
+        });
+        const base  = cart.reduce(function(s, i) { return s + i.rate * i.qty; }, 0);
+        const after = base - (base * disc / 100);
+        const final = after + (after * gst / 100);
+        var msg = '*QuotePad List*\n\n' + itemLines.join('\n');
+        msg += '\n\n*Subtotal: ' + sym + base.toFixed(2) + '*';
+        if (disc) msg += '\nDiscount (' + disc + '%): -' + sym + (base * disc / 100).toFixed(2);
+        if (gst)  msg += '\nGST (' + gst + '%): +' + sym + (after * gst / 100).toFixed(2);
+        if (disc || gst) msg += '\n*Total: ' + sym + final.toFixed(2) + '*';
+        window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+    }
+
+    // Excel Export
+    function exportExcel() {
+        if (!cart.length) { customAlert("List is empty!"); return; }
+        if (typeof XLSX === 'undefined') { customAlert("Excel export needs internet connection."); return; }
+        const sym  = appData.currency;
+        const rows = [['Item','Unit','Rate','Qty','Total']];
+        cart.forEach(i => rows.push([i.name, i.unit, i.rate, i.qty, +(i.rate*i.qty).toFixed(2)]));
+        const base = cart.reduce((s,i)=>s+i.rate*i.qty,0);
+        rows.push([],[`Grand Total`,``,``,``,+base.toFixed(2)]);
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'QuotePad');
+        XLSX.writeFile(wb, `QuotePad_${new Date().toLocaleDateString('en-IN').replace(/\//g,'-')}.xlsx`);
+    }
+
+    // Price History — record on inventory rate change
+    function recordPriceHistory(itemId, oldRate, newRate) {
+        if (oldRate === newRate) return;
+        if (!appData.priceHistory[itemId]) appData.priceHistory[itemId] = [];
+        appData.priceHistory[itemId].push({ date: new Date().toLocaleDateString('en-IN'), rate: newRate });
+        if (appData.priceHistory[itemId].length > 10) appData.priceHistory[itemId].shift(); // keep last 10
+    }
+    async function showPriceHistory(itemId, itemName, el) {
+        if (!itemName && el) itemName = el.dataset.n;
+        const hist = appData.priceHistory[itemId];
+        if (!hist || !hist.length) {
+            await customAlert('No price history yet for "' + itemName + '".\n\nHistory records whenever you edit the rate.');
+            return;
+        }
+        const lines = hist.map(function(h, i) {
+            const prev = hist[i-1];
+            const dir  = !prev ? '' : h.rate > prev.rate ? ' up' : h.rate < prev.rate ? ' down' : '';
+            return h.date + ': ' + appData.currency + h.rate + dir;
+        }).join('\n');
+        await customAlert('Price History - ' + itemName + '\n\n' + lines);
+    }
+
+
+    // ── QUICK ADD ────────────────────────────────────────────────
+    let _qaUnit = '';
+
+    function renderQaChips() {
+        const chips = document.getElementById('qa-unit-chips');
+        if (!chips) return;
+        if (!_qaUnit && appData.units.length) _qaUnit = appData.units[0];
+                chips.innerHTML = '';
+        appData.units.forEach(function(u) {
+            var d = document.createElement('div');
+            d.className = 'unit-chip' + (_qaUnit===u?' sel':'');
+            d.textContent = u;
+            d.onclick = function() { qaSelectUnit(u); };
+            chips.appendChild(d);
+        });
+        var addChip = document.createElement('div');
+        addChip.className = 'unit-chip-add';
+        addChip.textContent = '+ New';
+        addChip.title = 'Add new unit';
+        addChip.onclick = qaShowAddUnit;
+        chips.appendChild(addChip);
+    }
+
+    function qaShowAddUnit() {
+        const wrap = document.getElementById('qa-new-unit-wrap');
+        wrap.style.display = 'flex';
+        const inp = document.getElementById('qa-new-unit-input');
+        inp.value = '';
+        setTimeout(() => inp.focus(), 30);
+    }
+
+    function qaNewUnitKey(e) {
+        if (e.key === 'Enter')  { e.preventDefault(); qaNewUnitSave(); }
+        if (e.key === 'Escape') qaNewUnitCancel();
+    }
+
+    function qaNewUnitCancel() {
+        document.getElementById('qa-new-unit-wrap').style.display = 'none';
+        document.getElementById('qa-new-unit-input').value = '';
+    }
+
+    function qaNewUnitSave() {
+        const val = document.getElementById('qa-new-unit-input').value.trim();
+        if (!val) return;
+        if (!appData.units.map(u => u.toLowerCase()).includes(val.toLowerCase())) {
+            appData.units.push(val);
+            saveData();
+            renderUnitManager();
+            renderUnitDropdowns();
+        }
+        _qaUnit = appData.units.find(u => u.toLowerCase() === val.toLowerCase()) || val;
+        qaNewUnitCancel();
+        renderQaChips();
+        document.getElementById('qa-name').focus();
+    }
+
+    function qaSelectUnit(u) {
+        _qaUnit = u;
+        renderQaChips();
+    }
+
+    function quickAddOpen() {
+        document.getElementById('myCustomSelect').classList.remove('open');
+        const sheet = document.getElementById('quick-add-sheet');
+        sheet.style.display = 'block';
+        _qaUnit = appData.units[0] || 'kg';
+        renderQaChips();
+        document.getElementById('qa-name').value = '';
+        document.getElementById('qa-rate').value = '';
+        setTimeout(() => document.getElementById('qa-name').focus(), 50);
+    }
+
+    function quickAddClose() {
+        document.getElementById('quick-add-sheet').style.display = 'none';
+    }
+
+    function qaKeydown(e) {
+        if (e.key === 'Enter') { e.preventDefault(); quickAddSave(); }
+        if (e.key === 'Escape') quickAddClose();
+    }
+
+    async function quickAddSave() {
+        const name = document.getElementById('qa-name').value.trim();
+        const rate = parseFloat(document.getElementById('qa-rate').value) || 0;
+        const unit = _qaUnit;
+        if (!name) { document.getElementById('qa-name').focus(); return; }
+
+        // Check duplicate
+        const exists = appData.inventory.find(i => i.name.toLowerCase() === name.toLowerCase());
+        if (exists) {
+            // just select the existing one
+            quickAddClose();
+            selectDropdownItem(exists);
+            return;
+        }
+
+        const newItem = { id:'item_'+Date.now(), name, unit, rate };
+        appData.inventory.push(newItem);
+        saveData();
+        renderCustomDropdown();
+        renderInventoryTable();
+        renderUnitDropdowns();
+        quickAddClose();
+        selectDropdownItem(newItem);
+    }
+
+    function selectDropdownItem(item) {
+        document.getElementById('custom-select-text').innerText = item.name;
+        document.getElementById('item-select-value').value      = item.id;
+        document.getElementById('myCustomSelect').classList.remove('open');
+        document.querySelectorAll('.custom-option').forEach(el => el.classList.remove('selected'));
+        document.getElementById('qty-label').innerText = `Qty (${item.unit})`;
+        document.getElementById('qty-input').focus();
+    }
 
     // ── BOOT ─────────────────────────────────────────────────────────
 
