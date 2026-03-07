@@ -12,7 +12,9 @@
     <!-- Instantly apply saved theme before render to prevent flash & fix status bar -->
     <script>
     (function(){
-        const dark = localStorage.getItem('gp_theme') === 'dark';
+        let dark = localStorage.getItem('gp_theme') === 'dark';
+        // Also check appData.settings.theme (newer storage)
+        try { const d = JSON.parse(localStorage.getItem('gp_appData')); if (d?.settings?.theme) dark = d.settings.theme === 'dark'; } catch(e){}
         if (dark) {
             document.documentElement.classList.add('dark-html');
             document.querySelector('meta[name="theme-color"]').content = '#0d1f1a';
@@ -324,7 +326,7 @@ self.addEventListener('notificationclick', e => {
         .grp-dd-arrow { width:7px; height:7px; border-top:2px solid var(--muted); border-right:2px solid var(--muted); transform:rotate(135deg); transition:transform .15s; flex-shrink:0; margin-top:-2px; }
         .grp-dd-opts { position:absolute; top:100%; left:0; right:0; z-index:200; background:var(--solid); border:1.5px solid var(--accent); border-top:none; border-radius:0 0 8px 8px; max-height:180px; overflow-y:auto; opacity:0; visibility:hidden; pointer-events:none; transform:translateY(-4px); transition:all .12s var(--ease-spring); box-shadow:0 8px 16px rgba(16,185,129,.12); }
         .grp-dd-wrap.open .grp-dd-opts { opacity:1; visibility:visible; pointer-events:all; transform:translateY(0); }
-        .grp-dd-opt { padding:.5rem .7rem; font-size:.85rem; color:var(--text); cursor:pointer; border-bottom:1px solid var(--border-light); transition:all .08s; }
+        .grp-dd-opt { padding:.5rem .7rem; font-size:.85rem; color:var(--text); background:var(--solid); cursor:pointer; border-bottom:1px solid var(--border-light); transition:all .08s; }
         .grp-dd-opt:last-child { border-bottom:none; }
         .grp-dd-opt:hover { background:var(--accent); color:#fff; padding-left:.95rem; }
         .grp-dd-opt.selected { background:var(--accent); color:#fff; font-weight:600; }
@@ -1311,7 +1313,7 @@ self.addEventListener('notificationclick', e => {
                                         <div class="group-new-input-wrap" id="excel-newgroup-wrap">
                                             <input type="text" id="excel-newgroup-input" placeholder="New group name…" style="flex:1; font-size:.82rem; height:34px;">
                                             <button onclick="confirmNewGroupFromExcel()" style="height:34px; padding:0 .7rem; font-size:.8rem; width:auto;">Create</button>
-                                            <button onclick="cancelNewGroupFromExcel()" style="height:34px; padding:0 .5rem; width:34px; background:transparent; border:1.5px solid var(--border); color:var(--muted);">✕</button>
+                                            <button onclick="cancelNewGroupFromExcel()" style="height:34px; padding:0 .5rem; width:34px; background:transparent; border:1.5px solid var(--border); color:var(--muted);"><svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
                                         </div>
                                         <div style="font-size:.7rem; color:var(--muted);">All items will be filed under this group.</div>
                                     </div>
@@ -1459,7 +1461,14 @@ self.addEventListener('notificationclick', e => {
                     </div>
                     <div class="input-group">
                         <label>Unit</label>
-                        <select id="new-item-unit"></select>
+                        <div class="grp-dd-wrap" id="unit-dd">
+                            <div class="grp-dd-trigger" onclick="toggleGrpDd('unit-dd')">
+                                <span id="unit-dd-text">Select unit</span>
+                                <div class="grp-dd-arrow"></div>
+                            </div>
+                            <div class="grp-dd-opts" id="unit-dd-opts"></div>
+                        </div>
+                        <input type="hidden" id="new-item-unit" value="">
                     </div>
                     <div class="input-group">
                         <label>Rate (<span class="cur-sym">₹</span>)</label>
@@ -1480,7 +1489,7 @@ self.addEventListener('notificationclick', e => {
                     <div class="group-new-input-wrap" id="add-item-newgroup-wrap">
                         <input type="text" id="add-item-newgroup-input" placeholder="New group name…" style="flex:1; font-size:.85rem; height:36px;">
                         <button onclick="confirmNewGroupFromAdd()" style="height:36px; padding:0 .8rem; font-size:.82rem; width:auto;">Create</button>
-                        <button onclick="cancelNewGroupFromAdd()" style="height:36px; padding:0 .6rem; width:36px; background:transparent; border:1.5px solid var(--border); color:var(--muted);">✕</button>
+                        <button onclick="cancelNewGroupFromAdd()" style="height:36px; padding:0 .6rem; width:36px; background:transparent; border:1.5px solid var(--border); color:var(--muted);"><svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
                     </div>
                 </div>
                 <button onclick="addNewItem()" class="w-100" style="margin-top:.75rem;">Add Item</button>
@@ -1793,15 +1802,19 @@ self.addEventListener('notificationclick', e => {
     let appData = JSON.parse(localStorage.getItem('gp_appData')) || {
         inventory: DEFAULT_INVENTORY,
         lists:     [],
-        settings:  { listOnlyMode: false },
+        settings:  { listOnlyMode: false, theme: 'light', disc: '', gst: '' },
         units:     DEFAULT_UNITS,
         currency:  '\u20b9',
         priceHistory: {},
     };
     // migration guards
-    if (!appData.units)        appData.units        = DEFAULT_UNITS;
-    if (!appData.currency)     appData.currency     = '\u20b9';
-    if (!appData.priceHistory) appData.priceHistory = {};
+    if (!appData.units)              appData.units              = DEFAULT_UNITS;
+    if (!appData.currency)           appData.currency           = '\u20b9';
+    if (!appData.priceHistory)       appData.priceHistory       = {};
+    if (!appData.settings)           appData.settings           = {};
+    if (appData.settings.theme === undefined) appData.settings.theme = localStorage.getItem('gp_theme') || 'light';
+    if (appData.settings.disc === undefined)  appData.settings.disc  = '';
+    if (appData.settings.gst  === undefined)  appData.settings.gst   = '';
 
     let cart          = [];
     let editingItemId = null;
@@ -1809,7 +1822,7 @@ self.addEventListener('notificationclick', e => {
     function saveData() { localStorage.setItem('gp_appData', JSON.stringify(appData)); }
 
     // ── DARK MODE ────────────────────────────────────────────────────
-    let isDark = localStorage.getItem('gp_theme') === 'dark';
+    let isDark = appData.settings.theme === 'dark';
 
     function applyTheme() {
         document.body.classList.toggle('dark', isDark);
@@ -1835,13 +1848,19 @@ self.addEventListener('notificationclick', e => {
 
     function toggleTheme() {
         isDark = !isDark;
-        localStorage.setItem('gp_theme', isDark ? 'dark' : 'light');
+        appData.settings.theme = isDark ? 'dark' : 'light';
+        saveData();
         applyTheme();
     }
 
     function init() {
         applyTheme();
         document.getElementById('mode-toggle').checked = appData.settings.listOnlyMode;
+        // Restore disc/gst
+        const discEl = document.getElementById('discount-input');
+        const gstEl  = document.getElementById('gst-input');
+        if (discEl) discEl.value = appData.settings.disc || '';
+        if (gstEl)  gstEl.value  = appData.settings.gst  || '';
         renderUnitManager();
         renderUnitDropdowns();
         renderCustomDropdown();
@@ -2085,8 +2104,25 @@ self.addEventListener('notificationclick', e => {
     }
 
     function renderUnitDropdowns() {
-        document.getElementById('new-item-unit').innerHTML =
-            appData.units.map(u => `<option value="${u}">Per ${u}</option>`).join('');
+        const optsEl = document.getElementById('unit-dd-opts');
+        if (!optsEl) return;
+        const curVal = document.getElementById('new-item-unit')?.value || '';
+        optsEl.innerHTML = appData.units.map(u =>
+            `<div class="grp-dd-opt${curVal===u?' selected':''}" data-val="${u}" onclick="unitDdPick('${u}')">${u}</div>`
+        ).join('');
+        // Set default if nothing selected
+        if (!curVal && appData.units.length) unitDdPick(appData.units[0]);
+    }
+
+    function unitDdPick(val) {
+        const hidden = document.getElementById('new-item-unit');
+        const textEl = document.getElementById('unit-dd-text');
+        if (hidden) hidden.value = val;
+        if (textEl) textEl.textContent = val;
+        document.querySelectorAll('#unit-dd-opts .grp-dd-opt').forEach(o =>
+            o.classList.toggle('selected', o.dataset.val === val)
+        );
+        document.getElementById('unit-dd')?.classList.remove('open');
     }
 
     async function addNewUnit() {
@@ -2151,7 +2187,7 @@ self.addEventListener('notificationclick', e => {
     }
 
     // ── Custom group dropdown helpers ───────────────────────────────
-    const GRP_DDS = ['add-grp-dd', 'qa-grp-dd', 'excel-grp-dd'];
+    const GRP_DDS = ['add-grp-dd', 'qa-grp-dd', 'excel-grp-dd', 'unit-dd'];
 
     function toggleGrpDd(id) {
         const wrap = document.getElementById(id);
@@ -2292,7 +2328,7 @@ self.addEventListener('notificationclick', e => {
             return `<tr style="background:#e0f2fe !important;">
                 <td><div class="action-cell">
                     <button class="btn-small" onclick="saveEditItem('${item.id}')" style="height:30px;">Save</button>
-                    <button class="btn-outline btn-small" onclick="cancelEdit()" style="height:30px;">✕</button>
+                    <button class="btn-outline btn-small" onclick="cancelEdit()" style="height:30px;"><svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
                 </div></td>
                 <td><input type="text" id="edit-name-${item.id}" value="${item.name.replace(/"/g,'&quot;')}" style="padding:.4rem; font-size:.85rem; height:35px; width:100%;"></td>
                 <td><select id="edit-unit-${item.id}" style="padding:.4rem; font-size:.85rem; height:35px;">${unitOpts}</select></td>
@@ -2380,9 +2416,12 @@ self.addEventListener('notificationclick', e => {
         if (!newName || newName === oldName) return;
         if (getInvGroups().includes(newName)) { await customAlert(`Group "${newName}" already exists.`); return; }
         appData.inventory.forEach(i => { if (i.group === oldName) i.group = newName; });
+        // Sync group in saved history lists too
+        appData.lists.forEach(list => {
+            list.items.forEach(i => { if (i.group === oldName) i.group = newName; });
+        });
         saveData();
-        renderInventoryTable();
-        refreshGroupPickers();
+        renderCustomDropdown(); renderInventoryTable(); refreshGroupPickers();
     }
 
     function renderInventoryTable() {
@@ -2484,6 +2523,7 @@ self.addEventListener('notificationclick', e => {
         saveData();
         document.getElementById('new-item-name').value = '';
         document.getElementById('new-item-rate').value = '';
+        if (appData.units.length) unitDdPick(appData.units[0]);
         cancelNewGroupFromAdd();
         setGrpDdValue('add-grp-dd', '', 'No Group (Individual)');
         renderCustomDropdown(); renderInventoryTable();
@@ -2560,23 +2600,44 @@ self.addEventListener('notificationclick', e => {
             if (!draft.cart?.length) { clearDraft(); return; }
             const mins = Math.round((Date.now() - draft.ts) / 60000);
             const timeStr = mins < 60 ? `${mins} min ago` : `${Math.round(mins/60)} hr ago`;
-            // Show recovery banner
-            const banner = document.createElement('div');
-            banner.id = 'draft-recovery-banner';
-            banner.style.cssText = `position:fixed;bottom:0;left:0;right:0;z-index:9998;
-                background:linear-gradient(135deg,#1e293b,#0f172a);color:#fff;
-                padding:.85rem 1.25rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;
-                box-shadow:0 -4px 20px rgba(0,0,0,.3);animation:fadeSlideUp .25s var(--ease-spring) both;`;
-            banner.innerHTML = `
-                <svg width="18" height="18" fill="none" stroke="#10b981" viewBox="0 0 24 24" stroke-width="2.2" style="flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
-                <div style="flex:1;min-width:0;">
-                    <div style="font-size:.88rem;font-weight:700;">Unsaved cart found</div>
-                    <div style="font-size:.72rem;opacity:.7;">${draft.cart.length} item${draft.cart.length!==1?'s':''} · ${timeStr}</div>
-                </div>
-                <button onclick="recoverDraft()" style="background:#10b981;border:none;border-radius:10px;color:#fff;padding:.45rem .9rem;font-size:.82rem;font-weight:700;cursor:pointer;height:auto;white-space:nowrap;">Recover</button>
-                <button onclick="discardDraft()" style="background:rgba(255,255,255,.12);border:none;border-radius:10px;color:#fff;padding:.45rem .75rem;font-size:.82rem;font-weight:600;cursor:pointer;height:auto;white-space:nowrap;">Discard</button>`;
-            // Above mobile nav
-            document.body.appendChild(banner);
+
+            // Overlay
+            const overlay = document.createElement('div');
+            overlay.id = 'draft-recovery-overlay';
+            overlay.style.cssText = `position:fixed;inset:0;z-index:9998;
+                background:rgba(15,23,42,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+                display:flex;align-items:center;justify-content:center;padding:1.5rem;
+                animation:fadeIn .25s ease both;`;
+
+            overlay.innerHTML = `
+                <div style="background:var(--solid);border-radius:20px;padding:1.75rem 1.5rem;width:100%;max-width:340px;
+                    box-shadow:0 20px 40px rgba(0,0,0,.25);border:1.5px solid var(--border);
+                    animation:fadeSlideUp .3s var(--ease-spring) both;">
+                    <div style="width:48px;height:48px;background:linear-gradient(135deg,#fef9c3,#fde68a);border-radius:14px;
+                        display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+                        <svg width="24" height="24" fill="none" stroke="#d97706" viewBox="0 0 24 24" stroke-width="2.2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                        </svg>
+                    </div>
+                    <div style="text-align:center;margin-bottom:1.25rem;">
+                        <div style="font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:.35rem;">Unsaved Cart Found</div>
+                        <div style="font-size:.82rem;color:var(--muted);">${draft.cart.length} item${draft.cart.length!==1?'s':''} &nbsp;·&nbsp; ${timeStr}</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:.5rem;">
+                        <button onclick="recoverDraft()" style="width:100%;background:linear-gradient(135deg,#10b981,#059669);
+                            border:none;border-radius:12px;color:#fff;padding:.7rem;font-size:.92rem;font-weight:700;cursor:pointer;
+                            display:flex;align-items:center;justify-content:center;gap:.45rem;">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12"/></svg>
+                            Recover Cart
+                        </button>
+                        <button onclick="discardDraft()" style="width:100%;background:transparent;
+                            border:1.5px solid var(--border);border-radius:12px;color:var(--muted);padding:.7rem;font-size:.88rem;font-weight:600;cursor:pointer;">
+                            Discard
+                        </button>
+                    </div>
+                </div>`;
+
+            document.body.appendChild(overlay);
         } catch { clearDraft(); }
     }
 
@@ -2595,13 +2656,13 @@ self.addEventListener('notificationclick', e => {
             renderCart();
             switchTab('maker', document.querySelector('.desktop-nav .nav-btn'));
         } catch {}
-        document.getElementById('draft-recovery-banner')?.remove();
+        document.getElementById('draft-recovery-overlay')?.remove();
         // Don't clear draft yet — keep until user saves
     }
 
     function discardDraft() {
         clearDraft();
-        document.getElementById('draft-recovery-banner')?.remove();
+        document.getElementById('draft-recovery-overlay')?.remove();
     }
 
 
@@ -3444,7 +3505,7 @@ self.addEventListener('notificationclick', e => {
         body.innerHTML = parsed.map((row, i) => {
             const bg = i % 2 === 0 ? 'var(--solid)' : 'var(--bg)';
             const unitBadge = row.unit
-                ? `<span onclick="excelEditUnit(${i})" title="Tap to edit unit" style="background:#dcfce7; color:#166534; font-size:.7rem; font-weight:600; padding:.15rem .5rem; border-radius:10px; cursor:pointer; border:1.5px dashed #86efac;">${row.unit} ✎</span>`
+                ? `<span onclick="excelEditUnit(${i})" title="Tap to edit unit" style="background:#dcfce7; color:#166534; font-size:.7rem; font-weight:600; padding:.15rem .5rem; border-radius:10px; cursor:pointer; border:1.5px dashed #86efac;">${row.unit} <svg width="9" height="9" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" style="vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 13l-4 1 1-4L15.232 5.232a2 2 0 012.828 0l.708.708a2 2 0 010 2.828L9 13z"/></svg></span>`
                 : `<span onclick="excelEditUnit(${i})" title="Tap to set unit" style="color:var(--accent); font-size:.72rem; font-weight:600; cursor:pointer; border:1.5px dashed var(--accent); border-radius:8px; padding:.1rem .4rem;">+ unit</span>`;
             return `<tr id="ep-row-${i}" style="background:${bg};">
                 <td style="padding:.45rem .5rem; color:var(--muted); font-size:.78rem;">${i+1}</td>
@@ -3453,7 +3514,7 @@ self.addEventListener('notificationclick', e => {
                 <td style="padding:.45rem .5rem; text-align:center;" id="ep-unit-${i}">${unitBadge}</td>
                 <td style="padding:.45rem .5rem; text-align:right; color:var(--accent-hover);">${row.rate > 0 ? appData.currency + row.rate : '—'}</td>
                 <td style="padding:.45rem .4rem; text-align:center;">
-                    <button onclick="excelRemoveRow(${i})" title="Remove" style="background:none; border:none; cursor:pointer; padding:.15rem .3rem; color:var(--danger); font-size:1rem; line-height:1; border-radius:6px; min-width:unset; box-shadow:none;">✕</button>
+                    <button onclick="excelRemoveRow(${i})" title="Remove" style="background:none; border:none; cursor:pointer; padding:.15rem .3rem; color:var(--danger); font-size:1rem; line-height:1; border-radius:6px; min-width:unset; box-shadow:none;"><svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
                 </td>
             </tr>`;
         }).join('');
@@ -3480,7 +3541,7 @@ self.addEventListener('notificationclick', e => {
         cell.innerHTML = `<select id="ep-unit-sel-${i}" style="font-size:.75rem; padding:.15rem .3rem; border:1.5px solid var(--accent); border-radius:7px; background:var(--solid); color:var(--text); max-width:70px;" onchange="excelSaveUnit(${i})" onblur="excelSaveUnit(${i})">
             <option value="">— none —</option>
             ${opts}
-            <option value="__custom__">✎ custom…</option>
+            <option value="__custom__">+ custom…</option>
         </select>`;
         const sel = document.getElementById('ep-unit-sel-' + i);
         sel.focus();
@@ -3621,6 +3682,10 @@ self.addEventListener('notificationclick', e => {
         const final     = afterDisc + (afterDisc * gst / 100);
         const el = document.getElementById('tax-result');
         if (el) el.textContent = disc||gst ? `Final: ${appData.currency}${final.toFixed(2)}` : '';
+        // Persist disc/gst in appData
+        appData.settings.disc = document.getElementById('discount-input')?.value || '';
+        appData.settings.gst  = document.getElementById('gst-input')?.value      || '';
+        saveData();
     }
 
     // Item Notes — stored on cart item
