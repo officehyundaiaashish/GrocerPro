@@ -315,6 +315,25 @@ self.addEventListener('notificationclick', e => {
         .group-picker-wrap { display:flex; flex-direction:column; gap:.3rem; margin-top:.5rem; }
         .group-picker-select { padding:.38rem .6rem; font-size:.85rem; border:1.5px solid var(--border); border-radius:7px; background:var(--solid); color:var(--text); cursor:pointer; }
         .group-picker-select:focus { border-color:var(--accent); outline:none; }
+        /* Custom group dropdown */
+        .grp-dd-wrap { position:relative; user-select:none; }
+        .grp-dd-trigger { display:flex; align-items:center; justify-content:space-between; padding:.38rem .6rem; font-size:.85rem; border:1.5px solid var(--border); border-radius:7px; background:var(--solid); color:var(--text); cursor:pointer; transition:border-color .15s; min-height:34px; }
+        .grp-dd-trigger:hover { border-color:var(--accent); background:var(--accent-light); }
+        .grp-dd-wrap.open .grp-dd-trigger { border-color:var(--accent); background:var(--accent); color:#fff; border-radius:7px 7px 0 0; }
+        .grp-dd-wrap.open .grp-dd-trigger .grp-dd-arrow { border-color:#fff #fff transparent transparent; transform:rotate(-45deg); margin-top:3px; }
+        .grp-dd-arrow { width:7px; height:7px; border-top:2px solid var(--muted); border-right:2px solid var(--muted); transform:rotate(135deg); transition:transform .15s; flex-shrink:0; margin-top:-2px; }
+        .grp-dd-opts { position:absolute; top:100%; left:0; right:0; z-index:200; background:var(--solid); border:1.5px solid var(--accent); border-top:none; border-radius:0 0 8px 8px; max-height:180px; overflow-y:auto; opacity:0; visibility:hidden; pointer-events:none; transform:translateY(-4px); transition:all .12s var(--ease-spring); box-shadow:0 8px 16px rgba(16,185,129,.12); }
+        .grp-dd-wrap.open .grp-dd-opts { opacity:1; visibility:visible; pointer-events:all; transform:translateY(0); }
+        .grp-dd-opt { padding:.5rem .7rem; font-size:.85rem; color:var(--text); cursor:pointer; border-bottom:1px solid var(--border-light); transition:all .08s; }
+        .grp-dd-opt:last-child { border-bottom:none; }
+        .grp-dd-opt:hover { background:var(--accent); color:#fff; padding-left:.95rem; }
+        .grp-dd-opt.selected { background:var(--accent); color:#fff; font-weight:600; }
+        .grp-dd-opt.new-opt { color:var(--accent); font-weight:700; }
+        .grp-dd-opt.new-opt:hover { background:var(--accent); color:#fff; }
+        body.dark .grp-dd-trigger { background:var(--bg); color:var(--text); }
+        body.dark .grp-dd-opts { background:var(--solid); border-color:var(--accent); }
+        body.dark .grp-dd-opt { color:var(--text); border-bottom-color:var(--border); }
+        body.dark .grp-dd-opt:hover, body.dark .grp-dd-opt.selected { background:var(--accent); color:#fff; }
         .group-new-input-wrap { display:none; flex-direction:row; gap:.4rem; margin-top:.3rem; }
         .group-new-input-wrap.show { display:flex; }
         /* ── RESET & BASE ───────────────────────────────────────────── */
@@ -750,6 +769,15 @@ self.addEventListener('notificationclick', e => {
             transition:all .08s; gap:.3rem;
             animation: fadeSlideUp .12s var(--ease-spring) both;
         }
+        .unit-pill:hover { border-color:var(--accent); }
+        .unit-pill:hover .unit-rename-btn { opacity:1; }
+        .unit-rename-btn {
+            background:transparent; border:none; padding:0; color:var(--accent);
+            height:auto; display:flex; align-items:center; margin:0;
+            box-shadow:none; line-height:1; cursor:pointer;
+            opacity:0; transition:opacity .15s; flex-shrink:0;
+        }
+        .unit-rename-btn:hover { color:var(--accent-hover); transform:none; background:transparent; box-shadow:none; }
         .unit-pill button {
             background:transparent; border:none; padding:0; color:var(--muted);
             height:auto; display:flex; align-items:center; margin:0;
@@ -757,6 +785,11 @@ self.addEventListener('notificationclick', e => {
             transition:color .08s; cursor:pointer;
         }
         .unit-pill button:hover { color:var(--danger); transform:none; background:transparent; box-shadow:none; }
+        .unit-rename-hint {
+            font-size:.7rem; color:var(--muted); margin-top:.4rem;
+            display:flex; align-items:center; gap:.3rem; opacity:.8;
+            animation: fadeIn .3s ease both;
+        }
         .unit-pill-add {
             display:inline-flex; align-items:center; justify-content:center;
             width:30px; height:30px; border-radius:50%;
@@ -1157,9 +1190,14 @@ self.addEventListener('notificationclick', e => {
                             <!-- Group picker in quick add -->
                             <div class="input-group" style="gap:.25rem; margin-top:.4rem;">
                                 <label>Group</label>
-                                <select id="qa-group-sel" class="group-picker-select" onchange="onQaGroupChange(this.value)">
-                                    <option value="">No Group (Individual)</option>
-                                </select>
+                                <div class="grp-dd-wrap" id="qa-grp-dd">
+                                    <div class="grp-dd-trigger" onclick="toggleGrpDd('qa-grp-dd')">
+                                        <span id="qa-grp-dd-text">No Group (Individual)</span>
+                                        <div class="grp-dd-arrow"></div>
+                                    </div>
+                                    <div class="grp-dd-opts" id="qa-grp-dd-opts"></div>
+                                </div>
+                                <input type="hidden" id="qa-group-sel-val" value="">
                                 <div class="group-new-input-wrap" id="qa-newgroup-wrap">
                                     <input type="text" id="qa-newgroup-input" placeholder="New group name..." style="flex:1; font-size:.82rem; height:34px;">
                                     <button onclick="confirmNewGroupFromQa()" style="height:34px; padding:0 .7rem; font-size:.8rem; width:auto;">Create</button>
@@ -1262,7 +1300,19 @@ self.addEventListener('notificationclick', e => {
                                     </label>
                                     <div id="excel-group-wrap" style="display:none; flex-direction:column; gap:.3rem; padding:.6rem .75rem; background:var(--accent-light); border:1.5px solid var(--accent); border-radius:8px;">
                                         <label style="font-size:.75rem; font-weight:700; color:var(--accent-hover); text-transform:uppercase; letter-spacing:.4px;">Group Name</label>
-                                        <input type="text" id="excel-group-name" placeholder="e.g. Vegetables, Hardware, Grocery…" style="padding:.4rem .6rem; font-size:.85rem; border:1.5px solid var(--border); border-radius:7px; background:var(--solid); color:var(--text); outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+                                        <div class="grp-dd-wrap" id="excel-grp-dd">
+                                            <div class="grp-dd-trigger" onclick="toggleGrpDd('excel-grp-dd')">
+                                                <span id="excel-grp-dd-text">No Group (Individual)</span>
+                                                <div class="grp-dd-arrow"></div>
+                                            </div>
+                                            <div class="grp-dd-opts" id="excel-grp-dd-opts"></div>
+                                        </div>
+                                        <input type="hidden" id="excel-group-name" value="">
+                                        <div class="group-new-input-wrap" id="excel-newgroup-wrap">
+                                            <input type="text" id="excel-newgroup-input" placeholder="New group name…" style="flex:1; font-size:.82rem; height:34px;">
+                                            <button onclick="confirmNewGroupFromExcel()" style="height:34px; padding:0 .7rem; font-size:.8rem; width:auto;">Create</button>
+                                            <button onclick="cancelNewGroupFromExcel()" style="height:34px; padding:0 .5rem; width:34px; background:transparent; border:1.5px solid var(--border); color:var(--muted);">✕</button>
+                                        </div>
                                         <div style="font-size:.7rem; color:var(--muted);">All items will be filed under this group.</div>
                                     </div>
                                     <button onclick="importExcelData()" style="width:100%; font-size:.9rem;">
@@ -1385,6 +1435,10 @@ self.addEventListener('notificationclick', e => {
                     <span class="text-xs-muted">Tap X to delete</span>
                 </div>
                 <div id="unit-tags-container" style="display:flex; flex-wrap:wrap; gap:.5rem; align-items:center;"></div>
+                <div id="unit-rename-hint" class="unit-rename-hint" style="display:none;">
+                    <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 13l-4 1 1-4L15.232 5.232a2 2 0 012.828 0l.708.708a2 2 0 010 2.828L9 13z"/></svg>
+                    Hover on a unit to rename it
+                </div>
                 <!-- Inline add-unit input — hidden until + tapped -->
                 <div id="unit-add-wrap" style="display:none; margin-top:.6rem; animation:fadeSlideUp .12s var(--ease-spring) both;">
                     <div style="display:flex; gap:.4rem;">
@@ -1415,9 +1469,14 @@ self.addEventListener('notificationclick', e => {
                 <!-- Group picker for manual add -->
                 <div class="group-picker-wrap" id="add-item-group-wrap">
                     <label style="font-size:.75rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px;">Group</label>
-                    <select id="add-item-group-sel" class="group-picker-select" onchange="onAddGroupChange(this.value)">
-                        <option value="">No Group (Individual)</option>
-                    </select>
+                    <div class="grp-dd-wrap" id="add-grp-dd">
+                        <div class="grp-dd-trigger" onclick="toggleGrpDd('add-grp-dd')">
+                            <span id="add-grp-dd-text">No Group (Individual)</span>
+                            <div class="grp-dd-arrow"></div>
+                        </div>
+                        <div class="grp-dd-opts" id="add-grp-dd-opts"></div>
+                    </div>
+                    <input type="hidden" id="add-item-group-sel-val" value="">
                     <div class="group-new-input-wrap" id="add-item-newgroup-wrap">
                         <input type="text" id="add-item-newgroup-input" placeholder="New group name…" style="flex:1; font-size:.85rem; height:36px;">
                         <button onclick="confirmNewGroupFromAdd()" style="height:36px; padding:0 .8rem; font-size:.82rem; width:auto;">Create</button>
@@ -1436,7 +1495,7 @@ self.addEventListener('notificationclick', e => {
                 <!-- Search bar -->
                 <div class="search-wrap" style="margin-bottom:.5rem;">
                     <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/></svg>
-                    <input type="text" id="inv-search" class="search-input" placeholder="Search items..." oninput="filterInventory(this.value)">
+                    <input type="text" id="inv-search" class="search-input" placeholder="Search items..." oninput="filterInventory(this.value)" onfocus="showGroupFilterChips()">
                     <button class="search-clear" id="search-clear-btn" onclick="clearSearch()" title="Clear"><svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
                 </div>
                 <!-- Group filter chips — shown only when searching -->
@@ -1792,6 +1851,7 @@ self.addEventListener('notificationclick', e => {
         renderCurrencyPills();
         checkFirstTime();
         initBackupUI();
+        checkDraftRecovery();
     }
 
     // Splash — show every time, 1.8s visible then smooth fade
@@ -1890,6 +1950,12 @@ self.addEventListener('notificationclick', e => {
     let inventoryFilter = '';   // current search query
     let inventoryGroupFilter = ''; // group chip filter
 
+    function showGroupFilterChips() {
+        const chipWrap = document.getElementById('inv-group-filter-wrap');
+        if (chipWrap) chipWrap.style.display = 'flex';
+        renderInvGroupFilterChips();
+    }
+
     function filterInventory(query) {
         inventoryFilter = query.trim().toLowerCase();
         document.getElementById('search-clear-btn').classList.toggle('visible', inventoryFilter.length > 0);
@@ -1934,11 +2000,20 @@ self.addEventListener('notificationclick', e => {
         appData.units.forEach(function(u) {
             var pill = document.createElement('div');
             pill.className = 'unit-pill';
+
+            // Pencil rename button (visible on hover)
+            var ren = document.createElement('button');
+            ren.className = 'unit-rename-btn';
+            ren.title = 'Rename';
+            ren.innerHTML = '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 13l-4 1 1-4L15.232 5.232a2 2 0 012.828 0l.708.708a2 2 0 010 2.828L9 13z"/></svg>';
+            ren.onclick = function(e) { e.stopPropagation(); startUnitRename(pill, u); };
+
             var txt = document.createTextNode(u);
             var del = document.createElement('button');
             del.title = 'Delete'; del.innerHTML = '<svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>';
             del.onclick = function(e) { e.stopPropagation(); deleteUnit(u); };
-            pill.appendChild(txt); pill.appendChild(del);
+
+            pill.appendChild(ren); pill.appendChild(txt); pill.appendChild(del);
             c.appendChild(pill);
         });
         // ＋ chip at end
@@ -1946,6 +2021,53 @@ self.addEventListener('notificationclick', e => {
         add.className = 'unit-pill-add'; add.title = 'Add unit'; add.textContent = '+';
         add.onclick = showUnitAdd;
         c.appendChild(add);
+
+        // Hint — show only first 3 times inventory tab is visited
+        const hintEl = document.getElementById('unit-rename-hint');
+        const seen = parseInt(localStorage.getItem('gp_unitHintSeen') || '0');
+        if (hintEl) {
+            if (seen < 3) {
+                hintEl.style.display = 'flex';
+                localStorage.setItem('gp_unitHintSeen', seen + 1);
+                setTimeout(() => { hintEl.style.transition='opacity .5s'; hintEl.style.opacity='0'; setTimeout(()=>hintEl.style.display='none',520); }, 3000);
+            } else {
+                hintEl.style.display = 'none';
+            }
+        }
+    }
+
+    function startUnitRename(pill, oldName) {
+        // Replace pill content with inline input
+        pill.innerHTML = '';
+        var inp = document.createElement('input');
+        inp.value = oldName;
+        inp.style.cssText = 'border:none; background:transparent; color:var(--accent-hover); font-size:.82rem; font-weight:700; outline:none; width:' + Math.max(oldName.length * 9, 50) + 'px; padding:0;';
+        inp.onkeydown = function(e) {
+            if (e.key === 'Enter')  { e.preventDefault(); saveUnitRename(pill, oldName, inp.value.trim()); }
+            if (e.key === 'Escape') { renderUnitManager(); }
+        };
+        inp.onblur = function() { saveUnitRename(pill, oldName, inp.value.trim()); };
+        pill.appendChild(inp);
+        pill.style.borderColor = 'var(--accent)';
+        pill.style.background  = '#fff';
+        setTimeout(() => { inp.focus(); inp.select(); }, 20);
+    }
+
+    async function saveUnitRename(pill, oldName, newName) {
+        if (!newName || newName === oldName) { renderUnitManager(); return; }
+        if (appData.units.map(u => u.toLowerCase()).includes(newName.toLowerCase())) {
+            await customAlert(`Unit "${newName}" already exists.`);
+            renderUnitManager(); return;
+        }
+        // Rename in units list
+        const idx = appData.units.indexOf(oldName);
+        if (idx >= 0) appData.units[idx] = newName;
+        // Rename in inventory
+        appData.inventory.forEach(i => { if (i.unit === oldName) i.unit = newName; });
+        // Rename in cart
+        cart.forEach(i => { if (i.unit === oldName) i.unit = newName; });
+        saveData();
+        renderUnitManager(); renderUnitDropdowns(); renderInventoryTable(); renderCart();
     }
 
     function showUnitAdd() {
@@ -2028,61 +2150,130 @@ self.addEventListener('notificationclick', e => {
         return [...groups].sort();
     }
 
+    // ── Custom group dropdown helpers ───────────────────────────────
+    const GRP_DDS = ['add-grp-dd', 'qa-grp-dd', 'excel-grp-dd'];
+
+    function toggleGrpDd(id) {
+        const wrap = document.getElementById(id);
+        if (!wrap) return;
+        const isOpen = wrap.classList.contains('open');
+        // Close all first
+        GRP_DDS.forEach(d => { const el = document.getElementById(d); if (el) el.classList.remove('open'); });
+        if (!isOpen) wrap.classList.add('open');
+    }
+
+    // Close dropdowns on outside click
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.grp-dd-wrap'))
+            GRP_DDS.forEach(d => { const el = document.getElementById(d); if (el) el.classList.remove('open'); });
+    });
+
+    function setGrpDdValue(ddId, val, label) {
+        const hiddenId = ddId === 'add-grp-dd' ? 'add-item-group-sel-val'
+                       : ddId === 'qa-grp-dd'  ? 'qa-group-sel-val'
+                       : 'excel-group-name';
+        const textId   = ddId + '-text';
+        const hidden   = document.getElementById(hiddenId);
+        const textEl   = document.getElementById(textId);
+        if (hidden)  hidden.value      = val;
+        if (textEl)  textEl.textContent = label || val || 'No Group (Individual)';
+        // Mark selected
+        document.querySelectorAll(`#${ddId}-opts .grp-dd-opt`).forEach(o => {
+            o.classList.toggle('selected', o.dataset.val === val);
+        });
+        document.getElementById(ddId)?.classList.remove('open');
+    }
+
     // ── Populate group pickers everywhere ──────────────────────────
     function refreshGroupPickers() {
         const groups = getInvGroups();
-        const makeOptions = (selId) => {
-            const sel = document.getElementById(selId);
-            if (!sel) return;
-            const cur = sel.value;
-            sel.innerHTML = `<option value="">No Group (Individual)</option>` +
-                groups.map(g => `<option value="${g}" ${cur===g?'selected':''}>${g}</option>`).join('') +
-                `<option value="__new__">+ New group</option>`;
-        };
-        makeOptions('add-item-group-sel');
-        makeOptions('qa-group-sel');
+
+        GRP_DDS.forEach(ddId => {
+            const optsEl = document.getElementById(ddId + '-opts');
+            if (!optsEl) return;
+
+            // Get current value
+            const hiddenId = ddId === 'add-grp-dd' ? 'add-item-group-sel-val'
+                           : ddId === 'qa-grp-dd'  ? 'qa-group-sel-val'
+                           : 'excel-group-name';
+            const curVal = document.getElementById(hiddenId)?.value || '';
+
+            optsEl.innerHTML =
+                `<div class="grp-dd-opt${curVal===''?' selected':''}" data-val="" onclick="grpDdPick('${ddId}','','No Group (Individual)')">No Group (Individual)</div>` +
+                groups.map(g =>
+                    `<div class="grp-dd-opt${curVal===g?' selected':''}" data-val="${g}" onclick="grpDdPick('${ddId}','${g.replace(/'/g,"\\'")}','${g.replace(/'/g,"\\'")}')">${g}</div>`
+                ).join('') +
+                `<div class="grp-dd-opt new-opt" data-val="__new__" onclick="grpDdNew('${ddId}')">+ New group</div>`;
+        });
+    }
+
+    function grpDdPick(ddId, val, label) {
+        setGrpDdValue(ddId, val, label);
+        // Hide new-group input if open
+        const newWrapId = ddId === 'add-grp-dd' ? 'add-item-newgroup-wrap'
+                        : ddId === 'qa-grp-dd'  ? 'qa-newgroup-wrap'
+                        : 'excel-newgroup-wrap';
+        document.getElementById(newWrapId)?.classList.remove('show');
+    }
+
+    function grpDdNew(ddId) {
+        document.getElementById(ddId)?.classList.remove('open');
+        const newWrapId = ddId === 'add-grp-dd' ? 'add-item-newgroup-wrap'
+                        : ddId === 'qa-grp-dd'  ? 'qa-newgroup-wrap'
+                        : 'excel-newgroup-wrap';
+        const inputId   = ddId === 'add-grp-dd' ? 'add-item-newgroup-input'
+                        : ddId === 'qa-grp-dd'  ? 'qa-newgroup-input'
+                        : 'excel-newgroup-input';
+        const wrap = document.getElementById(newWrapId);
+        if (wrap) { wrap.classList.add('show'); setTimeout(() => document.getElementById(inputId)?.focus(), 30); }
     }
 
     function onAddGroupChange(val) {
-        const wrap = document.getElementById('add-item-newgroup-wrap');
-        if (val === '__new__') { wrap.classList.add('show'); document.getElementById('add-item-newgroup-input').focus(); }
-        else wrap.classList.remove('show');
+        if (val === '__new__') { document.getElementById('add-item-newgroup-wrap').classList.add('show'); document.getElementById('add-item-newgroup-input').focus(); }
+        else document.getElementById('add-item-newgroup-wrap').classList.remove('show');
     }
     function confirmNewGroupFromAdd() {
         const val = document.getElementById('add-item-newgroup-input').value.trim();
         if (!val) return;
         document.getElementById('add-item-newgroup-wrap').classList.remove('show');
-        // Add to select and select it
-        const sel = document.getElementById('add-item-group-sel');
-        let opt = [...sel.options].find(o => o.value === val);
-        if (!opt) { opt = new Option(val, val); sel.insertBefore(opt, sel.options[sel.options.length-1]); }
-        sel.value = val;
         document.getElementById('add-item-newgroup-input').value = '';
+        setGrpDdValue('add-grp-dd', val, val);
+        refreshGroupPickers();
     }
     function cancelNewGroupFromAdd() {
         document.getElementById('add-item-newgroup-wrap').classList.remove('show');
         document.getElementById('add-item-newgroup-input').value = '';
-        document.getElementById('add-item-group-sel').value = '';
+        setGrpDdValue('add-grp-dd', '', 'No Group (Individual)');
     }
     function onQaGroupChange(val) {
-        const wrap = document.getElementById('qa-newgroup-wrap');
-        if (val === '__new__') { wrap.classList.add('show'); document.getElementById('qa-newgroup-input').focus(); }
-        else wrap.classList.remove('show');
+        if (val === '__new__') { document.getElementById('qa-newgroup-wrap').classList.add('show'); document.getElementById('qa-newgroup-input').focus(); }
+        else document.getElementById('qa-newgroup-wrap').classList.remove('show');
     }
     function confirmNewGroupFromQa() {
         const val = document.getElementById('qa-newgroup-input').value.trim();
         if (!val) return;
         document.getElementById('qa-newgroup-wrap').classList.remove('show');
-        const sel = document.getElementById('qa-group-sel');
-        let opt = [...sel.options].find(o => o.value === val);
-        if (!opt) { opt = new Option(val, val); sel.insertBefore(opt, sel.options[sel.options.length-1]); }
-        sel.value = val;
         document.getElementById('qa-newgroup-input').value = '';
+        setGrpDdValue('qa-grp-dd', val, val);
+        refreshGroupPickers();
     }
     function cancelNewGroupFromQa() {
         document.getElementById('qa-newgroup-wrap').classList.remove('show');
         document.getElementById('qa-newgroup-input').value = '';
-        document.getElementById('qa-group-sel').value = '';
+        setGrpDdValue('qa-grp-dd', '', 'No Group (Individual)');
+    }
+    function confirmNewGroupFromExcel() {
+        const val = document.getElementById('excel-newgroup-input').value.trim();
+        if (!val) return;
+        document.getElementById('excel-newgroup-wrap').classList.remove('show');
+        document.getElementById('excel-newgroup-input').value = '';
+        setGrpDdValue('excel-grp-dd', val, val);
+        refreshGroupPickers();
+    }
+    function cancelNewGroupFromExcel() {
+        document.getElementById('excel-newgroup-wrap').classList.remove('show');
+        document.getElementById('excel-newgroup-input').value = '';
+        setGrpDdValue('excel-grp-dd', '', 'No Group (Individual)');
     }
 
     // ── Render single item row (reused across cards) ────────────────
@@ -2125,10 +2316,15 @@ self.addEventListener('notificationclick', e => {
     function buildGroupCard(label, items, cardClass, isOpen) {
         const open = isOpen ? 'open' : '';
         const tableRows = items.map(renderItemRow).join('');
+        const isNamed = cardClass === '' ; // only named groups (not individual/master)
+        const renameBtn = isNamed
+            ? `<button onclick="event.stopPropagation();startGroupRename('${label.replace(/'/g,"\\'")}')" title="Rename group" style="background:rgba(255,255,255,0.2);border:none;border-radius:6px;width:26px;height:26px;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;"><svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 13l-4 1 1-4L15.232 5.232a2 2 0 012.828 0l.708.708a2 2 0 010 2.828L9 13z"/></svg></button>`
+            : '';
         return `<div class="inv-group-card">
             <div class="inv-group-header ${cardClass}" onclick="toggleInvCard(this)">
-                <span class="inv-group-title">${label}</span>
+                <span class="inv-group-title" id="grp-title-${label.replace(/\s+/g,'_')}">${label}</span>
                 <span class="inv-group-count">${items.length} item${items.length!==1?'s':''}</span>
+                ${renameBtn}
                 <svg class="inv-group-chevron ${open}" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
             </div>
             <div class="inv-group-body ${open}">
@@ -2152,6 +2348,41 @@ self.addEventListener('notificationclick', e => {
         const body    = header.nextElementSibling;
         const open    = body.classList.toggle('open');
         chevron.classList.toggle('open', open);
+    }
+
+    function startGroupRename(oldName) {
+        const id = 'grp-rename-dialog';
+        if (document.getElementById(id)) return;
+        const overlay = document.createElement('div');
+        overlay.id = id;
+        overlay.className = 'dialog-overlay active';
+        overlay.innerHTML = `<div class="dialog-box" style="max-width:340px;">
+            <div class="dialog-title"><svg width="18" height="18" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 13l-4 1 1-4L15.232 5.232a2 2 0 012.828 0l.708.708a2 2 0 010 2.828L9 13z"/></svg> Rename Group</div>
+            <input id="grp-rename-input" class="rename-input" value="${oldName.replace(/"/g,'&quot;')}" style="width:100%;margin:1rem 0;" onkeydown="handleGroupRenameKey(event,'${oldName.replace(/'/g,"\\'")}')">
+            <div class="dialog-actions">
+                <button class="btn-outline" style="border:none;color:var(--muted);" onclick="document.getElementById('grp-rename-dialog').remove()">Cancel</button>
+                <button onclick="saveGroupRename('${oldName.replace(/'/g,"\\'")}')">Rename</button>
+            </div>
+        </div>`;
+        document.body.appendChild(overlay);
+        setTimeout(() => { const inp = document.getElementById('grp-rename-input'); inp.focus(); inp.select(); }, 50);
+    }
+
+    function handleGroupRenameKey(e, oldName) {
+        if (e.key === 'Enter')  { e.preventDefault(); saveGroupRename(oldName); }
+        if (e.key === 'Escape') { document.getElementById('grp-rename-dialog')?.remove(); }
+    }
+
+    async function saveGroupRename(oldName) {
+        const inp     = document.getElementById('grp-rename-input');
+        const newName = inp ? inp.value.trim() : '';
+        document.getElementById('grp-rename-dialog')?.remove();
+        if (!newName || newName === oldName) return;
+        if (getInvGroups().includes(newName)) { await customAlert(`Group "${newName}" already exists.`); return; }
+        appData.inventory.forEach(i => { if (i.group === oldName) i.group = newName; });
+        saveData();
+        renderInventoryTable();
+        refreshGroupPickers();
     }
 
     function renderInventoryTable() {
@@ -2240,7 +2471,7 @@ self.addEventListener('notificationclick', e => {
         const name  = document.getElementById('new-item-name').value.trim();
         const unit  = document.getElementById('new-item-unit').value;
         const rate  = parseFloat(document.getElementById('new-item-rate').value);
-        const grpSel = document.getElementById('add-item-group-sel');
+        const grpSel = document.getElementById('add-item-group-sel-val');
         let   group  = grpSel ? grpSel.value : '';
         if (group === '__new__') {
             const nv = document.getElementById('add-item-newgroup-input').value.trim();
@@ -2254,6 +2485,7 @@ self.addEventListener('notificationclick', e => {
         document.getElementById('new-item-name').value = '';
         document.getElementById('new-item-rate').value = '';
         cancelNewGroupFromAdd();
+        setGrpDdValue('add-grp-dd', '', 'No Group (Individual)');
         renderCustomDropdown(); renderInventoryTable();
         document.getElementById('new-item-name').focus();
     }
@@ -2308,7 +2540,71 @@ self.addEventListener('notificationclick', e => {
         }
     }
 
-    // Shared delete button HTML (reused in every row)
+    const DRAFT_KEY = 'gp_cartDraft';
+
+    function saveDraft() {
+        if (!cart.length) { localStorage.removeItem(DRAFT_KEY); return; }
+        const disc = document.getElementById('discount-input')?.value || '';
+        const gst  = document.getElementById('gst-input')?.value || '';
+        const name = document.getElementById('list-name-input')?.value || '';
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ cart, disc, gst, name, ts: Date.now() }));
+    }
+
+    function clearDraft() { localStorage.removeItem(DRAFT_KEY); }
+
+    function checkDraftRecovery() {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (!raw) return;
+        try {
+            const draft = JSON.parse(raw);
+            if (!draft.cart?.length) { clearDraft(); return; }
+            const mins = Math.round((Date.now() - draft.ts) / 60000);
+            const timeStr = mins < 60 ? `${mins} min ago` : `${Math.round(mins/60)} hr ago`;
+            // Show recovery banner
+            const banner = document.createElement('div');
+            banner.id = 'draft-recovery-banner';
+            banner.style.cssText = `position:fixed;bottom:0;left:0;right:0;z-index:9998;
+                background:linear-gradient(135deg,#1e293b,#0f172a);color:#fff;
+                padding:.85rem 1.25rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;
+                box-shadow:0 -4px 20px rgba(0,0,0,.3);animation:fadeSlideUp .25s var(--ease-spring) both;`;
+            banner.innerHTML = `
+                <svg width="18" height="18" fill="none" stroke="#10b981" viewBox="0 0 24 24" stroke-width="2.2" style="flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:.88rem;font-weight:700;">Unsaved cart found</div>
+                    <div style="font-size:.72rem;opacity:.7;">${draft.cart.length} item${draft.cart.length!==1?'s':''} · ${timeStr}</div>
+                </div>
+                <button onclick="recoverDraft()" style="background:#10b981;border:none;border-radius:10px;color:#fff;padding:.45rem .9rem;font-size:.82rem;font-weight:700;cursor:pointer;height:auto;white-space:nowrap;">Recover</button>
+                <button onclick="discardDraft()" style="background:rgba(255,255,255,.12);border:none;border-radius:10px;color:#fff;padding:.45rem .75rem;font-size:.82rem;font-weight:600;cursor:pointer;height:auto;white-space:nowrap;">Discard</button>`;
+            // Above mobile nav
+            document.body.appendChild(banner);
+        } catch { clearDraft(); }
+    }
+
+    function recoverDraft() {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (!raw) return;
+        try {
+            const draft = JSON.parse(raw);
+            cart = draft.cart || [];
+            const discEl = document.getElementById('discount-input');
+            const gstEl  = document.getElementById('gst-input');
+            const nameEl = document.getElementById('list-name-input');
+            if (discEl) discEl.value = draft.disc || '';
+            if (gstEl)  gstEl.value  = draft.gst  || '';
+            if (nameEl) nameEl.value = draft.name || '';
+            renderCart();
+            switchTab('maker', document.querySelector('.desktop-nav .nav-btn'));
+        } catch {}
+        document.getElementById('draft-recovery-banner')?.remove();
+        // Don't clear draft yet — keep until user saves
+    }
+
+    function discardDraft() {
+        clearDraft();
+        document.getElementById('draft-recovery-banner')?.remove();
+    }
+
+
     const delBtn = idx =>
         `<button class="btn-del-row no-print" onclick="removeCartItem(${idx})"><svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>`;
 
@@ -2364,6 +2660,7 @@ self.addEventListener('notificationclick', e => {
         document.getElementById('grand-total').innerText = total.toFixed(2);
         document.querySelectorAll('.cur-sym').forEach(el => el.textContent = sym);
         recalcTax();
+        saveDraft();
     }
 
 
@@ -2458,7 +2755,7 @@ self.addEventListener('notificationclick', e => {
         });
         saveData(); renderHistory();
         document.getElementById('list-name-input').value = title;
-        cart = []; renderCart();
+        cart = []; clearDraft(); renderCart();
     }
 
     async function loadList(id) {
@@ -3289,6 +3586,8 @@ self.addEventListener('notificationclick', e => {
         document.getElementById('excel-save-inventory').checked  = false;
         document.getElementById('excel-group-wrap').style.display = 'none';
         document.getElementById('excel-group-name').value         = '';
+        setGrpDdValue('excel-grp-dd', '', 'No Group (Individual)');
+        cancelNewGroupFromExcel();
         // Close panel
         document.getElementById('excel-panel').style.display         = 'none';
         document.getElementById('excel-toggle-arrow').style.transform = 'rotate(0deg)';
@@ -3456,6 +3755,7 @@ self.addEventListener('notificationclick', e => {
         document.getElementById('qa-rate').value = '';
         // Reset group picker
         cancelNewGroupFromQa();
+        setGrpDdValue('qa-grp-dd', '', 'No Group (Individual)');
         refreshGroupPickers();
         setTimeout(() => document.getElementById('qa-name').focus(), 50);
     }
@@ -3484,7 +3784,7 @@ self.addEventListener('notificationclick', e => {
             return;
         }
 
-        const grpSelQa = document.getElementById('qa-group-sel');
+        const grpSelQa = document.getElementById('qa-group-sel-val');
         let qaGroup = grpSelQa ? grpSelQa.value : '';
         if (qaGroup === '__new__') {
             const nv = document.getElementById('qa-newgroup-input')?.value.trim();
