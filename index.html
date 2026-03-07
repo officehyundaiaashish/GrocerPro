@@ -1224,12 +1224,17 @@ self.addEventListener('notificationclick', e => {
                                 <div id="excel-action-btns" style="display:none; gap:.5rem; flex-direction:column;">
                                     <!-- Optional: save to inventory toggle -->
                                     <label style="display:flex; align-items:center; gap:.6rem; padding:.6rem .75rem; background:var(--bg); border:1px solid var(--border-light); border-radius:8px; cursor:pointer; user-select:none;">
-                                        <input type="checkbox" id="excel-save-inventory" style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer; display:inline;">
+                                        <input type="checkbox" id="excel-save-inventory" onchange="toggleExcelGroupInput(this.checked)" style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer; display:inline;">
                                         <div>
                                             <div style="font-size:.83rem; font-weight:600; color:var(--text);">Also save to Inventory</div>
-                                            <div style="font-size:.72rem; color:var(--muted);">New items will be added to master inventory</div>
+                                            <div style="font-size:.72rem; color:var(--muted);">Items will be saved under a group in master inventory</div>
                                         </div>
                                     </label>
+                                    <div id="excel-group-wrap" style="display:none; flex-direction:column; gap:.3rem; padding:.6rem .75rem; background:var(--accent-light); border:1.5px solid var(--accent); border-radius:8px;">
+                                        <label style="font-size:.75rem; font-weight:700; color:var(--accent-hover); text-transform:uppercase; letter-spacing:.4px;">Group Name</label>
+                                        <input type="text" id="excel-group-name" placeholder="e.g. Vegetables, Hardware, Grocery…" style="padding:.4rem .6rem; font-size:.85rem; border:1.5px solid var(--border); border-radius:7px; background:var(--solid); color:var(--text); outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+                                        <div style="font-size:.7rem; color:var(--muted);">All imported items will be tagged under this group</div>
+                                    </div>
                                     <button onclick="importExcelData()" style="width:100%; font-size:.9rem;">
                                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" style="vertical-align:middle; margin-right:.3rem;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                                         Load into Cart
@@ -2010,7 +2015,7 @@ self.addEventListener('notificationclick', e => {
                                 <button class="btn-danger  btn-small" onclick="deleteItem('${item.id}')">Del</button>
                             </div>
                         </td>
-                        <td style="font-weight:500;">${item.name}</td>
+                        <td style="font-weight:500;">${item.name}${item.group ? `<br><span style="font-size:.68rem; font-weight:600; background:var(--accent-light); color:var(--accent-hover); padding:.1rem .4rem; border-radius:8px; margin-top:.15rem; display:inline-block;">${item.group}</span>` : ''}</td>
                         <td>${item.unit}</td>
                         <td>${appData.currency}${item.rate}</td>
                         <td style="text-align:center;">${trend}<button class="btn-outline btn-small" style="font-size:.65rem; padding:.15rem .35rem;" data-id="${item.id}" data-n="${item.name.replace(/"/g,'&quot;')}" onclick="showPriceHistory(this.dataset.id, this.dataset.n)">Log</button></td>
@@ -3014,10 +3019,17 @@ self.addEventListener('notificationclick', e => {
         renderExcelPreview(_excelParsed);
     }
 
+    function toggleExcelGroupInput(checked) {
+        const wrap = document.getElementById('excel-group-wrap');
+        wrap.style.display = checked ? 'flex' : 'none';
+        if (checked) setTimeout(() => document.getElementById('excel-group-name').focus(), 50);
+    }
+
     async function importExcelData() {
         if (!_excelParsed.length) return;
 
         const saveToInv = document.getElementById('excel-save-inventory').checked;
+        const groupName = (document.getElementById('excel-group-name')?.value || '').trim();
         let addedToInv  = 0;
 
         for (const row of _excelParsed) {
@@ -3042,11 +3054,13 @@ self.addEventListener('notificationclick', e => {
                     i.name.toLowerCase().trim() === row.name.toLowerCase().trim());
                 if (!inv) {
                     inv = { id: 'item_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
-                            name: row.name, unit: row.unit || '', rate: row.rate || 0 };
+                            name: row.name, unit: row.unit || '', rate: row.rate || 0,
+                            group: groupName || '' };
                     appData.inventory.push(inv);
                     addedToInv++;
-                } else if (row.rate > 0 && inv.rate === 0) {
-                    inv.rate = row.rate;
+                } else {
+                    if (row.rate > 0 && inv.rate === 0) inv.rate = row.rate;
+                    if (groupName && !inv.group) inv.group = groupName;
                 }
                 // Use inventory id for cart item so qty controls work
                 cartItem.id = inv.id;
@@ -3067,7 +3081,8 @@ self.addEventListener('notificationclick', e => {
         renderCart();
         switchTab('maker', document.querySelector('.desktop-nav .nav-btn'));
         if (saveToInv && addedToInv > 0) {
-            await customAlert(`Done!\n\n${_excelParsed.length} items loaded into Cart\n${addedToInv} new item(s) added to Inventory`);
+            const grpMsg = groupName ? `\nGroup: "${groupName}"` : '';
+            await customAlert(`Done!\n\n${_excelParsed.length} items loaded into Cart\n${addedToInv} new item(s) added to Inventory${grpMsg}`);
         }
         resetExcelImport();
     }
@@ -3081,6 +3096,8 @@ self.addEventListener('notificationclick', e => {
         document.getElementById('excel-action-btns').style.display  = 'none';
         document.getElementById('excel-preview-body').innerHTML  = '';
         document.getElementById('excel-save-inventory').checked  = false;
+        document.getElementById('excel-group-wrap').style.display = 'none';
+        document.getElementById('excel-group-name').value         = '';
         // Close panel
         document.getElementById('excel-panel').style.display         = 'none';
         document.getElementById('excel-toggle-arrow').style.transform = 'rotate(0deg)';
