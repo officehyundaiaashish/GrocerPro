@@ -1207,11 +1207,12 @@ self.addEventListener('notificationclick', e => {
                                         <table style="width:100%; border-collapse:collapse; font-size:.8rem; min-width:340px;">
                                             <thead>
                                                 <tr style="background:var(--accent); color:#fff;">
-                                                    <th style="padding:.45rem .65rem; text-align:left;">#</th>
-                                                    <th style="padding:.45rem .65rem; text-align:left;">Item</th>
-                                                    <th style="padding:.45rem .65rem; text-align:center;">Qty</th>
-                                                    <th style="padding:.45rem .65rem; text-align:center;">Unit</th>
-                                                    <th style="padding:.45rem .65rem; text-align:right;">Rate</th>
+                                                    <th style="padding:.45rem .5rem; text-align:left;">#</th>
+                                                    <th style="padding:.45rem .5rem; text-align:left;">Item</th>
+                                                    <th style="padding:.45rem .5rem; text-align:center;">Qty</th>
+                                                    <th style="padding:.45rem .5rem; text-align:center;">Unit</th>
+                                                    <th style="padding:.45rem .5rem; text-align:right;">Rate</th>
+                                                    <th style="padding:.45rem .4rem; text-align:center;"></th>
                                                 </tr>
                                             </thead>
                                             <tbody id="excel-preview-body"></tbody>
@@ -2938,28 +2939,79 @@ self.addEventListener('notificationclick', e => {
     }
 
     function renderExcelPreview(parsed) {
-        if (!parsed.length) { customAlert('No valid rows found in the file.'); return; }
+        if (!parsed.length) {
+            document.getElementById('excel-preview-wrap').style.display = 'none';
+            document.getElementById('excel-action-btns').style.display  = 'none';
+            customAlert('No valid rows found in the file.');
+            return;
+        }
 
         const body = document.getElementById('excel-preview-body');
 
         body.innerHTML = parsed.map((row, i) => {
             const bg = i % 2 === 0 ? 'var(--solid)' : 'var(--bg)';
             const unitBadge = row.unit
-                ? `<span style="background:#dcfce7; color:#166534; font-size:.7rem; font-weight:600; padding:.15rem .5rem; border-radius:10px;">${row.unit}</span>`
-                : `<span style="color:var(--muted); font-size:.75rem;">—</span>`;
-            return `<tr style="background:${bg};">
-                <td style="padding:.45rem .75rem; color:var(--muted); font-size:.78rem;">${i+1}</td>
-                <td style="padding:.45rem .75rem; font-weight:600; color:var(--text);">${row.name}</td>
-                <td style="padding:.45rem .75rem; text-align:center; color:var(--text);">${row.qty}</td>
-                <td style="padding:.45rem .75rem; text-align:center;">${unitBadge}</td>
-                <td style="padding:.45rem .75rem; text-align:right; color:var(--accent-hover);">${row.rate > 0 ? appData.currency + row.rate : '—'}</td>
+                ? `<span onclick="excelEditUnit(${i})" title="Tap to edit unit" style="background:#dcfce7; color:#166534; font-size:.7rem; font-weight:600; padding:.15rem .5rem; border-radius:10px; cursor:pointer; border:1.5px dashed #86efac;">${row.unit} ✎</span>`
+                : `<span onclick="excelEditUnit(${i})" title="Tap to set unit" style="color:var(--accent); font-size:.72rem; font-weight:600; cursor:pointer; border:1.5px dashed var(--accent); border-radius:8px; padding:.1rem .4rem;">+ unit</span>`;
+            return `<tr id="ep-row-${i}" style="background:${bg};">
+                <td style="padding:.45rem .5rem; color:var(--muted); font-size:.78rem;">${i+1}</td>
+                <td style="padding:.45rem .5rem; font-weight:600; color:var(--text);">${row.name}</td>
+                <td style="padding:.45rem .5rem; text-align:center; color:var(--text);">${row.qty}</td>
+                <td style="padding:.45rem .5rem; text-align:center;" id="ep-unit-${i}">${unitBadge}</td>
+                <td style="padding:.45rem .5rem; text-align:right; color:var(--accent-hover);">${row.rate > 0 ? appData.currency + row.rate : '—'}</td>
+                <td style="padding:.45rem .4rem; text-align:center;">
+                    <button onclick="excelRemoveRow(${i})" title="Remove" style="background:none; border:none; cursor:pointer; padding:.15rem .3rem; color:var(--danger); font-size:1rem; line-height:1; border-radius:6px; min-width:unset; box-shadow:none;">✕</button>
+                </td>
             </tr>`;
         }).join('');
 
-        document.getElementById('excel-preview-count').textContent = `${parsed.length} items ready`;
+        document.getElementById('excel-preview-count').textContent = `${parsed.length} item${parsed.length !== 1 ? 's' : ''} ready`;
         document.getElementById('excel-warn').textContent = '';
         document.getElementById('excel-preview-wrap').style.display = 'block';
         document.getElementById('excel-action-btns').style.display  = 'flex';
+    }
+
+    function excelRemoveRow(i) {
+        _excelParsed.splice(i, 1);
+        renderExcelPreview(_excelParsed);
+    }
+
+    function excelEditUnit(i) {
+        const cell = document.getElementById('ep-unit-' + i);
+        if (!cell) return;
+        const current = _excelParsed[i].unit || '';
+        // Build options from existing units + free input
+        const opts = appData.units.map(u =>
+            `<option value="${u}" ${u === current ? 'selected' : ''}>${u}</option>`
+        ).join('');
+        cell.innerHTML = `<select id="ep-unit-sel-${i}" style="font-size:.75rem; padding:.15rem .3rem; border:1.5px solid var(--accent); border-radius:7px; background:var(--solid); color:var(--text); max-width:70px;" onchange="excelSaveUnit(${i})" onblur="excelSaveUnit(${i})">
+            <option value="">— none —</option>
+            ${opts}
+            <option value="__custom__">✎ custom…</option>
+        </select>`;
+        const sel = document.getElementById('ep-unit-sel-' + i);
+        sel.focus();
+        sel.addEventListener('change', function() {
+            if (this.value === '__custom__') {
+                const val = prompt('Enter unit:', current);
+                if (val !== null) {
+                    _excelParsed[i].unit = val.trim();
+                    // Add to units list if new
+                    if (val.trim() && !appData.units.includes(val.trim())) {
+                        appData.units.push(val.trim());
+                        saveData();
+                    }
+                }
+                renderExcelPreview(_excelParsed);
+            }
+        });
+    }
+
+    function excelSaveUnit(i) {
+        const sel = document.getElementById('ep-unit-sel-' + i);
+        if (!sel || sel.value === '__custom__') return;
+        _excelParsed[i].unit = sel.value;
+        renderExcelPreview(_excelParsed);
     }
 
     async function importExcelData() {
