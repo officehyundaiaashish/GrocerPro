@@ -1434,11 +1434,13 @@ self.addEventListener('notificationclick', e => {
                 </div>
                 <p class="text-sm-muted mb-2">Edits here reflect instantly in cart and history.</p>
                 <!-- Search bar -->
-                <div class="search-wrap" style="margin-bottom:.75rem;">
+                <div class="search-wrap" style="margin-bottom:.5rem;">
                     <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/></svg>
-                    <input type="text" id="inv-search" class="search-input" placeholder="Search all items..." oninput="filterInventory(this.value)">
+                    <input type="text" id="inv-search" class="search-input" placeholder="Search items..." oninput="filterInventory(this.value)">
                     <button class="search-clear" id="search-clear-btn" onclick="clearSearch()" title="Clear"><svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
                 </div>
+                <!-- Group filter chips — shown only when searching -->
+                <div id="inv-group-filter-wrap" style="display:none; flex-wrap:wrap; gap:.35rem; margin-bottom:.65rem;"></div>
                 <!-- Group cards container -->
                 <div id="inv-cards-container"></div>
                 <!-- hidden legacy table body — kept for compatibility -->
@@ -1886,17 +1888,43 @@ self.addEventListener('notificationclick', e => {
     // ── SECTION 5: UNIT MANAGER ──────────────────────────────────────
 
     let inventoryFilter = '';   // current search query
+    let inventoryGroupFilter = ''; // group chip filter
 
     function filterInventory(query) {
         inventoryFilter = query.trim().toLowerCase();
         document.getElementById('search-clear-btn').classList.toggle('visible', inventoryFilter.length > 0);
+        // Show/hide group filter chips only when typing
+        const chipWrap = document.getElementById('inv-group-filter-wrap');
+        if (chipWrap) chipWrap.style.display = inventoryFilter ? 'flex' : 'none';
+        renderInvGroupFilterChips();
         renderInventoryTable();
     }
 
     function clearSearch() {
         document.getElementById('inv-search').value = '';
+        inventoryGroupFilter = '';
+        const chipWrap = document.getElementById('inv-group-filter-wrap');
+        if (chipWrap) chipWrap.style.display = 'none';
         filterInventory('');
         document.getElementById('inv-search').focus();
+    }
+
+    function renderInvGroupFilterChips() {
+        const wrap = document.getElementById('inv-group-filter-wrap');
+        if (!wrap) return;
+        const groups = getInvGroups();
+        const chips = ['All', ...groups, 'Individual'];
+        wrap.innerHTML = chips.map(g => {
+            const val = g === 'All' ? '' : g;
+            const active = inventoryGroupFilter === val;
+            return `<span onclick="setInvGroupFilter('${val}')" style="cursor:pointer; font-size:.72rem; font-weight:600; padding:.2rem .6rem; border-radius:20px; border:1.5px solid ${active ? 'var(--accent)' : 'var(--border)'}; background:${active ? 'var(--accent)' : 'var(--solid)'}; color:${active ? '#fff' : 'var(--muted)'}; transition:all .15s;">${g}</span>`;
+        }).join('');
+    }
+
+    function setInvGroupFilter(val) {
+        inventoryGroupFilter = val;
+        renderInvGroupFilterChips();
+        renderInventoryTable();
     }
 
     function renderUnitManager() {
@@ -2146,30 +2174,31 @@ self.addEventListener('notificationclick', e => {
             return;
         }
 
-        // If searching — show flat master card only
+        // If searching — apply group filter too, show flat results
         if (filter) {
-            container.innerHTML = filtered.length
-                ? buildGroupCard(`Search results for "${filter}"`, filtered, 'master', true)
-                : `<div style="text-align:center;color:var(--muted);padding:2rem;">No items match "${filter}"</div>`;
+            const gf = inventoryGroupFilter;
+            let results = filtered;
+            if (gf === 'Individual') results = filtered.filter(i => !i.group);
+            else if (gf) results = filtered.filter(i => i.group === gf);
+
+            const label = gf ? `"${filter}" in ${gf || 'All'}` : `"${filter}"`;
+            container.innerHTML = results.length
+                ? buildGroupCard(`Results for ${label}`, results, 'master', true)
+                : `<div style="text-align:center;color:var(--muted);padding:2rem;">No items found</div>`;
             refreshGroupPickers();
             return;
         }
 
-        // Normal view: Master card (all) + group cards + individual card
-        const groups    = getInvGroups();
-        const indiv     = all.filter(i => !i.group);
+        // Normal view: group cards + individual card (no master)
+        const groups = getInvGroups();
+        const indiv  = all.filter(i => !i.group);
         let html = '';
 
-        // 1. Master card — collapsed by default
-        html += buildGroupCard('Master Inventory (All)', all, 'master', false);
-
-        // 2. Each named group card — expanded
         groups.forEach(g => {
             const items = all.filter(i => i.group === g);
             html += buildGroupCard(g, items, '', true);
         });
 
-        // 3. Individual card — expanded
         if (indiv.length) {
             html += buildGroupCard('Individual', indiv, 'individual', true);
         }
