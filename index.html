@@ -3879,20 +3879,28 @@ self.addEventListener('notificationclick', e => {
     // WhatsApp Share
     function shareWhatsApp() {
         if (!cart.length) { customAlert("List is empty!"); return; }
-        const sym  = appData.currency;
-        const disc = parseFloat(document.getElementById('discount-input')?.value) || 0;
-        const gst  = parseFloat(document.getElementById('gst-input')?.value)      || 0;
+        const sym        = appData.currency;
+        const isListOnly = appData.settings.listOnlyMode;
+        const disc = isListOnly ? 0 : (parseFloat(document.getElementById('discount-input')?.value) || 0);
+        const gst  = isListOnly ? 0 : (parseFloat(document.getElementById('gst-input')?.value)      || 0);
         const itemLines = cart.map(function(item, n) {
+            if (isListOnly) {
+                return (n+1) + '. ' + item.name + ' - ' + item.qty + ' ' + item.unit + (item.note ? ' (' + item.note + ')' : '');
+            }
             return (n+1) + '. ' + item.name + ' - ' + item.qty + ' ' + item.unit + ' x ' + sym + item.rate + ' = ' + sym + (item.rate * item.qty).toFixed(2) + (item.note ? ' (' + item.note + ')' : '');
         });
-        const base  = cart.reduce(function(s, i) { return s + i.rate * i.qty; }, 0);
-        const after = base - (base * disc / 100);
-        const final = after + (after * gst / 100);
-        var msg = '*QuotePad List*\n\n' + itemLines.join('\n');
-        msg += '\n\n*Subtotal: ' + sym + base.toFixed(2) + '*';
-        if (disc) msg += '\nDiscount (' + disc + '%): -' + sym + (base * disc / 100).toFixed(2);
-        if (gst)  msg += '\nGST (' + gst + '%): +' + sym + (after * gst / 100).toFixed(2);
-        if (disc || gst) msg += '\n*Total: ' + sym + final.toFixed(2) + '*';
+        const nameInput  = document.getElementById('list-name-input')?.value?.trim();
+        const listTitle  = nameInput || (isListOnly ? 'Purchase Item List' : 'Quotation');
+        var msg = '*' + listTitle + '*\n\n' + itemLines.join('\n');
+        if (!isListOnly) {
+            const base  = cart.reduce(function(s, i) { return s + i.rate * i.qty; }, 0);
+            const after = base - (base * disc / 100);
+            const final = after + (after * gst / 100);
+            msg += '\n\n*Subtotal: ' + sym + base.toFixed(2) + '*';
+            if (disc) msg += '\nDiscount (' + disc + '%): -' + sym + (base * disc / 100).toFixed(2);
+            if (gst)  msg += '\nGST (' + gst + '%): +' + sym + (after * gst / 100).toFixed(2);
+            msg += '\n*Total: ' + sym + final.toFixed(2) + '*';
+        }
         window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
     }
 
@@ -3900,14 +3908,29 @@ self.addEventListener('notificationclick', e => {
     function exportExcel() {
         if (!cart.length) { customAlert("List is empty!"); return; }
         if (typeof XLSX === 'undefined') { customAlert("Excel export needs internet connection."); return; }
-        const sym  = appData.currency;
-        const rows = [['Item','Unit','Rate','Qty','Total']];
-        cart.forEach(i => rows.push([i.name, i.unit, i.rate, i.qty, +(i.rate*i.qty).toFixed(2)]));
-        const base = cart.reduce((s,i)=>s+i.rate*i.qty,0);
-        rows.push([],[`Grand Total`,``,``,``,+base.toFixed(2)]);
+        const sym        = appData.currency;
+        const isListOnly = appData.settings.listOnlyMode;
+        const disc = isListOnly ? 0 : (parseFloat(document.getElementById('discount-input')?.value) || 0);
+        const gst  = isListOnly ? 0 : (parseFloat(document.getElementById('gst-input')?.value)      || 0);
+
+        let rows, base;
+        if (isListOnly) {
+            rows = [['Item', 'Unit', 'Qty']];
+            cart.forEach(i => rows.push([i.name, i.unit, i.qty]));
+        } else {
+            rows = [['Item', 'Unit', 'Rate', 'Qty', 'Total']];
+            cart.forEach(i => rows.push([i.name, i.unit, i.rate, i.qty, +(i.rate * i.qty).toFixed(2)]));
+            base         = cart.reduce((s, i) => s + i.rate * i.qty, 0);
+            const after  = base - (base * disc / 100);
+            const final  = after + (after * gst / 100);
+            rows.push([]);
+            if (disc) rows.push(['Discount (' + disc + '%)', '', '', '', -(base * disc / 100).toFixed(2)]);
+            if (gst)  rows.push(['GST (' + gst + '%)',       '', '', '', +(after * gst / 100).toFixed(2)]);
+            rows.push(['Grand Total', '', '', '', +final.toFixed(2)]);
+        }
         const ws = XLSX.utils.aoa_to_sheet(rows);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'QuotePad');
+        XLSX.utils.book_append_sheet(wb, ws, isListOnly ? 'Shopping List' : 'Quotation');
         XLSX.writeFile(wb, `QuotePad_${new Date().toLocaleDateString('en-US').replace(/\//g,'-')}.xlsx`);
     }
 
