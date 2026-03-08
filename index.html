@@ -1353,12 +1353,7 @@ self.addEventListener('notificationclick', e => {
                     <div style="font-size:.82rem; color:var(--muted); font-weight:500;" id="dash-greeting-sub">Good Morning</div>
                     <div style="font-size:1.5rem; font-weight:800; color:var(--text); line-height:1.2;" id="dash-greeting-name">QuotePad</div>
                 </div>
-                <button onclick="openSearchScreen()" id="dash-search-btn"
-                    style="background:var(--solid); border:1.5px solid var(--border-light); cursor:pointer; color:var(--muted);
-                    padding:.5rem; border-radius:12px; display:flex; align-items:center; justify-content:center;
-                    box-shadow:var(--shadow); margin-top:.15rem;">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35"/></svg>
-                </button>
+
             </div>
 
             <!-- Stats row -->
@@ -1381,6 +1376,7 @@ self.addEventListener('notificationclick', e => {
                         </div>
                     </div>
                     <div style="font-size:2rem; font-weight:900; color:var(--text); line-height:1;" id="dash-month-quotes">0</div>
+                    <div id="dash-month-amt" style="font-size:.72rem; color:var(--accent); font-weight:700; min-height:.9rem;"></div>
                     <div style="font-size:.72rem; color:var(--muted); font-weight:600;">This Month</div>
                 </div>
             </div>
@@ -1420,34 +1416,24 @@ self.addEventListener('notificationclick', e => {
         <section id="search-view" class="view-section">
             <!-- Search bar (sticky under header) -->
             <div style="position:sticky; top:0; z-index:5; background:var(--bg); padding:.75rem 0 .6rem;">
-                <div style="display:flex; align-items:center; gap:.6rem;">
-                    <button onclick="closeSearch()"
-                        style="background:var(--solid); border:1.5px solid var(--border-light); border-radius:12px;
-                        width:40px; height:40px; display:flex; align-items:center; justify-content:center;
-                        cursor:pointer; color:var(--muted); flex-shrink:0; box-shadow:var(--shadow);">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
-                        </svg>
+                <div style="position:relative;">
+                    <svg width="16" height="16" fill="none" stroke="var(--muted)" viewBox="0 0 24 24" stroke-width="2.2"
+                        style="position:absolute; left:.75rem; top:50%; transform:translateY(-50%); pointer-events:none;">
+                        <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <input id="search-screen-input" type="text" placeholder="Search by name or amount..."
+                        oninput="renderSearchResults()"
+                        style="width:100%; padding:.65rem .75rem .65rem 2.4rem;
+                        border:1.5px solid var(--border); border-radius:12px;
+                        font-size:.95rem; background:var(--solid); color:var(--text);
+                        outline:none; box-sizing:border-box; box-shadow:var(--shadow);"
+                        onfocus="this.style.borderColor='var(--accent)'"
+                        onblur="this.style.borderColor='var(--border)'">
+                    <button id="search-clear-x" onclick="clearSearchScreen()"
+                        style="display:none; position:absolute; right:.6rem; top:50%; transform:translateY(-50%);
+                        background:none; border:none; cursor:pointer; color:var(--muted); padding:.2rem; line-height:1;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
-                    <div style="position:relative; flex:1;">
-                        <svg width="16" height="16" fill="none" stroke="var(--muted)" viewBox="0 0 24 24" stroke-width="2.2"
-                            style="position:absolute; left:.75rem; top:50%; transform:translateY(-50%); pointer-events:none;">
-                            <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35"/>
-                        </svg>
-                        <input id="search-screen-input" type="text" placeholder="Search by name or amount..."
-                            oninput="renderSearchResults()"
-                            style="width:100%; padding:.65rem .75rem .65rem 2.4rem;
-                            border:1.5px solid var(--border); border-radius:12px;
-                            font-size:.95rem; background:var(--solid); color:var(--text);
-                            outline:none; box-sizing:border-box; box-shadow:var(--shadow);"
-                            onfocus="this.style.borderColor='var(--accent)'"
-                            onblur="this.style.borderColor='var(--border)'">
-                        <button id="search-clear-x" onclick="clearSearchScreen()"
-                            style="display:none; position:absolute; right:.6rem; top:50%; transform:translateY(-50%);
-                            background:none; border:none; cursor:pointer; color:var(--muted); padding:.2rem; line-height:1;">
-                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                        </button>
-                    </div>
                 </div>
                 <!-- Result count -->
                 <div id="search-result-count" style="font-size:.75rem; color:var(--muted); margin-top:.5rem; padding-left:.25rem;"></div>
@@ -2126,6 +2112,9 @@ self.addEventListener('notificationclick', e => {
                 </button>
             </div>
 
+            <!-- Stats summary bar -->
+            <div id="bp-stats" style="display:none;padding:.5rem 1rem;border-bottom:1px solid var(--border-light);background:var(--bg);flex-shrink:0;"></div>
+
             <!-- List area -->
             <div id="bp-list" style="flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:.65rem;"></div>
 
@@ -2338,6 +2327,23 @@ self.addEventListener('notificationclick', e => {
                         </div>
                     </div>
                     <div style="font-size:.75rem;color:var(--muted);margin-top:.75rem;">Choose the primary color for your PDF headers and accents</div>
+                </div>
+
+                <!-- Apply Button -->
+                <div style="margin-top:1.5rem;padding-bottom:max(1.5rem,env(safe-area-inset-bottom));">
+                    <button id="pdf-apply-btn" onclick="applyPDFSettings()"
+                        style="width:100%;padding:.85rem;border-radius:14px;border:none;
+                        background:var(--accent);color:#fff;font-size:1rem;font-weight:700;
+                        cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.6rem;
+                        transition:background .2s,transform .15s;"
+                        onpointerdown="this.style.transform='scale(.97)'"
+                        onpointerup="this.style.transform='scale(1)'"
+                        onpointerleave="this.style.transform='scale(1)'">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Apply Settings
+                    </button>
                 </div>
             </div>
         </div>
@@ -2599,14 +2605,32 @@ self.addEventListener('notificationclick', e => {
                 : 'Dear User';
         }
 
-        // Stats
+        // Stats — count ALL lists (quotes + list-only both), show amount where applicable
         const total = appData.lists.length;
         const now   = new Date();
         const monthLists = appData.lists.filter(l => {
             try { const d = new Date(l.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); } catch { return false; }
         });
+
+        // Total Saved Lists = all lists count
         document.getElementById('dash-total-quotes').textContent = total;
-        document.getElementById('dash-month-quotes').textContent = monthLists.length;
+
+        // This Month = count + total amount (sum rates for quotes, 0 for list-only)
+        const monthAmt = monthLists.reduce((sum, l) => {
+            if (l.listOnly) return sum; // list-only has no rates
+            const base  = (l.items || []).reduce((s, i) => s + (parseFloat(i.rate)||0) * (parseFloat(i.qty)||1), 0);
+            const after = base - (base * (parseFloat(l.disc)||0) / 100);
+            return sum + after + (after * (parseFloat(l.gst)||0) / 100);
+        }, 0);
+        const sym = appData.currency || '₹';
+        const monthEl = document.getElementById('dash-month-quotes');
+        if (monthEl) {
+            monthEl.textContent = monthLists.length;
+            // Show amount below if any quotes exist (not just lists)
+            const hasQuotes = monthLists.some(l => !l.listOnly);
+            const amtEl = document.getElementById('dash-month-amt');
+            if (amtEl) amtEl.textContent = hasQuotes ? sym + monthAmt.toFixed(2) : '';
+        }
 
         // Recent lists
         const container  = document.getElementById('dash-recent-list');
@@ -2618,7 +2642,6 @@ self.addEventListener('notificationclick', e => {
         }
         emptyState.style.display = 'none';
         const recent = [...appData.lists].reverse().slice(0, 5);
-        const sym    = appData.currency;
         container.innerHTML = recent.map(list => buildListCardHTML(list, sym)).join('');
     }
 
@@ -4341,11 +4364,11 @@ self.addEventListener('notificationclick', e => {
         const after = base - (base * disc / 100);
         const total = after + (after * gst / 100);
 
-        // ── Read PDF Settings ──────────────────────────────────────────
-        const pdfSettings = appData.pdfSettings || {};
-        const template    = pdfSettings.template    || 'classic';
-        const accent      = pdfSettings.accentColor || '#10b981';
-        const logoSrc     = pdfSettings.logo        || null;
+        // ── Read PDF Settings (always fresh from appData) ──────────────
+        if (!appData.pdfSettings) appData.pdfSettings = { template: 'classic', accentColor: '#10b981', logo: null };
+        const template    = appData.pdfSettings.template    || 'classic';
+        const accent      = appData.pdfSettings.accentColor || '#10b981';
+        const logoSrc     = appData.pdfSettings.logo        || null;
 
         // Derive a slightly darker shade for table headers / footer
         // Simple approach: use the accent as-is for header, use it for borders too
@@ -4699,154 +4722,119 @@ self.addEventListener('notificationclick', e => {
     }
 
     async function renderPDF(htmlString, filename) {
-        showPDFOverlay();
-
-        // Generate PDF blob
-        let pdfBlob = null;
-
-        // Method 1: html2pdf (needs internet, works in browser/Chrome)
-        if (typeof html2pdf !== 'undefined') {
-            try {
-                const pdfOutput = await html2pdf()
-                    .set({
-                        margin:      [8, 8, 15, 8],
-                        filename,
-                        image:       { type: 'jpeg', quality: 0.98 },
-                        html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, backgroundColor: '#ffffff', windowWidth: 680 },
-                        jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                        pagebreak:   { mode: ['avoid-all', 'css', 'legacy'] },
-                    })
-                    .from(htmlString)
-                    .output('blob');
-                pdfBlob = pdfOutput;
-            } catch(e) {
-                console.warn('html2pdf failed:', e);
-                hidePDFOverlay();
-                await customAlert("PDF generation failed. Please check your internet connection.");
-                return;
-            }
-        } else {
-            hidePDFOverlay();
-            await customAlert("PDF export needs internet. Please connect and try again.");
-            return;
-        }
-
-        hidePDFOverlay();
-
-        // Show PDF preview with save/share options
-        if (pdfBlob) {
-            showPDFPreview(pdfBlob, filename);
-        }
+        // Show HTML preview directly — no PDF conversion needed, works offline too
+        showPDFPreview(htmlString, filename);
     }
 
-    function showPDFPreview(blob, filename) {
-        // Create preview overlay
+    function showPDFPreview(htmlString, filename) {
+        // Remove any existing preview
+        const existing = document.getElementById('pdf-preview-overlay');
+        if (existing) existing.remove();
+
         const overlay = document.createElement('div');
         overlay.id = 'pdf-preview-overlay';
-        overlay.style.cssText = `
-            position: fixed; inset: 0; z-index: 9999;
-            background: var(--bg);
-            display: flex; flex-direction: column;
-            padding-top: max(0px, env(safe-area-inset-top));
-        `;
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;padding-top:max(0px,env(safe-area-inset-top));';
 
-        const pdfUrl = URL.createObjectURL(blob);
+        // Store html for download
+        window._currentPDFHtml = htmlString;
+        window._currentPDFFilename = filename;
 
         overlay.innerHTML = `
-            <!-- Header -->
-            <div style="display: flex; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-light); flex-shrink: 0;">
-                <span style="font-size: 1rem; font-weight: 700; color: var(--text); flex: 1;">PDF Preview</span>
-                <button onclick="closePDFPreview()" style="width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--bg); color: var(--muted); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .15s; padding: 0;"
-                    onmouseenter="this.style.borderColor='#e11d48'; this.style.color='#e11d48'"
-                    onmouseleave="this.style.borderColor='var(--border)'; this.style.color='var(--muted)'">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            <div style="display:flex;align-items:center;padding:.85rem 1.25rem;border-bottom:1px solid var(--border-light);flex-shrink:0;gap:.75rem;">
+                <button onclick="closePDFPreview()" style="width:34px;height:34px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;padding:0;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                 </button>
-            </div>
-
-            <!-- PDF Preview -->
-            <div style="flex: 1; overflow: auto; background: #e5e7eb; padding: 1rem;">
-                <iframe src="${pdfUrl}" style="width: 100%; height: 100%; border: none; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,.15);"></iframe>
-            </div>
-
-            <!-- Action Buttons -->
-            <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-light); display: flex; gap: .75rem; flex-shrink: 0;
-                padding-bottom: max(1rem, env(safe-area-inset-bottom));">
-                <button onclick="savePDFToDevice('${filename}')" style="flex: 1;">
-                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                    Save to Device
+                <span style="font-size:1rem;font-weight:700;color:var(--text);flex:1;">Preview</span>
+                <button onclick="downloadPDFNow()" style="display:flex;align-items:center;gap:.4rem;padding:.5rem 1rem;border-radius:10px;border:none;background:#10b981;color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Download PDF
                 </button>
-                <button onclick="sharePDF('${filename}')" style="flex: 1; background: linear-gradient(135deg, #3b82f6, #2563eb); border: none;">
-                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                <button onclick="sharePDFNow()" style="display:flex;align-items:center;gap:.4rem;padding:.5rem 1rem;border-radius:10px;border:none;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
                     Share
                 </button>
+            </div>
+            <div style="flex:1;overflow:auto;background:#d1d5db;padding:1rem;display:flex;justify-content:center;">
+                <div id="pdf-html-preview" style="width:100%;max-width:700px;background:#fff;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.18);overflow:hidden;">
+                    ${htmlString}
+                </div>
             </div>
         `;
 
         document.body.appendChild(overlay);
-
-        // Store blob globally for actions
-        window._currentPDFBlob = blob;
-        window._currentPDFFilename = filename;
     }
 
     function closePDFPreview() {
         const overlay = document.getElementById('pdf-preview-overlay');
-        if (overlay) {
-            URL.revokeObjectURL(overlay.querySelector('iframe').src);
-            overlay.remove();
-        }
-        delete window._currentPDFBlob;
+        if (overlay) overlay.remove();
+        delete window._currentPDFHtml;
         delete window._currentPDFFilename;
     }
 
-    async function savePDFToDevice(filename) {
-        const blob = window._currentPDFBlob;
-        if (!blob) return;
+    async function downloadPDFNow() {
+        const htmlString = window._currentPDFHtml;
+        const filename   = window._currentPDFFilename;
+        if (!htmlString) return;
 
-        try {
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(a.href);
-            await customAlert('PDF saved to Downloads!');
-        } catch(e) {
-            await customAlert('Save failed. Try Share option instead.');
+        if (typeof html2pdf !== 'undefined') {
+            try {
+                const el = document.getElementById('pdf-html-preview');
+                await html2pdf().set({
+                    margin:      [8, 8, 15, 8],
+                    filename,
+                    image:       { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, backgroundColor: '#ffffff', windowWidth: 700 },
+                    jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak:   { mode: ['avoid-all', 'css', 'legacy'] },
+                }).from(el).save();
+            } catch(e) {
+                await customAlert('PDF download failed. Try Share instead.');
+            }
+        } else {
+            // Fallback: open in new tab for manual print/save
+            const w = window.open('', '_blank');
+            w.document.write('<html><head><title>' + filename + '</title></head><body>' + htmlString + '</body></html>');
+            w.document.close();
+            w.print();
         }
     }
 
-    async function sharePDF(filename) {
-        const blob = window._currentPDFBlob;
-        if (!blob) return;
+    async function sharePDFNow() {
+        const htmlString = window._currentPDFHtml;
+        const filename   = window._currentPDFFilename;
+        if (!htmlString) return;
 
-        // Web Share API with file
-        if (navigator.share && navigator.canShare) {
+        if (typeof html2pdf !== 'undefined') {
             try {
+                const el = document.getElementById('pdf-html-preview');
+                const blob = await html2pdf().set({
+                    margin:      [8, 8, 15, 8],
+                    filename,
+                    image:       { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', windowWidth: 700 },
+                    jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                }).from(el).output('blob');
+
                 const file = new File([blob], filename, { type: 'application/pdf' });
-                if (navigator.canShare({ files: [file] })) {
-                    await navigator.share({
-                        files: [file],
-                        title: 'QuotePad PDF',
-                        text: 'Quotation generated by QuotePad'
-                    });
-                    return;
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: filename });
+                } else {
+                    // Fallback download
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = filename;
+                    a.click();
+                    URL.revokeObjectURL(a.href);
                 }
             } catch(e) {
-                if (e.name !== 'AbortError') {
-                    console.error('Share failed:', e);
-                }
+                await customAlert('Share failed. Try Download instead.');
             }
+        } else {
+            await customAlert('Share needs internet. Please connect and try again.');
         }
-
-        // Fallback: download
-        await customAlert('Share not available. PDF will be saved to Downloads.');
-        savePDFToDevice(filename);
     }
 
     async function exportPDF() {
-        if (window._pdfLibMissing) { await customAlert("PDF export needs internet. Please connect and try again."); return; }
         if (!cart.length) { await customAlert("List is empty. Add items first."); return; }
         const isListOnly = appData.settings.listOnlyMode;
         const nameInput  = document.getElementById('list-name-input').value.trim();
@@ -4857,7 +4845,6 @@ self.addEventListener('notificationclick', e => {
     }
 
     async function downloadHistoryPDF(id) {
-        if (window._pdfLibMissing) { await customAlert("PDF export needs internet. Please connect and try again."); return; }
         const list = appData.lists.find(l => l.id === id);
         if (!list) return;
         const isListOnly = appData.settings.listOnlyMode;
@@ -6261,8 +6248,9 @@ self.addEventListener('notificationclick', e => {
     }
 
     function renderBP() {
-        const labelEl = document.getElementById('bp-label');
-        const listEl  = document.getElementById('bp-list');
+        const labelEl  = document.getElementById('bp-label');
+        const listEl   = document.getElementById('bp-list');
+        const statsEl  = document.getElementById('bp-stats');
         if (!labelEl || !listEl) return;
 
         const sym = appData.currency || '₹';
@@ -6286,6 +6274,28 @@ self.addEventListener('notificationclick', e => {
 
         lists = lists.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+        // ── Summary bar (count + total amount) ───────────────────────
+        if (statsEl) {
+            if (!lists.length) {
+                statsEl.style.display = 'none';
+            } else {
+                const totalAmt = lists.reduce((sum, l) => {
+                    if (l.listOnly) return sum;
+                    const base  = (l.items||[]).reduce((s,i) => s+(parseFloat(i.rate)||0)*(parseFloat(i.qty)||1), 0);
+                    const after = base - (base*(parseFloat(l.disc)||0)/100);
+                    return sum + after + (after*(parseFloat(l.gst)||0)/100);
+                }, 0);
+                const quoteCount = lists.filter(l => !l.listOnly).length;
+                const listCount  = lists.filter(l =>  l.listOnly).length;
+                const parts = [];
+                if (quoteCount) parts.push(quoteCount + ' quote' + (quoteCount>1?'s':''));
+                if (listCount)  parts.push(listCount  + ' list'  + (listCount>1?'s':''));
+                const amtStr = quoteCount ? ' · ' + sym + totalAmt.toFixed(2) : '';
+                statsEl.style.display = 'flex';
+                statsEl.innerHTML = `<span style="font-size:.82rem;color:var(--muted);font-weight:600;">${parts.join(' + ')}${amtStr}</span>`;
+            }
+        }
+
         if (!lists.length) {
             listEl.innerHTML = `<div class="bp-empty">
                 <svg width="40" height="40" fill="none" stroke="var(--border)" viewBox="0 0 24 24" stroke-width="1.5" style="margin:0 auto .75rem;display:block;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
@@ -6299,23 +6309,44 @@ self.addEventListener('notificationclick', e => {
 
     // Card subtitle update
     function refreshMoreTab() {
-        // Update card subtexts
         const now = new Date();
+        const sym = appData.currency || '₹';
+
+        function listAmt(l) {
+            if (l.listOnly) return 0;
+            const base  = (l.items||[]).reduce((s,i) => s+(parseFloat(i.rate)||0)*(parseFloat(i.qty)||1), 0);
+            const after = base - (base*(parseFloat(l.disc)||0)/100);
+            return after + (after*(parseFloat(l.gst)||0)/100);
+        }
+
+        // This Month card
         const mEl = document.getElementById('mbr-card-sub');
-        const yEl = document.getElementById('ybr-card-sub');
         if (mEl) {
             const m = now.getMonth(), y = now.getFullYear();
-            const cnt = (appData.lists||[]).filter(l => {
+            const mLists = (appData.lists||[]).filter(l => {
                 try { const d = new Date(l.date); return d.getMonth()===m && d.getFullYear()===y; } catch { return false; }
-            }).length;
-            mEl.textContent = cnt ? `${cnt} list${cnt>1?'s':''} this month` : 'No lists this month';
+            });
+            const cnt = mLists.length;
+            const amt = mLists.reduce((s,l) => s+listAmt(l), 0);
+            const hasQ = mLists.some(l => !l.listOnly);
+            mEl.textContent = cnt
+                ? `${cnt} list${cnt>1?'s':''} · ${hasQ ? sym+amt.toFixed(2) : 'No rates'}`
+                : 'No lists this month';
         }
+
+        // This Year card
+        const yEl = document.getElementById('ybr-card-sub');
         if (yEl) {
             const y = now.getFullYear();
-            const cnt = (appData.lists||[]).filter(l => {
+            const yLists = (appData.lists||[]).filter(l => {
                 try { return new Date(l.date).getFullYear()===y; } catch { return false; }
-            }).length;
-            yEl.textContent = cnt ? `${cnt} list${cnt>1?'s':''} this year` : 'No lists this year';
+            });
+            const cnt = yLists.length;
+            const amt = yLists.reduce((s,l) => s+listAmt(l), 0);
+            const hasQ = yLists.some(l => !l.listOnly);
+            yEl.textContent = cnt
+                ? `${cnt} list${cnt>1?'s':''} · ${hasQ ? sym+amt.toFixed(2) : 'No rates'}`
+                : 'No lists this year';
         }
     }
 
@@ -6364,6 +6395,24 @@ self.addEventListener('notificationclick', e => {
     function closePDFSettings() {
         const el = document.getElementById('pdf-settings-overlay');
         if (el) el.style.display = 'none';
+    }
+
+    function applyPDFSettings() {
+        // Settings are already saved live on each selection
+        // Just show success feedback and close
+        const btn = document.getElementById('pdf-apply-btn');
+        if (btn) {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Settings Applied!';
+            btn.style.background = '#059669';
+            setTimeout(() => {
+                btn.innerHTML = orig;
+                btn.style.background = '';
+                closePDFSettings();
+            }, 1000);
+        } else {
+            closePDFSettings();
+        }
     }
 
     function refreshPDFSettingsUI() {
