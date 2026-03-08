@@ -3880,7 +3880,7 @@ self.addEventListener('notificationclick', e => {
     function shareWhatsApp() {
         if (!cart.length) { customAlert("List is empty!"); return; }
         const sym        = appData.currency;
-        const isListOnly = appData.settings.listOnlyMode;
+        const isListOnly = document.getElementById('mode-toggle')?.checked ?? appData.settings.listOnlyMode;
         const disc = isListOnly ? 0 : (parseFloat(document.getElementById('discount-input')?.value) || 0);
         const gst  = isListOnly ? 0 : (parseFloat(document.getElementById('gst-input')?.value)      || 0);
         const itemLines = cart.map(function(item, n) {
@@ -3909,10 +3909,9 @@ self.addEventListener('notificationclick', e => {
         if (!cart.length) { customAlert("List is empty!"); return; }
         if (typeof XLSX === 'undefined') { customAlert("Excel export needs internet connection."); return; }
         const sym        = appData.currency;
-        const isListOnly = appData.settings.listOnlyMode;
+        const isListOnly = document.getElementById('mode-toggle')?.checked ?? appData.settings.listOnlyMode;
         const disc = isListOnly ? 0 : (parseFloat(document.getElementById('discount-input')?.value) || 0);
         const gst  = isListOnly ? 0 : (parseFloat(document.getElementById('gst-input')?.value)      || 0);
-
         let rows, base;
         if (isListOnly) {
             rows = [['Item', 'Unit', 'Qty']];
