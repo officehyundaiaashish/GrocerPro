@@ -1638,6 +1638,7 @@ self.addEventListener('notificationclick', e => {
                                 <div style="font-size:.82rem; font-weight:700; color:var(--text);">Admin Panel</div>
                                 <div id="admin-pending-badge" style="display:none; background:#ef4444; color:#fff; font-size:.65rem; font-weight:700; padding:.2rem .5rem; border-radius:20px;"></div>
                             </div>
+                            <div id="admin-storage-bar-wrap" style="background:var(--bg);border-radius:12px;padding:.65rem .75rem;margin-bottom:.75rem;border:1px solid var(--border-light);"></div>
                             <div id="admin-users-list" style="display:flex; flex-direction:column; gap:.5rem;">
                                 <div style="text-align:center; color:var(--muted); font-size:.8rem; padding:.75rem;">Loading...</div>
                             </div>
@@ -3139,7 +3140,7 @@ self.addEventListener('notificationclick', e => {
         if (fbApp) return;
         const { initializeApp }          = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
         const { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
-        const { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, onSnapshot, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+        const { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, deleteDoc, writeBatch, onSnapshot, serverTimestamp, query, orderBy } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
 
         const firebaseConfig = {
             apiKey:            "AIzaSyBY_cG_ZIIG32v9j-0eG1rLqIBibbMGH6E",
@@ -3157,7 +3158,7 @@ self.addEventListener('notificationclick', e => {
         // Persist session across app close/reopen
         await setPersistence(fbAuth, browserLocalPersistence);
 
-        window._fb = { doc, getDoc, setDoc, collection, getDocs, updateDoc, onSnapshot, serverTimestamp, GoogleAuthProvider, signInWithPopup, signOut };
+        window._fb = { doc, getDoc, setDoc, collection, getDocs, updateDoc, deleteDoc, writeBatch, onSnapshot, serverTimestamp, query, orderBy, GoogleAuthProvider, signInWithPopup, signOut };
 
         onAuthStateChanged(fbAuth, async user => {
             fbCurrentUser = user;
@@ -3240,7 +3241,7 @@ self.addEventListener('notificationclick', e => {
             }
         }
 
-        // Real-time listener — status change hote hi UI update ho
+        // Real-time listener — status change hote hi UI update ho (app khuli ho tab bhi)
         let _lastKnownStatus = snap.exists() ? snap.data().status : null;
         onSnapshot(ref, docSnap => {
             if (!docSnap.exists()) return;
@@ -3248,12 +3249,18 @@ self.addEventListener('notificationclick', e => {
             showCloudStatus(d.status);
             if (d.status === 'approved') {
                 const lastEl = document.getElementById('cloud-last-backup');
-                if (lastEl && d.lastBackup?.toDate) {
-                    lastEl.textContent = 'Last backup: ' + d.lastBackup.toDate().toLocaleString();
+                if (lastEl) {
+                    let txt = '';
+                    if (d.lastBackup?.toDate)  txt += 'Backup: ' + d.lastBackup.toDate().toLocaleString();
+                    if (d.backupSize)          txt += (txt ? '  ·  ' : '') + d.backupSize + (d.chunkCount > 1 ? ' (' + d.chunkCount + ' parts)' : '');
+                    if (d.lastRestore?.toDate) txt += (txt ? '\n' : '') + 'Restored: ' + d.lastRestore.toDate().toLocaleString();
+                    lastEl.textContent = txt;
                 }
             }
-            // Show notification if status changed from pending
-            if (_lastKnownStatus && _lastKnownStatus !== d.status) {
+            // Real-time notif — status badla to turant dikhao (app khuli ho tab bhi)
+            if (_lastKnownStatus !== null && _lastKnownStatus !== d.status) {
+                // Mark as seen so app-reopen check skip kare
+                localStorage.setItem('gp_statusSeen_' + user.uid, d.status);
                 showStatusChangeNotif(d.status);
             }
             _lastKnownStatus = d.status;
@@ -3325,34 +3332,119 @@ self.addEventListener('notificationclick', e => {
         }
     }
 
+    // ── CHUNKED BACKUP CONSTANTS ─────────────────────────────────────
+    const CHUNK_LIMIT    = 0.98 * 1024 * 1024;  // 0.98 MB per chunk
+    const USER_MAX_BYTES = 0.98 * 1024 * 1024;  // 1 chunk max for normal users
+    const ADMIN_MAX_GB   = 1 * 1024 * 1024 * 1024; // 1 GB total all users
+
+    function formatBytes(bytes) {
+        if (bytes >= 1024*1024) return (bytes/(1024*1024)).toFixed(2) + ' MB';
+        return (bytes/1024).toFixed(1) + ' KB';
+    }
+
+    // Split big JSON string into 0.98MB chunks
+    function splitIntoChunks(str) {
+        const chunks = [];
+        let i = 0;
+        while (i < str.length) {
+            // Estimate bytes — UTF-8 worst case 3 bytes/char, use char count * 3
+            // But we measure actual blob size per slice for accuracy
+            let end = i + Math.floor(CHUNK_LIMIT / 3);
+            if (end > str.length) end = str.length;
+            // Fine-tune: shrink if blob too big
+            let slice = str.slice(i, end);
+            while (new Blob([slice]).size > CHUNK_LIMIT && slice.length > 1) {
+                end = i + Math.floor((end - i) * 0.9);
+                slice = str.slice(i, end);
+            }
+            chunks.push(slice);
+            i = end;
+        }
+        return chunks;
+    }
+
     async function cloudBackupNow() {
         if (!fbCurrentUser || !fbDb) return;
-        showProgress('Saving to cloud...');
+        const isAdmin = fbCurrentUser.email === ADMIN_EMAIL_FB;
+        showProgress('Preparing backup...');
         try {
-            const { doc, setDoc, serverTimestamp } = window._fb;
-            await setDoc(doc(fbDb, 'backups', fbCurrentUser.uid), {
-                data:    JSON.stringify(appData),
-                savedAt: serverTimestamp(),
-                email:   fbCurrentUser.email,
-            });
-            await setDoc(doc(fbDb, 'requests', fbCurrentUser.uid), { lastBackup: serverTimestamp() }, { merge: true });
+            const { doc, setDoc, collection, getDocs, deleteDoc, serverTimestamp } = window._fb;
+            const jsonStr    = JSON.stringify(appData);
+            const totalBytes = new Blob([jsonStr]).size;
+            const sizeLabel  = formatBytes(totalBytes);
+
+            // Warn user if large (no block)
+            if (!isAdmin && totalBytes > USER_MAX_BYTES) {
+                showCloudToast('Large backup (' + sizeLabel + ') — saving in parts.', false);
+            }
+
+            const chunks    = splitIntoChunks(jsonStr);
+            const chunksCol = collection(fbDb, 'backups', fbCurrentUser.uid, 'chunks');
+
+            // Delete old chunks first
+            showProgress('Clearing old backup...');
+            const oldSnap = await getDocs(chunksCol);
+            for (const d of oldSnap.docs) await deleteDoc(d.ref);
+
+            // Write new chunks
+            for (let i = 0; i < chunks.length; i++) {
+                showProgress(`Saving part ${i+1} of ${chunks.length}...`);
+                await setDoc(doc(fbDb, 'backups', fbCurrentUser.uid, 'chunks', 'chunk_' + i), {
+                    index: i,
+                    data:  chunks[i],
+                });
+            }
+
+            // Save metadata
+            await setDoc(doc(fbDb, 'requests', fbCurrentUser.uid), {
+                lastBackup:  serverTimestamp(),
+                backupSize:  sizeLabel,
+                backupBytes: totalBytes,
+                chunkCount:  chunks.length,
+            }, { merge: true });
+
             hideProgress();
-            showCloudToast('Cloud backup saved!');
-            document.getElementById('cloud-last-backup').textContent = 'Last backup: ' + new Date().toLocaleString();
-        } catch(e) { hideProgress(); showCloudToast('Backup failed. Try again.', true); }
+            showCloudToast('Backup saved! ' + sizeLabel + (chunks.length > 1 ? ' (' + chunks.length + ' parts)' : ''));
+
+            // Update user-visible size info
+            const lastEl = document.getElementById('cloud-last-backup');
+            if (lastEl) {
+                lastEl.textContent = 'Backup: ' + new Date().toLocaleString()
+                    + '  ·  ' + sizeLabel
+                    + (chunks.length > 1 ? ' (' + chunks.length + ' parts)' : '');
+            }
+        } catch(e) { hideProgress(); showCloudToast('Backup failed: ' + (e.message||''), true); console.error(e); }
     }
 
     async function cloudRestoreNow() {
         if (!fbCurrentUser || !fbDb) return;
         if (!await customConfirm('Restore from cloud? This will replace your current data.')) return;
-        showProgress('Fetching from cloud...');
+        showProgress('Fetching backup info...');
         try {
-            const { doc, getDoc } = window._fb;
-            const snap = await getDoc(doc(fbDb, 'backups', fbCurrentUser.uid));
-            if (!snap.exists()) { hideProgress(); showCloudToast('No cloud backup found.', true); return; }
-            hideProgress();
-            await doRestore(snap.data().data, 'Cloud Restore', true);
-        } catch(e) { hideProgress(); showCloudToast('Restore failed.', true); }
+            const { collection, getDocs, doc, setDoc, serverTimestamp, query, orderBy } = window._fb;
+            const chunksCol = collection(fbDb, 'backups', fbCurrentUser.uid, 'chunks');
+            const snap = await getDocs(chunksCol);
+
+            if (!snap.empty) {
+                // Chunked restore
+                const chunks = [];
+                snap.forEach(d => chunks.push(d.data()));
+                chunks.sort((a, b) => a.index - b.index);
+                showProgress('Merging ' + chunks.length + ' part(s)...');
+                const fullJson = chunks.map(c => c.data).join('');
+                hideProgress();
+                await doRestore(fullJson, 'Cloud Restore', true);
+            } else {
+                // Legacy single-doc restore fallback
+                const { getDoc } = window._fb;
+                const legacySnap = await getDoc(doc(fbDb, 'backups', fbCurrentUser.uid));
+                if (!legacySnap.exists()) { hideProgress(); showCloudToast('No cloud backup found.', true); return; }
+                hideProgress();
+                await doRestore(legacySnap.data().data, 'Cloud Restore', true);
+            }
+
+            await setDoc(doc(fbDb, 'requests', fbCurrentUser.uid), { lastRestore: serverTimestamp() }, { merge: true });
+        } catch(e) { hideProgress(); showCloudToast('Restore failed.', true); console.error(e); }
     }
 
     async function adminLoadUsers() {
@@ -3415,18 +3507,42 @@ self.addEventListener('notificationclick', e => {
         const list   = document.getElementById('admin-users-list');
         const badge  = document.getElementById('admin-pending-badge');
         if (!list) return;
+
         const pending = users.filter(u => u.status === 'pending').length;
         badge.textContent   = pending ? pending + ' pending' : '';
         badge.style.display = pending ? 'block' : 'none';
+
+        // Total storage bar
+        const totalBytes = users.reduce((s, u) => s + (u.backupBytes || 0), 0);
+        const totalLabel = formatBytes(totalBytes);
+        const pct        = Math.min((totalBytes / ADMIN_MAX_GB) * 100, 100).toFixed(1);
+        const barColor   = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : '#10b981';
+
+        const storageBar = document.getElementById('admin-storage-bar-wrap');
+        if (storageBar) {
+            storageBar.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.35rem;">
+                    <span style="font-size:.72rem;font-weight:700;color:var(--text);">Total Storage Used</span>
+                    <span style="font-size:.7rem;color:var(--muted);">${totalLabel} / 1 GB</span>
+                </div>
+                <div style="background:var(--border);border-radius:99px;height:7px;overflow:hidden;margin-bottom:.25rem;">
+                    <div style="width:${pct}%;height:100%;background:${barColor};border-radius:99px;transition:width .5s;"></div>
+                </div>
+                <div style="font-size:.68rem;color:${barColor};font-weight:700;text-align:right;">${pct}% used</div>`;
+        }
+
         if (!users.length) {
             list.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:.82rem;padding:.75rem;">No requests yet.</div>`;
             return;
         }
         const statusColor = { pending:'#d97706', approved:'#059669', rejected:'#dc2626', blocked:'#64748b' };
         list.innerHTML = users.map(u => {
-            const sc = statusColor[u.status] || '#64748b';
+            const sc      = statusColor[u.status] || '#64748b';
             const reqDate = u.requestedAt?.toDate ? u.requestedAt.toDate().toLocaleDateString() : '';
-            const lastBk  = u.lastBackup?.toDate  ? u.lastBackup.toDate().toLocaleString()    : '';
+            const lastBk  = u.lastBackup?.toDate  ? u.lastBackup.toDate().toLocaleString()     : '';
+            const lastRs  = u.lastRestore?.toDate ? u.lastRestore.toDate().toLocaleString()    : '';
+            const bkSize  = u.backupSize || '';
+            const chunks  = u.chunkCount > 1 ? ` · ${u.chunkCount} parts` : '';
             return `<div style="background:var(--bg);border:1px solid var(--border-light);border-radius:12px;padding:.7rem .85rem;">
                 <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;">
                     <div style="flex:1;min-width:0;">
@@ -3435,7 +3551,11 @@ self.addEventListener('notificationclick', e => {
                     </div>
                     <span style="font-size:.68rem;font-weight:700;padding:.2rem .5rem;border-radius:20px;background:${sc}22;color:${sc};">${u.status}</span>
                 </div>
-                ${reqDate ? `<div style="font-size:.68rem;color:var(--muted);margin-bottom:.45rem;">Requested: ${reqDate}${lastBk?' &nbsp;·&nbsp; Last backup: '+lastBk:''}</div>` : ''}
+                <div style="font-size:.68rem;color:var(--muted);margin-bottom:.45rem;line-height:1.7;">
+                    ${reqDate ? `Requested: ${reqDate}<br>` : ''}
+                    ${lastBk  ? `Backup: ${lastBk}${bkSize ? ' <b style="color:var(--text);">(' + bkSize + chunks + ')</b>' : ''}<br>` : ''}
+                    ${lastRs  ? `Restored: ${lastRs}` : ''}
+                </div>
                 <div style="display:flex;gap:.4rem;">
                     ${u.status!=='approved' ? `<button onclick="adminAct('approved','${u.id}')" style="flex:1;background:#dcfce7;color:#166534;border:none;border-radius:8px;padding:.35rem;font-size:.75rem;font-weight:700;cursor:pointer;">Approve</button>` : ''}
                     ${u.status!=='rejected' ? `<button onclick="adminAct('rejected','${u.id}')" style="flex:1;background:#fee2e2;color:#991b1b;border:none;border-radius:8px;padding:.35rem;font-size:.75rem;font-weight:700;cursor:pointer;">Reject</button>`  : ''}
