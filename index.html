@@ -1537,139 +1537,148 @@ self.addEventListener('notificationclick', e => {
                 </div>
             </div>
 
-            <!-- CLOUD BACKUP CARD -->
-            <div class="card animate-entry" id="cloud-backup-card" style="animation-delay:.02s;">
-                <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:1.25rem;">
-                    <div style="width:38px; height:38px; background:linear-gradient(135deg,#4285f4,#1a73e8); border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                        <svg width="20" height="20" fill="none" stroke="#fff" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
-                    </div>
-                    <div style="flex:1;">
-                        <div style="font-size:1rem; font-weight:700; color:var(--text);">Cloud Backup</div>
-                        <div style="font-size:.75rem; color:var(--muted);">Backup & restore via Google account</div>
-                    </div>
-                    <div id="cloud-status-badge" style="display:none; font-size:.7rem; font-weight:700; padding:.25rem .65rem; border-radius:20px;"></div>
-                </div>
-
-                <!-- Not logged in -->
-                <div id="cloud-login-section">
-                    <p style="font-size:.82rem; color:var(--muted); margin-bottom:1rem; line-height:1.55;">Login with Google to enable cloud backup. Your data stays private and secure.</p>
-                    <button onclick="cloudGoogleLogin()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:.6rem;
-                        background:#fff; color:#3c4043; border:1.5px solid #dadce0; border-radius:12px;
-                        padding:.7rem; font-size:.88rem; font-weight:600; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.1);">
-                        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-                        Sign in with Google
-                    </button>
-                </div>
-
-                <!-- Logged in -->
-                <div id="cloud-user-section" style="display:none;">
-                    <!-- User info row -->
-                    <div style="display:flex; align-items:center; gap:.65rem; margin-bottom:1rem; background:var(--bg); border-radius:12px; padding:.65rem .85rem;">
-                        <img id="cloud-avatar" src="" style="width:34px; height:34px; border-radius:50%; object-fit:cover;" onerror="this.style.display='none'">
-                        <div style="flex:1; min-width:0;">
-                            <div id="cloud-user-name" style="font-size:.85rem; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
-                            <div id="cloud-user-email" style="font-size:.72rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
-                        </div>
-                        <button onclick="cloudLogout()" style="background:none; border:1px solid var(--border); border-radius:8px; color:var(--muted); font-size:.72rem; padding:.3rem .55rem; cursor:pointer; flex-shrink:0;">Logout</button>
-                    </div>
-
-                    <!-- Pending -->
-                    <div id="cloud-pending-section" style="display:none;">
-                        <div style="background:linear-gradient(135deg,#fffbeb,#fef3c7); border:1.5px solid #fcd34d; border-radius:12px; padding:.85rem 1rem; text-align:center;">
-                            <svg width="28" height="28" fill="none" stroke="#d97706" viewBox="0 0 24 24" stroke-width="2" style="margin-bottom:.4rem;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            <div style="font-size:.88rem; font-weight:700; color:#92400e; margin-bottom:.3rem;">Approval Pending</div>
-                            <div style="font-size:.75rem; color:#b45309; line-height:1.5;">Request sent to admin. You will be notified once approved.</div>
-                        </div>
-                    </div>
-
-                    <!-- Rejected -->
-                    <div id="cloud-rejected-section" style="display:none;">
-                        <div style="background:linear-gradient(135deg,#fef2f2,#fee2e2); border:1.5px solid #fca5a5; border-radius:12px; padding:.85rem 1rem; text-align:center;">
-                            <svg width="28" height="28" fill="none" stroke="#dc2626" viewBox="0 0 24 24" stroke-width="2" style="margin-bottom:.4rem;"><path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            <div style="font-size:.88rem; font-weight:700; color:#991b1b; margin-bottom:.3rem;">Access Rejected</div>
-                            <div style="font-size:.75rem; color:#b91c1c; line-height:1.5;">Cloud backup access was not granted for this account.</div>
-                        </div>
-                    </div>
-
-                    <!-- Blocked -->
-                    <div id="cloud-blocked-section" style="display:none;">
-                        <div style="background:linear-gradient(135deg,#f8fafc,#f1f5f9); border:1.5px solid #cbd5e1; border-radius:12px; padding:.85rem 1rem; text-align:center;">
-                            <svg width="28" height="28" fill="none" stroke="#64748b" viewBox="0 0 24 24" stroke-width="2" style="margin-bottom:.4rem;"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
-                            <div style="font-size:.88rem; font-weight:700; color:#475569; margin-bottom:.3rem;">Access Blocked</div>
-                            <div style="font-size:.75rem; color:#64748b; line-height:1.5;">Your cloud backup access has been blocked.</div>
-                        </div>
-                    </div>
-
-                    <!-- Approved — backup/restore -->
-                    <div id="cloud-approved-section" style="display:none;">
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:.65rem; margin-bottom:.5rem;">
-                            <button onclick="cloudBackupNow()" style="display:flex; align-items:center; justify-content:center; gap:.4rem;
-                                background:linear-gradient(135deg,#10b981,#059669); color:#fff;
-                                border:none; border-radius:14px; padding:.75rem .5rem; font-size:.85rem; font-weight:700;
-                                box-shadow:0 2px 6px rgba(0,0,0,.12); cursor:pointer;">
-                                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                Backup
-                            </button>
-                            <button onclick="cloudRestoreNow()" style="display:flex; align-items:center; justify-content:center; gap:.4rem;
-                                background:linear-gradient(135deg,#6366f1,#4f46e5); color:#fff;
-                                border:none; border-radius:14px; padding:.75rem .5rem; font-size:.85rem; font-weight:700;
-                                box-shadow:0 2px 6px rgba(0,0,0,.12); cursor:pointer;">
-                                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12"/></svg>
-                                Restore
-                            </button>
-                        </div>
-                        <div id="cloud-last-backup" style="font-size:.72rem; color:var(--muted); text-align:center;"></div>
-                    </div>
-
-                    <!-- Admin panel — only for giriaashish02@gmail.com -->
-                    <div id="cloud-admin-panel" style="display:none; margin-top:1.25rem; border-top:1.5px solid var(--border); padding-top:1.25rem;">
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.85rem;">
-                            <div style="font-size:.85rem; font-weight:700; color:var(--text);">Admin Panel</div>
-                            <div id="admin-pending-badge" style="display:none; background:#ef4444; color:#fff; font-size:.68rem; font-weight:700; padding:.2rem .55rem; border-radius:20px;"></div>
-                        </div>
-                        <div id="admin-users-list" style="display:flex; flex-direction:column; gap:.5rem;">
-                            <div style="text-align:center; color:var(--muted); font-size:.82rem; padding:.75rem;">Loading...</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="card animate-entry" id="data-mgmt-card" style="animation-delay:.04s;">
+            <!-- DATA MANAGEMENT PARENT CARD -->
+            <div class="card animate-entry" style="animation-delay:.02s;">
 
                 <!-- Header -->
                 <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:1.25rem;">
                     <div style="width:38px; height:38px; background:linear-gradient(135deg,#10b981,#059669); border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                         <svg width="20" height="20" fill="none" stroke="#fff" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10a2 2 0 002 2h12a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-3.414-3.414A1 1 0 0015.586 5H6a2 2 0 00-2 2zm4-1v4h8V6"/></svg>
                     </div>
-                    <div style="flex:1;">
+                    <div>
                         <div style="font-size:1rem; font-weight:700; color:var(--text);">Data Management</div>
-                        <div style="font-size:.75rem; color:var(--muted);">Backup, restore and export your data</div>
+                        <div style="font-size:.75rem; color:var(--muted);">Backup & restore your data</div>
                     </div>
                 </div>
 
-                <!-- Action row: Download + Restore from file -->
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:.65rem;">
-                    <button id="web-backup-btn" onclick="downloadBackup()" style="
-                        display:flex; align-items:center; justify-content:center; gap:.4rem;
-                        background:linear-gradient(135deg,#10b981,#059669); color:#fff;
-                        border:none; border-radius:14px; padding:.75rem .5rem; font-size:.85rem; font-weight:700;
-                        box-shadow:0 2px 6px rgba(0,0,0,.12); cursor:pointer;">
-                        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                        Download
-                    </button>
-                    <label style="display:flex; align-items:center; justify-content:center; gap:.4rem;
-                        background:linear-gradient(135deg,#6366f1,#4f46e5); color:#fff;
-                        border-radius:14px; padding:.75rem .5rem; font-size:.85rem; font-weight:700;
-                        box-shadow:0 2px 6px rgba(0,0,0,.12); cursor:pointer; position:relative;">
-                        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12"/></svg>
-                        Restore File
-                        <input type="file" id="restore-file" accept=".json" style="position:absolute;inset:0;opacity:0;cursor:pointer;" onchange="restoreFromFileInput(this)">
-                    </label>
+                <!-- CLOUD BACKUP INNER CARD -->
+                <div id="cloud-backup-card" style="background:var(--bg); border:1.5px solid var(--border-light); border-radius:16px; padding:1rem; margin-bottom:.75rem;">
+                    <div style="display:flex; align-items:center; gap:.65rem; margin-bottom:1rem;">
+                        <div style="width:32px; height:32px; background:linear-gradient(135deg,#4285f4,#1a73e8); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <svg width="16" height="16" fill="none" stroke="#fff" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-size:.88rem; font-weight:700; color:var(--text);">Cloud Backup</div>
+                            <div style="font-size:.7rem; color:var(--muted);">Via Google account</div>
+                        </div>
+                        <div id="cloud-status-badge" style="display:none; font-size:.68rem; font-weight:700; padding:.2rem .55rem; border-radius:20px;"></div>
+                    </div>
+
+                    <!-- Not logged in -->
+                    <div id="cloud-login-section">
+                        <p style="font-size:.8rem; color:var(--muted); margin-bottom:.85rem; line-height:1.55;">Login with Google to enable cloud backup. Your data stays private and secure.</p>
+                        <button onclick="cloudGoogleLogin()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:.6rem;
+                            background:#fff; color:#3c4043; border:1.5px solid #dadce0; border-radius:12px;
+                            padding:.65rem; font-size:.85rem; font-weight:600; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.1);">
+                            <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                            Sign in with Google
+                        </button>
+                    </div>
+
+                    <!-- Logged in -->
+                    <div id="cloud-user-section" style="display:none;">
+                        <div style="display:flex; align-items:center; gap:.6rem; margin-bottom:.85rem; background:var(--solid); border-radius:10px; padding:.55rem .75rem;">
+                            <img id="cloud-avatar" src="" style="width:28px; height:28px; border-radius:50%; object-fit:cover;" onerror="this.style.display='none'">
+                            <div style="flex:1; min-width:0;">
+                                <div id="cloud-user-name" style="font-size:.8rem; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
+                                <div id="cloud-user-email" style="font-size:.68rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
+                            </div>
+                            <button onclick="cloudLogout()" style="background:none; border:1px solid var(--border); border-radius:8px; color:var(--muted); font-size:.7rem; padding:.25rem .5rem; cursor:pointer; flex-shrink:0;">Logout</button>
+                        </div>
+
+                        <!-- Pending -->
+                        <div id="cloud-pending-section" style="display:none;">
+                            <div style="background:linear-gradient(135deg,#fffbeb,#fef3c7); border:1.5px solid #fcd34d; border-radius:12px; padding:.75rem; text-align:center;">
+                                <svg width="22" height="22" fill="none" stroke="#d97706" viewBox="0 0 24 24" stroke-width="2" style="margin-bottom:.3rem;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <div style="font-size:.82rem; font-weight:700; color:#92400e; margin-bottom:.2rem;">Approval Pending</div>
+                                <div style="font-size:.72rem; color:#b45309; line-height:1.5;">Request sent to admin. You will be notified once approved.</div>
+                            </div>
+                        </div>
+
+                        <!-- Rejected -->
+                        <div id="cloud-rejected-section" style="display:none;">
+                            <div style="background:linear-gradient(135deg,#fef2f2,#fee2e2); border:1.5px solid #fca5a5; border-radius:12px; padding:.75rem; text-align:center;">
+                                <svg width="22" height="22" fill="none" stroke="#dc2626" viewBox="0 0 24 24" stroke-width="2" style="margin-bottom:.3rem;"><path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <div style="font-size:.82rem; font-weight:700; color:#991b1b; margin-bottom:.2rem;">Access Rejected</div>
+                                <div style="font-size:.72rem; color:#b91c1c; line-height:1.5;">Cloud backup access was not granted.</div>
+                            </div>
+                        </div>
+
+                        <!-- Blocked -->
+                        <div id="cloud-blocked-section" style="display:none;">
+                            <div style="background:linear-gradient(135deg,#f8fafc,#f1f5f9); border:1.5px solid #cbd5e1; border-radius:12px; padding:.75rem; text-align:center;">
+                                <svg width="22" height="22" fill="none" stroke="#64748b" viewBox="0 0 24 24" stroke-width="2" style="margin-bottom:.3rem;"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                <div style="font-size:.82rem; font-weight:700; color:#475569; margin-bottom:.2rem;">Access Blocked</div>
+                                <div style="font-size:.72rem; color:#64748b; line-height:1.5;">Your cloud backup access has been blocked.</div>
+                            </div>
+                        </div>
+
+                        <!-- Approved -->
+                        <div id="cloud-approved-section" style="display:none;">
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:.55rem; margin-bottom:.45rem;">
+                                <button onclick="cloudBackupNow()" style="display:flex; align-items:center; justify-content:center; gap:.4rem;
+                                    background:linear-gradient(135deg,#10b981,#059669); color:#fff;
+                                    border:none; border-radius:12px; padding:.65rem .5rem; font-size:.82rem; font-weight:700; cursor:pointer;">
+                                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    Backup
+                                </button>
+                                <button onclick="cloudRestoreNow()" style="display:flex; align-items:center; justify-content:center; gap:.4rem;
+                                    background:linear-gradient(135deg,#6366f1,#4f46e5); color:#fff;
+                                    border:none; border-radius:12px; padding:.65rem .5rem; font-size:.82rem; font-weight:700; cursor:pointer;">
+                                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12"/></svg>
+                                    Restore
+                                </button>
+                            </div>
+                            <div id="cloud-last-backup" style="font-size:.68rem; color:var(--muted); text-align:center;"></div>
+                        </div>
+
+                        <!-- Admin panel -->
+                        <div id="cloud-admin-panel" style="display:none; margin-top:1rem; border-top:1.5px solid var(--border); padding-top:1rem;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem;">
+                                <div style="font-size:.82rem; font-weight:700; color:var(--text);">Admin Panel</div>
+                                <div id="admin-pending-badge" style="display:none; background:#ef4444; color:#fff; font-size:.65rem; font-weight:700; padding:.2rem .5rem; border-radius:20px;"></div>
+                            </div>
+                            <div id="admin-users-list" style="display:flex; flex-direction:column; gap:.5rem;">
+                                <div style="text-align:center; color:var(--muted); font-size:.8rem; padding:.75rem;">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div id="file-name-display" style="font-size:.75rem; color:var(--muted); text-align:center; min-height:1rem; margin-top:.35rem;"></div>
+
+                <!-- DEVICE BACKUP INNER CARD -->
+                <div id="data-mgmt-card" style="background:var(--bg); border:1.5px solid var(--border-light); border-radius:16px; padding:1rem;">
+                    <div style="display:flex; align-items:center; gap:.65rem; margin-bottom:1rem;">
+                        <div style="width:32px; height:32px; background:linear-gradient(135deg,#10b981,#059669); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <svg width="16" height="16" fill="none" stroke="#fff" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                        </div>
+                        <div>
+                            <div style="font-size:.88rem; font-weight:700; color:var(--text);">Device Backup</div>
+                            <div style="font-size:.7rem; color:var(--muted);">Download & restore JSON file</div>
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:.55rem;">
+                        <button id="web-backup-btn" onclick="downloadBackup()" style="
+                            display:flex; align-items:center; justify-content:center; gap:.4rem;
+                            background:linear-gradient(135deg,#10b981,#059669); color:#fff;
+                            border:none; border-radius:12px; padding:.65rem .5rem; font-size:.82rem; font-weight:700;
+                            box-shadow:0 2px 6px rgba(0,0,0,.12); cursor:pointer;">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            Download
+                        </button>
+                        <label style="display:flex; align-items:center; justify-content:center; gap:.4rem;
+                            background:linear-gradient(135deg,#6366f1,#4f46e5); color:#fff;
+                            border-radius:12px; padding:.65rem .5rem; font-size:.82rem; font-weight:700;
+                            box-shadow:0 2px 6px rgba(0,0,0,.12); cursor:pointer; position:relative;">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12"/></svg>
+                            Restore File
+                            <input type="file" id="restore-file" accept=".json" style="position:absolute;inset:0;opacity:0;cursor:pointer;" onchange="restoreFromFileInput(this)">
+                        </label>
+                    </div>
+                    <div id="file-name-display" style="font-size:.72rem; color:var(--muted); text-align:center; min-height:1rem; margin-top:.35rem;"></div>
+                </div>
 
             </div>
+
         </section>
         <!-- ABOUT -->
         <section id="about-view" class="view-section">
@@ -2057,6 +2066,7 @@ self.addEventListener('notificationclick', e => {
         appData.units.forEach(function(u) {
             var pill = document.createElement('div');
             pill.className = 'unit-pill';
+            pill.ondblclick = function(e) { e.stopPropagation(); startUnitRename(pill, u); };
 
             // Pencil rename button (visible on hover)
             var ren = document.createElement('button');
@@ -3184,6 +3194,7 @@ self.addEventListener('notificationclick', e => {
 
     async function cloudLogout() {
         if (!fbAuth) return;
+        if (!await customConfirm('Logout from cloud backup?')) return;
         const { signOut } = window._fb;
         await signOut(fbAuth);
     }
@@ -3268,31 +3279,32 @@ self.addEventListener('notificationclick', e => {
 
     async function cloudBackupNow() {
         if (!fbCurrentUser || !fbDb) return;
-        showCloudToast('Saving to cloud...');
+        showProgress('Saving to cloud...');
         try {
             const { doc, setDoc, serverTimestamp } = window._fb;
             await setDoc(doc(fbDb, 'backups', fbCurrentUser.uid), {
-                data:      JSON.stringify(appData),
-                savedAt:   serverTimestamp(),
-                email:     fbCurrentUser.email,
+                data:    JSON.stringify(appData),
+                savedAt: serverTimestamp(),
+                email:   fbCurrentUser.email,
             });
             await setDoc(doc(fbDb, 'requests', fbCurrentUser.uid), { lastBackup: serverTimestamp() }, { merge: true });
+            hideProgress();
             showCloudToast('Cloud backup saved!');
             document.getElementById('cloud-last-backup').textContent = 'Last backup: ' + new Date().toLocaleString();
-        } catch(e) { showCloudToast('Backup failed. Try again.', true); }
+        } catch(e) { hideProgress(); showCloudToast('Backup failed. Try again.', true); }
     }
 
     async function cloudRestoreNow() {
         if (!fbCurrentUser || !fbDb) return;
         if (!await customConfirm('Restore from cloud? This will replace your current data.')) return;
-        showCloudToast('Fetching from cloud...');
+        showProgress('Fetching from cloud...');
         try {
             const { doc, getDoc } = window._fb;
             const snap = await getDoc(doc(fbDb, 'backups', fbCurrentUser.uid));
-            if (!snap.exists()) { showCloudToast('No cloud backup found.', true); return; }
-            await doRestore(snap.data().data, 'Cloud Restore');
-            showCloudToast('Restored successfully!');
-        } catch(e) { showCloudToast('Restore failed.', true); }
+            if (!snap.exists()) { hideProgress(); showCloudToast('No cloud backup found.', true); return; }
+            hideProgress();
+            await doRestore(snap.data().data, 'Cloud Restore', true);
+        } catch(e) { hideProgress(); showCloudToast('Restore failed.', true); }
     }
 
     async function adminLoadUsers() {
@@ -3484,8 +3496,9 @@ self.addEventListener('notificationclick', e => {
     }
 
     // ── Common restore logic (shows which backup is being restored) ───
-    async function doRestore(jsonStr, label) {
-        if (!await customConfirm(`Restore from:\n"${label}"?\n\nThis will replace your current data.`)) return;
+    async function doRestore(jsonStr, label, skipConfirm = false) {
+        if (!skipConfirm && !await customConfirm(`Restore from:\n"${label}"?\n\nThis will replace your current data.`)) return;
+        showProgress('Restoring...');
         try {
             const parsed = JSON.parse(jsonStr);
             if (parsed.inventory && parsed.lists && parsed.settings) {
@@ -3495,29 +3508,62 @@ self.addEventListener('notificationclick', e => {
                 if (!appData.priceHistory) appData.priceHistory = {};
                 cart = []; inventoryFilter = '';
                 saveData(); init();
+                hideProgress();
                 switchTab('maker', document.querySelector('.desktop-nav .nav-btn'));
                 await customAlert(`Restore complete.\n\n"${label}" has been loaded.`);
-            } else { await customAlert('This file is not a valid backup.'); }
-        } catch { await customAlert('Could not read the file. Please try again.'); }
+            } else { hideProgress(); await customAlert('This file is not a valid backup.'); }
+        } catch { hideProgress(); await customAlert('Could not read the file. Please try again.'); }
     }
 
 
+    function showProgress(msg = 'Please wait...') {
+        let el = document.getElementById('progress-overlay');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'progress-overlay';
+            el.style.cssText = `position:fixed;inset:0;z-index:9997;background:rgba(15,23,42,.45);
+                backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+                display:flex;align-items:center;justify-content:center;`;
+            el.innerHTML = `<div style="background:var(--solid);border-radius:20px;padding:1.75rem 2rem;
+                text-align:center;box-shadow:0 20px 40px rgba(0,0,0,.25);border:1.5px solid var(--border);
+                min-width:200px;animation:fadeSlideUp .2s var(--ease-spring) both;">
+                <div id="progress-spinner" style="width:36px;height:36px;border:3px solid var(--border);
+                    border-top-color:var(--accent);border-radius:50%;margin:0 auto .85rem;
+                    animation:spin .7s linear infinite;"></div>
+                <div id="progress-msg" style="font-size:.88rem;font-weight:600;color:var(--text);"></div>
+            </div>`;
+            document.body.appendChild(el);
+            const style = document.createElement('style');
+            style.textContent = `@keyframes spin { to { transform:rotate(360deg); } }`;
+            document.head.appendChild(style);
+        }
+        document.getElementById('progress-msg').textContent = msg;
+        el.style.display = 'flex';
+    }
+
+    function hideProgress() {
+        const el = document.getElementById('progress-overlay');
+        if (el) el.style.display = 'none';
+    }
+
     // ── Web mode: download backup as JSON file ────────────────────────
     async function downloadBackup() {
+        showProgress('Preparing backup...');
         const jsonStr  = JSON.stringify(appData, null, 2);
         const filename = `QuotePad_Backup_${new Date().toLocaleDateString('en-US').replace(/\//g,'-')}.json`;
         if (navigator.share && navigator.canShare) {
             try {
                 const file = new File([jsonStr], filename, { type:'application/json' });
-                if (navigator.canShare({ files:[file] })) { await navigator.share({ files:[file], title:'QuotePad Backup' }); return; }
+                if (navigator.canShare({ files:[file] })) { hideProgress(); await navigator.share({ files:[file], title:'QuotePad Backup' }); return; }
             } catch(e) {}
         }
         try {
             const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([jsonStr],{type:'application/json'})), download: filename });
-            document.body.appendChild(a); a.click(); document.body.removeChild(a); return;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            hideProgress(); return;
         } catch(e) {}
-        try { await navigator.clipboard.writeText(jsonStr); await customAlert('Copied to clipboard. Paste in any notes app and save as .json'); }
-        catch(e) { await customAlert('Could not download. Open in Chrome browser.'); }
+        try { hideProgress(); await navigator.clipboard.writeText(jsonStr); await customAlert('Copied to clipboard. Paste in any notes app and save as .json'); }
+        catch(e) { hideProgress(); await customAlert('Could not download. Open in Chrome browser.'); }
     }
 
     // ── SECTION 11: EXCEL / CSV IMPORT ───────────────────────────────
