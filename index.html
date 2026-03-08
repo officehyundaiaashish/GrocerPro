@@ -3144,7 +3144,7 @@ self.addEventListener('notificationclick', e => {
         fbAuth = getAuth(fbApp);
         fbDb   = getFirestore(fbApp);
 
-        window._fb = { doc, getDoc, setDoc, collection, getDocs, updateDoc, serverTimestamp };
+        window._fb = { doc, getDoc, setDoc, collection, getDocs, updateDoc, serverTimestamp, GoogleAuthProvider, signInWithPopup, signOut };
 
         onAuthStateChanged(fbAuth, async user => {
             fbCurrentUser = user;
@@ -3167,15 +3167,21 @@ self.addEventListener('notificationclick', e => {
 
     async function cloudGoogleLogin() {
         await initFirebase();
-        const { GoogleAuthProvider, signInWithPopup } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
         try {
-            await signInWithPopup(fbAuth, new GoogleAuthProvider());
-        } catch(e) { showCloudToast('Login failed. Try again.', true); }
+            const { GoogleAuthProvider, signInWithPopup } = window._fb;
+            const provider = new GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
+            await signInWithPopup(fbAuth, provider);
+        } catch(e) {
+            if (e.code !== 'auth/popup-closed-by-user') {
+                showCloudToast('Login failed: ' + (e.code || e.message), true);
+            }
+        }
     }
 
     async function cloudLogout() {
         if (!fbAuth) return;
-        const { signOut } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+        const { signOut } = window._fb;
         await signOut(fbAuth);
     }
 
