@@ -728,6 +728,21 @@ self.addEventListener('notificationclick', e => {
         .btn-danger:hover { background:#fca5a5; color:#fff; }
         .btn-danger::after { background: rgba(239,68,68,0.2); }
 
+        .icon-btn {
+            background: transparent !important;
+            padding: 0 !important;
+            height: 36px !important;
+            width: 36px !important;
+            border-radius: 10px !important;
+        }
+        .icon-btn:hover { background: transparent !important; transform: translateY(-1px); box-shadow: none !important; }
+        .icon-btn.icon-pdf  { border: 1.5px solid #64748b !important; }
+        .icon-btn.icon-share{ border: 1.5px solid #6366f1 !important; }
+        .icon-btn.icon-del  { border: 1.5px solid #ef4444 !important; }
+        .icon-btn.icon-pdf:hover  { border-color: #94a3b8 !important; }
+        .icon-btn.icon-share:hover{ background: #6366f122 !important; }
+        .icon-btn.icon-del:hover  { background: #ef444422 !important; }
+
         .btn-small { padding:.4rem .6rem; font-size:.8rem; height:auto; }
 
         /* Delete button inside table – reusable class */
@@ -1108,7 +1123,7 @@ self.addEventListener('notificationclick', e => {
         <nav class="desktop-nav">
             <button class="nav-btn active"  onclick="switchTab('maker',     this)">List Maker</button>
             <button class="nav-btn"         onclick="switchTab('inventory', this)">Inventory</button>
-            <button class="nav-btn"         onclick="switchTab('history',   this)">History</button>
+            <button class="nav-btn"         onclick="switchTab('history',   this)">My Lists</button>
             <button class="nav-btn"         onclick="switchTab('backup',    this)">Data</button>
             <button class="nav-btn"         onclick="switchTab('about',     this)">About</button>
         </nav>
@@ -1520,8 +1535,11 @@ self.addEventListener('notificationclick', e => {
         <section id="history-view" class="view-section">
             <div class="card animate-entry">
                 <div class="card-header">
-                    <h2>Saved Quotations</h2>
-                    <span class="text-xs-muted">Tap title to rename</span>
+                    <h2>My Lists</h2>
+                    <button onclick="receiveListDialog()" style="display:flex;align-items:center;gap:.4rem;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:.4rem .9rem;font-size:.78rem;font-weight:700;cursor:pointer;height:auto;">
+                        <svg width="13" height="13" fill="none" stroke="#fff" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        Receive List
+                    </button>
                 </div>
                 <div id="history-container" style="display:grid; gap:1rem; margin-top:1rem; grid-template-columns:repeat(auto-fill, minmax(280px,1fr));"></div>
             </div>
@@ -1816,7 +1834,7 @@ self.addEventListener('notificationclick', e => {
         </button>
         <button class="nav-btn" onclick="switchTab('history', this)">
             <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            History
+            My Lists
         </button>
         <button class="nav-btn" onclick="switchTab('backup', this)">
             <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
@@ -1919,6 +1937,7 @@ self.addEventListener('notificationclick', e => {
         initBackupUI();
         checkDraftRecovery();
         initCloudBackup();
+        checkReceiveFromURL();
     }
 
     // Splash — show every time, 1.8s visible then smooth fade
@@ -2783,24 +2802,288 @@ self.addEventListener('notificationclick', e => {
             return;
         }
         container.innerHTML = [...appData.lists].reverse().map(list => `
-            <div class="card" style="margin-bottom:0; display:flex; flex-direction:column;">
-                <div class="text-sm-muted mb-1">${list.date}</div>
-                <div id="title-display-${list.id}" style="font-weight:600; font-size:1.05rem; margin-bottom:.5rem; cursor:pointer; color:var(--accent);" onclick="startRename('${list.id}')" title="Tap to rename">${list.title}</div>
-                <div id="title-edit-${list.id}" style="display:none; margin-bottom:.5rem;">
+            <div style="background:var(--solid);border:1.5px solid var(--border-light);border-radius:20px;
+                padding:1.1rem 1.15rem;display:flex;flex-direction:column;gap:.6rem;
+                transition:box-shadow .2s,transform .2s;cursor:default;"
+                onmouseenter="this.style.boxShadow='0 8px 24px rgba(0,0,0,.1)';this.style.transform='translateY(-1px)'"
+                onmouseleave="this.style.boxShadow='';this.style.transform=''">
+
+                <!-- Date + badge -->
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <span style="font-size:.68rem;color:var(--muted);font-weight:500;">${list.date}</span>
+                    ${list.listOnly ? `<span style="font-size:.62rem;font-weight:700;padding:.15rem .45rem;border-radius:20px;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;">LIST</span>` : `<span style="font-size:.62rem;font-weight:700;padding:.15rem .45rem;border-radius:20px;background:#f0fdf4;color:#059669;border:1px solid #a7f3d0;">QUOTE</span>`}
+                </div>
+
+                <!-- Title -->
+                <div id="title-display-${list.id}"
+                    style="font-weight:700;font-size:.98rem;color:var(--text);cursor:pointer;line-height:1.3;"
+                    onclick="startRename('${list.id}')" title="Tap to rename">
+                    ${list.title}
+                </div>
+                <div id="title-edit-${list.id}" style="display:none;">
                     <input class="rename-input" id="rename-input-${list.id}" value="${list.title}"
                         onkeydown="handleRenameKey(event,'${list.id}')"
                         onblur="saveRename('${list.id}')">
                 </div>
-                <p class="text-sm-muted mb-2">${list.items.length} items${!list.listOnly && (list.disc||list.gst) ? ' &nbsp;·&nbsp; <span style="font-size:.72rem; background:#f0fdf4; color:#059669; border:1px solid #a7f3d0; border-radius:20px; padding:.1rem .45rem; font-weight:700;">' + (list.disc?'Disc '+list.disc+'%':'') + (list.disc&&list.gst?' + ':'') + (list.gst?'GST '+list.gst+'%':'') + '</span>' : ''} &nbsp;|&nbsp; <span style="color:var(--text); font-weight:600;">${appData.currency}${list.total.toFixed(2)}</span></p>
-                <div style="display:flex; gap:.5rem; margin-top:auto;">
-                    <button class="btn-outline" style="padding:.4rem; font-size:.85rem; flex:1;" onclick="loadList('${list.id}')">Load</button>
-                    <button class="btn-outline" style="padding:.4rem; font-size:.85rem; flex:1; color:var(--text); border-color:var(--muted);" onclick="downloadHistoryPDF('${list.id}')">PDF</button>
-                    <button class="btn-danger"  style="padding:.4rem; font-size:.85rem; flex:1;" onclick="deleteList('${list.id}')">Del</button>
+
+                <!-- Meta -->
+                <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">
+                    <span style="font-size:.72rem;color:var(--muted);">${list.items.length} items</span>
+                    ${!list.listOnly && (list.disc||list.gst) ? `
+                        <span style="font-size:.65rem;font-weight:700;padding:.1rem .4rem;border-radius:20px;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;">
+                            ${list.disc?'Disc '+list.disc+'%':''}${list.disc&&list.gst?'+':''}${list.gst?'GST '+list.gst+'%':''}
+                        </span>` : ''}
+                    <span style="font-size:.78rem;font-weight:800;color:var(--accent);margin-left:auto;">${appData.currency}${list.total.toFixed(2)}</span>
+                </div>
+
+                <!-- Divider -->
+                <div style="height:1px;background:var(--border-light);margin:0 -.1rem;"></div>
+
+                <!-- Icon action buttons -->
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <!-- Load -->
+                    <button onclick="loadList('${list.id}')" title="Load to cart"
+                        style="display:flex;align-items:center;gap:.35rem;background:var(--accent);color:#fff;
+                        border:none;border-radius:10px;padding:.45rem .85rem;font-size:.75rem;font-weight:700;cursor:pointer;">
+                        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6M17 13l1.5 6M9 19h6"/></svg>
+                        Load
+                    </button>
+
+                    <div style="display:flex;gap:.4rem;">
+                        <button onclick="downloadHistoryPDF('${list.id}')" title="Export PDF" class="icon-btn icon-pdf">
+                            <svg width="17" height="17" fill="none" stroke="#64748b" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6M9 17h4"/></svg>
+                        </button>
+                        <button onclick="shareList('${list.id}')" title="Share list" class="icon-btn icon-share">
+                            <svg width="17" height="17" fill="none" stroke="#6366f1" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                        </button>
+                        <button onclick="deleteList('${list.id}')" title="Delete" class="icon-btn icon-del">
+                            <svg width="17" height="17" fill="none" stroke="#ef4444" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
                 </div>
             </div>`).join('');
     }
 
-    // #10 — Rename helpers
+    // ── LIST SHARING ─────────────────────────────────────────────────
+
+    function genShareCode() {
+        // 6 char alphanumeric code
+        return Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+
+    async function shareList(listId) {
+        if (!fbCurrentUser || !fbDb) {
+            await customAlert('Please login to cloud backup first to share lists.');
+            return;
+        }
+        const list = appData.lists.find(l => l.id === listId);
+        if (!list) return;
+
+        showProgress('Creating share link...');
+        try {
+            const { doc, setDoc, serverTimestamp } = window._fb;
+            const code = genShareCode();
+            const shareData = {
+                code,
+                title:     list.title,
+                items:     list.items,
+                disc:      list.disc  || 0,
+                gst:       list.gst   || 0,
+                listOnly:  list.listOnly || false,
+                total:     list.total || 0,
+                currency:  appData.currency,
+                sharedBy:  fbCurrentUser.displayName || fbCurrentUser.email,
+                sharedAt:  serverTimestamp(),
+            };
+            await setDoc(doc(fbDb, 'shared_lists', code), shareData);
+            hideProgress();
+
+            const appUrl = window.location.href.split('?')[0];
+            const link   = appUrl + '?receive=' + code;
+            showShareCard(list.title, code, link);
+        } catch(e) { hideProgress(); showCloudToast('Share failed. Try again.', true); }
+    }
+
+    function showShareCard(title, code, link) {
+        const ex = document.getElementById('share-card-overlay');
+        if (ex) ex.remove();
+        const overlay = document.createElement('div');
+        overlay.id = 'share-card-overlay';
+        overlay.style.cssText = `position:fixed;inset:0;z-index:9998;background:rgba(15,23,42,.5);
+            backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+            display:flex;align-items:center;justify-content:center;padding:1.5rem;`;
+        overlay.innerHTML = `
+            <div style="background:var(--solid);border-radius:24px;padding:1.75rem;max-width:320px;width:100%;
+                box-shadow:0 24px 48px rgba(0,0,0,.3);border:1.5px solid var(--border);
+                animation:fadeSlideUp .3s var(--ease-spring) both;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+                    <div style="font-size:1rem;font-weight:800;color:var(--text);">Share List</div>
+                    <button onclick="document.getElementById('share-card-overlay').remove()"
+                        style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem;">✕</button>
+                </div>
+                <div style="font-size:.82rem;color:var(--muted);margin-bottom:1rem;">"${title}"</div>
+
+                <!-- Code -->
+                <div style="background:var(--bg);border-radius:14px;padding:1rem;text-align:center;margin-bottom:.75rem;border:1.5px solid var(--border-light);">
+                    <div style="font-size:.7rem;color:var(--muted);margin-bottom:.4rem;font-weight:600;letter-spacing:.5px;">SHARE CODE</div>
+                    <div style="font-size:2rem;font-weight:900;color:var(--accent);letter-spacing:.35rem;">${code}</div>
+                </div>
+
+                <!-- Buttons -->
+                <div style="display:flex;flex-direction:column;gap:.55rem;">
+                    <button onclick="copyShareCode('${code}')"
+                        style="width:100%;padding:.7rem;border-radius:12px;border:1.5px solid var(--accent);
+                        background:transparent;color:var(--accent);font-size:.85rem;font-weight:700;cursor:pointer;">
+                        Copy Code
+                    </button>
+                    <button onclick="copyShareLink('${link}')"
+                        style="width:100%;padding:.7rem;border-radius:12px;border:none;
+                        background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;">
+                        Copy Link
+                    </button>
+                    <button onclick="whatsappShareList('${code}','${encodeURIComponent(title)}','${encodeURIComponent(link)}')"
+                        style="width:100%;padding:.7rem;border-radius:12px;border:none;
+                        background:#25D366;color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;">
+                        Share via WhatsApp
+                    </button>
+                </div>
+                <div style="font-size:.7rem;color:var(--muted);text-align:center;margin-top:.75rem;line-height:1.5;">
+                    Recipient gets their own copy — your original stays safe.
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+    }
+
+    function copyShareCode(code) {
+        navigator.clipboard.writeText(code).then(() => showCloudToast('Code copied!'));
+    }
+
+    function copyShareLink(link) {
+        navigator.clipboard.writeText(link).then(() => showCloudToast('Link copied!'));
+    }
+
+    function whatsappShareList(code, title, link) {
+        const msg = `*QuotePad List: ${decodeURIComponent(title)}*\n\nOpen this link to receive the list:\n${decodeURIComponent(link)}\n\nOr enter code manually: *${code}*`;
+        window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+    }
+
+    function receiveListDialog() {
+        const ex = document.getElementById('receive-dialog-overlay');
+        if (ex) ex.remove();
+        const overlay = document.createElement('div');
+        overlay.id = 'receive-dialog-overlay';
+        overlay.style.cssText = `position:fixed;inset:0;z-index:9998;background:rgba(15,23,42,.5);
+            backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+            display:flex;align-items:center;justify-content:center;padding:1.5rem;`;
+        overlay.innerHTML = `
+            <div style="background:var(--solid);border-radius:24px;padding:1.75rem;max-width:320px;width:100%;
+                box-shadow:0 24px 48px rgba(0,0,0,.3);border:1.5px solid var(--border);
+                animation:fadeSlideUp .3s var(--ease-spring) both;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+                    <div style="font-size:1rem;font-weight:800;color:var(--text);">Receive List</div>
+                    <button onclick="document.getElementById('receive-dialog-overlay').remove()"
+                        style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem;">✕</button>
+                </div>
+                <p style="font-size:.82rem;color:var(--muted);margin-bottom:1rem;line-height:1.55;">Enter the 6-digit code shared with you:</p>
+                <input id="receive-code-input" maxlength="6"
+                    style="width:100%;text-align:center;font-size:1.6rem;font-weight:900;letter-spacing:.4rem;
+                    border:2px solid var(--border);border-radius:14px;padding:.75rem;
+                    background:var(--bg);color:var(--text);text-transform:uppercase;margin-bottom:1rem;"
+                    placeholder="ABC123"
+                    oninput="this.value=this.value.toUpperCase()">
+                <button onclick="receiveListByCode()"
+                    style="width:100%;padding:.75rem;border-radius:14px;border:none;
+                    background:var(--accent);color:#fff;
+                    font-size:.9rem;font-weight:700;cursor:pointer;">
+                    Get List
+                </button>
+            </div>`;
+        document.body.appendChild(overlay);
+        setTimeout(() => document.getElementById('receive-code-input')?.focus(), 100);
+    }
+
+    async function receiveListByCode() {
+        const code = document.getElementById('receive-code-input')?.value?.trim().toUpperCase();
+        if (!code || code.length < 6) { showCloudToast('Enter a valid 6-digit code.', true); return; }
+
+        if (!fbCurrentUser || !fbDb) {
+            // Allow offline receive via code too — fetch from Firestore anyway
+            if (!fbApp) await initFirebase();
+        }
+
+        showProgress('Fetching list...');
+        try {
+            const { doc, getDoc } = window._fb;
+            const snap = await getDoc(doc(fbDb, 'shared_lists', code));
+            if (!snap.exists()) {
+                hideProgress();
+                showCloudToast('No list found for this code.', true);
+                return;
+            }
+            const data = snap.data();
+            hideProgress();
+            document.getElementById('receive-dialog-overlay')?.remove();
+
+            // Fork — create a new copy in user's local lists
+            const newList = {
+                id:       'list_' + Date.now(),
+                date:     new Date().toLocaleString(),
+                title:    data.title + ' (from ' + data.sharedBy + ')',
+                items:    data.items,
+                disc:     data.disc  || 0,
+                gst:      data.gst   || 0,
+                listOnly: data.listOnly || false,
+                total:    data.total || 0,
+            };
+            appData.lists.push(newList);
+            saveData();
+            renderHistory();
+            showCloudToast('List received! "' + data.title + '" added to your Saved Lists.');
+        } catch(e) { hideProgress(); showCloudToast('Failed to fetch list.', true); console.error(e); }
+    }
+
+    // Auto-receive if URL has ?receive=CODE
+    async function checkReceiveFromURL() {
+        const params = new URLSearchParams(window.location.search);
+        const code   = params.get('receive');
+        if (!code) return;
+        // Clean URL
+        window.history.replaceState({}, '', window.location.pathname);
+        // Wait for Firebase to init
+        await initFirebase();
+        // Small delay for auth state
+        setTimeout(() => {
+            document.getElementById('receive-code-input') // if dialog open, skip
+            receiveListFromURL(code);
+        }, 1500);
+    }
+
+    async function receiveListFromURL(code) {
+        showProgress('Fetching shared list...');
+        try {
+            const { doc, getDoc } = window._fb;
+            const snap = await getDoc(doc(fbDb, 'shared_lists', code));
+            if (!snap.exists()) { hideProgress(); showCloudToast('Shared list not found.', true); return; }
+            const data = snap.data();
+            hideProgress();
+
+            const newList = {
+                id:       'list_' + Date.now(),
+                date:     new Date().toLocaleString(),
+                title:    data.title + ' (from ' + data.sharedBy + ')',
+                items:    data.items,
+                disc:     data.disc  || 0,
+                gst:      data.gst   || 0,
+                listOnly: data.listOnly || false,
+                total:    data.total || 0,
+            };
+            appData.lists.push(newList);
+            saveData();
+            renderHistory();
+            switchTab('history', document.querySelector('[data-view="history"]'));
+            showCloudToast('List received! "' + data.title + '" added.');
+        } catch(e) { hideProgress(); showCloudToast('Could not receive list.', true); }
+    }
     function startRename(id) {
         document.getElementById(`title-display-${id}`).style.display = 'none';
         const editDiv = document.getElementById(`title-edit-${id}`);
