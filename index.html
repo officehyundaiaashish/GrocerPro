@@ -3128,8 +3128,8 @@ self.addEventListener('notificationclick', e => {
     async function initFirebase() {
         if (fbApp) return;
         const { initializeApp }          = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
-        const { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
-        const { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+        const { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+        const { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, onSnapshot, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
 
         const firebaseConfig = {
             apiKey:            "AIzaSyBY_cG_ZIIG32v9j-0eG1rLqIBibbMGH6E",
@@ -3144,7 +3144,10 @@ self.addEventListener('notificationclick', e => {
         fbAuth = getAuth(fbApp);
         fbDb   = getFirestore(fbApp);
 
-        window._fb = { doc, getDoc, setDoc, collection, getDocs, updateDoc, serverTimestamp, GoogleAuthProvider, signInWithPopup, signOut };
+        // Persist session across app close/reopen
+        await setPersistence(fbAuth, browserLocalPersistence);
+
+        window._fb = { doc, getDoc, setDoc, collection, getDocs, updateDoc, onSnapshot, serverTimestamp, GoogleAuthProvider, signInWithPopup, signOut };
 
         onAuthStateChanged(fbAuth, async user => {
             fbCurrentUser = user;
@@ -3186,23 +3189,29 @@ self.addEventListener('notificationclick', e => {
     }
 
     async function cloudHandleUserLogin(user) {
-        const { doc, getDoc, setDoc, serverTimestamp } = window._fb;
+        const { doc, getDoc, setDoc, onSnapshot, serverTimestamp } = window._fb;
         const ref = doc(fbDb, 'requests', user.uid);
         const snap = await getDoc(ref);
 
         if (!snap.exists()) {
-            // First time — create request
+            const isAdmin = user.email === ADMIN_EMAIL_FB;
             await setDoc(ref, {
                 uid:         user.uid,
                 email:       user.email,
                 name:        user.displayName || '',
-                status:      'pending',
+                status:      isAdmin ? 'approved' : 'pending',
                 requestedAt: serverTimestamp(),
             });
-            showCloudStatus('pending');
+            showCloudStatus(isAdmin ? 'approved' : 'pending');
         } else {
             const data = snap.data();
-            showCloudStatus(data.status);
+            if (user.email === ADMIN_EMAIL_FB && data.status !== 'approved') {
+                const { updateDoc } = window._fb;
+                await updateDoc(ref, { status: 'approved' });
+                showCloudStatus('approved');
+            } else {
+                showCloudStatus(data.status);
+            }
             if (data.status === 'approved') {
                 const lastEl = document.getElementById('cloud-last-backup');
                 if (lastEl && data.lastBackup?.toDate) {
@@ -3210,6 +3219,19 @@ self.addEventListener('notificationclick', e => {
                 }
             }
         }
+
+        // Real-time listener — status change hote hi UI update ho
+        onSnapshot(ref, docSnap => {
+            if (!docSnap.exists()) return;
+            const d = docSnap.data();
+            showCloudStatus(d.status);
+            if (d.status === 'approved') {
+                const lastEl = document.getElementById('cloud-last-backup');
+                if (lastEl && d.lastBackup?.toDate) {
+                    lastEl.textContent = 'Last backup: ' + d.lastBackup.toDate().toLocaleString();
+                }
+            }
+        });
 
         // Admin panel
         if (user.email === ADMIN_EMAIL_FB) {
@@ -3343,14 +3365,8 @@ self.addEventListener('notificationclick', e => {
     }
 
     function initCloudBackup() {
-        // Auto-init Firebase when backup tab is opened
-        document.querySelectorAll('.nav-btn, .desktop-nav .nav-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                if (btn.dataset.view === 'backup' && !fbApp) initFirebase();
-            });
-        });
-        // Init now if already on backup tab
-        if (document.getElementById('backup-view')?.classList.contains('active')) initFirebase();
+        // Init Firebase immediately on app start — session restore ke liye
+        initFirebase();
     }
 
     // ── Init backup UI based on mode ──────────────────────────────────
