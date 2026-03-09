@@ -744,7 +744,7 @@ self.addEventListener('notificationclick', e => {
 
         /* ── TOP BAR ────────────────────────────────────────────────── */
         .top-bar {
-            background: var(--bg);
+            background: var(--solid);
             display: flex; align-items: center;
             padding: 1rem 1.5rem;
             /* Safe area for notch / Dynamic Island */
@@ -4989,20 +4989,19 @@ self.addEventListener('notificationclick', e => {
 
         if (typeof html2pdf !== 'undefined') {
             try {
-                const el = document.getElementById('pdf-html-preview');
-                // Clone and scale to A4 width for perfect fit
-                const clone = el.cloneNode(true);
-                clone.style.cssText = 'width:794px;background:#fff;padding:0;margin:0;transform:none;';
-                document.body.appendChild(clone);
+                const wrapper = document.createElement('div');
+                wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:#fff;';
+                wrapper.innerHTML = htmlString;
+                document.body.appendChild(wrapper);
                 await html2pdf().set({
                     margin:      [10, 10, 10, 10],
                     filename,
                     image:       { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, backgroundColor: '#ffffff', windowWidth: 794, scrollX: 0, scrollY: 0 },
+                    html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, backgroundColor: '#ffffff', windowWidth: 794 },
                     jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                    pagebreak:   { mode: ['css', 'legacy'], before: '.page-break-before', avoid: ['tr', 'thead', 'tfoot', '.no-break'] },
-                }).from(clone).save();
-                document.body.removeChild(clone);
+                    pagebreak:   { mode: ['css', 'legacy'], avoid: ['tr', 'thead', 'tfoot'] },
+                }).from(wrapper).save();
+                document.body.removeChild(wrapper);
             } catch(e) {
                 await customAlert('PDF download failed. Try Share instead.');
             }
@@ -5022,19 +5021,19 @@ self.addEventListener('notificationclick', e => {
 
         if (typeof html2pdf !== 'undefined') {
             try {
-                const el = document.getElementById('pdf-html-preview');
-                const clone = el.cloneNode(true);
-                clone.style.cssText = 'width:794px;background:#fff;padding:0;margin:0;transform:none;';
-                document.body.appendChild(clone);
+                const wrapper = document.createElement('div');
+                wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:#fff;';
+                wrapper.innerHTML = htmlString;
+                document.body.appendChild(wrapper);
                 const blob = await html2pdf().set({
                     margin:      [10, 10, 10, 10],
                     filename,
                     image:       { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', windowWidth: 794, scrollX: 0, scrollY: 0 },
+                    html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', windowWidth: 794 },
                     jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                    pagebreak:   { mode: ['css', 'legacy'], before: '.page-break-before', avoid: ['tr', 'thead', 'tfoot', '.no-break'] },
-                }).from(clone).output('blob');
-                document.body.removeChild(clone);
+                    pagebreak:   { mode: ['css', 'legacy'], avoid: ['tr', 'thead', 'tfoot'] },
+                }).from(wrapper).output('blob');
+                document.body.removeChild(wrapper);
 
                 const file = new File([blob], filename, { type: 'application/pdf' });
                 if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
