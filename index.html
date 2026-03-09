@@ -21,9 +21,8 @@
             document.documentElement.classList.add('dark-html');
             document.querySelector('meta[name="theme-color"]').content = '#0d1f1a';
             document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').content = 'black-translucent';
-        } else {
-            document.querySelector('meta[name="theme-color"]').content = '#ffffff';
         }
+        // Light mode: keep green (#10b981) during splash — will update to white after splash hides
     })();
     </script>
 
@@ -357,7 +356,7 @@ self.addEventListener('notificationclick', e => {
 
         /* html must also carry the bg — browser uses html for overscroll flash color */
         html {
-            background: #ffffff;
+            background: #10b981; /* Match splash accent — eliminates thin line between browser bar and splash */
             overscroll-behavior: none;
         }
         html.dark-html { background: #0d1f1a; }
@@ -2562,7 +2561,7 @@ self.addEventListener('notificationclick', e => {
             const isDark = document.body.classList.contains('dark');
             const themeMeta = document.querySelector('meta[name="theme-color"]');
             const appleBarMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
-            if (themeMeta) themeMeta.content = isDark ? '#0d1f1a' : '#f0fdf4';
+            if (themeMeta) themeMeta.content = isDark ? '#0d1f1a' : '#ffffff';
             if (appleBarMeta) appleBarMeta.content = isDark ? 'black-translucent' : 'default';
             document.documentElement.classList.add('app-ready'); // restore html bg
             setTimeout(() => splash.remove(), 500);
