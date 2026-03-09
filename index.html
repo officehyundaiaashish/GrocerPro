@@ -2617,7 +2617,7 @@ self.addEventListener('notificationclick', e => {
 
         // This Month = count + total amount (sum rates for quotes, 0 for list-only)
         const monthAmt = monthLists.reduce((sum, l) => {
-            if (l.listOnly) return sum; // list-only has no rates
+            // Include all lists - quotes + shopping lists both
             const base  = (l.items || []).reduce((s, i) => s + (parseFloat(i.rate)||0) * (parseFloat(i.qty)||1), 0);
             const after = base - (base * (parseFloat(l.disc)||0) / 100);
             return sum + after + (after * (parseFloat(l.gst)||0) / 100);
@@ -2627,9 +2627,8 @@ self.addEventListener('notificationclick', e => {
         if (monthEl) {
             monthEl.textContent = monthLists.length;
             // Show amount below if any quotes exist (not just lists)
-            const hasQuotes = monthLists.some(l => !l.listOnly);
             const amtEl = document.getElementById('dash-month-amt');
-            if (amtEl) amtEl.textContent = hasQuotes ? sym + monthAmt.toFixed(2) : '';
+            if (amtEl) amtEl.textContent = monthAmt > 0 ? sym + monthAmt.toFixed(2) : '';
         }
 
         // Recent lists
@@ -6280,7 +6279,7 @@ self.addEventListener('notificationclick', e => {
                 statsEl.style.display = 'none';
             } else {
                 const totalAmt = lists.reduce((sum, l) => {
-                    if (l.listOnly) return sum;
+                    // Include all - quotes + shopping lists
                     const base  = (l.items||[]).reduce((s,i) => s+(parseFloat(i.rate)||0)*(parseFloat(i.qty)||1), 0);
                     const after = base - (base*(parseFloat(l.disc)||0)/100);
                     return sum + after + (after*(parseFloat(l.gst)||0)/100);
@@ -6290,7 +6289,7 @@ self.addEventListener('notificationclick', e => {
                 const parts = [];
                 if (quoteCount) parts.push(quoteCount + ' quote' + (quoteCount>1?'s':''));
                 if (listCount)  parts.push(listCount  + ' list'  + (listCount>1?'s':''));
-                const amtStr = quoteCount ? ' · ' + sym + totalAmt.toFixed(2) : '';
+                const amtStr = totalAmt > 0 ? ' · ' + sym + totalAmt.toFixed(2) : '';
                 statsEl.style.display = 'flex';
                 statsEl.innerHTML = `<span style="font-size:.82rem;color:var(--muted);font-weight:600;">${parts.join(' + ')}${amtStr}</span>`;
             }
@@ -6313,7 +6312,7 @@ self.addEventListener('notificationclick', e => {
         const sym = appData.currency || '₹';
 
         function listAmt(l) {
-            if (l.listOnly) return 0;
+            // Include ALL lists - list-only items also have qty, use rate if available else count qty
             const base  = (l.items||[]).reduce((s,i) => s+(parseFloat(i.rate)||0)*(parseFloat(i.qty)||1), 0);
             const after = base - (base*(parseFloat(l.disc)||0)/100);
             return after + (after*(parseFloat(l.gst)||0)/100);
@@ -6328,9 +6327,8 @@ self.addEventListener('notificationclick', e => {
             });
             const cnt = mLists.length;
             const amt = mLists.reduce((s,l) => s+listAmt(l), 0);
-            const hasQ = mLists.some(l => !l.listOnly);
             mEl.textContent = cnt
-                ? `${cnt} list${cnt>1?'s':''} · ${hasQ ? sym+amt.toFixed(2) : 'No rates'}`
+                ? `${cnt} list${cnt>1?'s':''} · ${amt > 0 ? sym+amt.toFixed(2) : '—'}`
                 : 'No lists this month';
         }
 
@@ -6343,9 +6341,8 @@ self.addEventListener('notificationclick', e => {
             });
             const cnt = yLists.length;
             const amt = yLists.reduce((s,l) => s+listAmt(l), 0);
-            const hasQ = yLists.some(l => !l.listOnly);
             yEl.textContent = cnt
-                ? `${cnt} list${cnt>1?'s':''} · ${hasQ ? sym+amt.toFixed(2) : 'No rates'}`
+                ? `${cnt} list${cnt>1?'s':''} · ${amt > 0 ? sym+amt.toFixed(2) : '—'}`
                 : 'No lists this year';
         }
     }
