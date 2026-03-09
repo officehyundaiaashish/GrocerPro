@@ -1329,7 +1329,6 @@ self.addEventListener('notificationclick', e => {
         </div>
         <nav class="desktop-nav">
             <button class="nav-btn active"  onclick="switchTab('dashboard', this)">Home</button>
-            <button class="nav-btn"         onclick="switchTab('maker',     this)">List Maker</button>
             <button class="nav-btn"         onclick="switchTab('inventory', this)">Inventory</button>
             <button class="nav-btn"         onclick="switchTab('backup',    this)">Data</button>
             <button class="nav-btn"         onclick="switchTab('about',     this)">More</button>
@@ -2397,7 +2396,7 @@ self.addEventListener('notificationclick', e => {
         style="position:fixed; bottom:calc(32px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%);
         width:64px; height:64px; border-radius:50%; background:var(--accent); color:#fff; border:none;
         cursor:pointer; z-index:200;
-        box-shadow:0 2px 8px rgba(0,0,0,.2);
+        box-shadow:0 4px 16px rgba(0,0,0,.25);
         display:flex; align-items:center; justify-content:center;
         transition:transform .15s var(--ease);"
         onpointerdown="this.style.transform='translateX(-50%) scale(.92)'"
@@ -2405,6 +2404,21 @@ self.addEventListener('notificationclick', e => {
         onpointerleave="this.style.transform='translateX(-50%) scale(1)'">
         <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
     </button>
+    <style>
+        @media (min-width: 768px) {
+            #fab-new-list {
+                left: auto !important;
+                right: 2rem !important;
+                bottom: 2rem !important;
+                transform: none !important;
+                width: 56px !important;
+                height: 56px !important;
+            }
+            #fab-new-list:active {
+                transform: scale(.92) !important;
+            }
+        }
+    </style>
 
     <script>
     // ── SECTION 1: BOOT & STATE ───────────────────────────────────────
@@ -2588,6 +2602,16 @@ self.addEventListener('notificationclick', e => {
         if (tabId === 'dashboard') renderDashboard();
         if (tabId === 'about') refreshMoreTab();
         scrollToTop();
+        // Desktop pe FAB sirf dashboard mein dikhe, mobile unchanged
+        const fab = document.getElementById('fab-new-list');
+        if (fab && window.innerWidth >= 768) {
+            fab.style.display = (tabId === 'dashboard') ? 'flex' : 'none';
+        }
+        // Desktop pe mobile-nav wapas dikhao (agar maker se aaye hain)
+        if (window.innerWidth >= 768) {
+            const mobileNav = document.querySelector('.mobile-nav');
+            if (mobileNav) mobileNav.style.display = '';
+        }
     }
 
     // Open Maker fresh (no list editing)
@@ -2610,6 +2634,13 @@ self.addEventListener('notificationclick', e => {
         document.getElementById('maker-view').classList.add('active');
         renderCart();
         scrollToTop();
+        // Desktop pe mobile-nav aur FAB hide karo maker mein
+        if (window.innerWidth >= 768) {
+            const mobileNav = document.querySelector('.mobile-nav');
+            if (mobileNav) mobileNav.style.display = 'none';
+            const fab = document.getElementById('fab-new-list');
+            if (fab) fab.style.display = 'none';
+        }
     }
 
     // ── DASHBOARD ────────────────────────────────────────────────────
